@@ -1,10 +1,15 @@
-
 SHLIB_VERSION = 0.84.0
 SHLIB_COMPAT_VERSION = 0.81
 
 MODULES=dessert_core.o dessert_log.o dessert_tun.o dessert_iface.o dessert_msg.o dessert_cli.o dessert_periodic.o
 
 UNAME = $(shell uname | tr 'a-z' 'A-Z')
+TARFILES = *.c *.h Makefile Intro.txt 
+
+PREFIX ?= $(DESTDIR)/usr
+DIR_LIB=$(PREFIX)/lib
+DIR_INCLUDE=$(PREFIX)/include
+
 ifeq ($(UNAME),LINUX)
 	LIBS = pthread pcap cli crypt
 	CFLAGS += -ggdb -Wall -fPIC -DTARGET_$(UNAME) -D_GNU_SOURCE -DSHLIB_VERSION=\"$(SHLIB_VERSION)\"
@@ -37,7 +42,7 @@ LDFLAGS +=
 all: libdessert.a $(SHLIB)
 
 clean:
-	rm -r *.o *.a *.so *.so.* *.dylib ||  true
+	rm -r *.o *.a *.so *.so.* *.dylib *.tar.gz ||  true
 
 install:
 	echo "ECHO:: $(DIR_LIB) $(SHLIB)"
@@ -57,4 +62,7 @@ $(SHLIB): $(MODULES)
 	ln -fs $(SHLIB) $(SHLIB_DEFAULT)
 
 tarball: clean
-	tar -czf ../libdessert-$(SHLIB_VERSION).tar.gz *.c *.h Makefile
+	mkdir libdessert$(SHLIB_COMPAT_VERSION)-$(SHLIB_VERSION)
+	cp $(TARFILES) libdessert$(SHLIB_COMPAT_VERSION)-$(SHLIB_VERSION)
+	tar -czf libdessert$(SHLIB_COMPAT_VERSION)-$(SHLIB_VERSION).tar.gz libdessert$(SHLIB_COMPAT_VERSION)-$(SHLIB_VERSION)
+	rm -rf libdessert$(SHLIB_COMPAT_VERSION)-$(SHLIB_VERSION)
