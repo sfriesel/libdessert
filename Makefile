@@ -31,24 +31,14 @@ else ifeq ($(UNAME),FREEBSD)
 	SHLIB_LDFLAGS = -shared -Wl,-soname,$(SHLIB_COMPAT) -o $(SHLIB)
 endif
 
-CFLAGS += -I../contrib/libcli/
-LDFLAGS += -L../contrib/libcli/
-
-export DYLD_LIBRARY_PATH=.:../contrib/libcli/
-export LD_LIBRARY_PATH=.:../contrib/libcli/
+CFLAGS +=
+LDFLAGS +=
 
 all: libdessert.a $(SHLIB)
 
 clean:
 	rm -r *.o *.a *.so *.so.* *.dylib ||  true
 
-#install:
-#	mkdir -p $(DIR_LIB)
-#	install -m 755 $(SHLIB) $(DIR_LIB)
-#	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_COMPAT))
-#	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_DEFAULT))
-#	mkdir -p $(DIR_INCLUDE)
-#	install -m 644 dessert.h $(DIR_INCLUDE)
 install:
 	echo "ECHO:: $(DIR_LIB) $(SHLIB)"
 	install -d $(DIR_LIB) $(DIR_INCLUDE)
@@ -67,4 +57,4 @@ $(SHLIB): $(MODULES)
 	ln -fs $(SHLIB) $(SHLIB_DEFAULT)
 
 tarball: clean
-	tar -czf ../libdessert-$(SHLIB_VERSION).tar.gz ../$(SHLIB_VERSION)
+	tar -czf ../libdessert-$(SHLIB_VERSION).tar.gz *.c *.h Makefile
