@@ -1,5 +1,5 @@
 
-SHLIB_VERSION = 0.81.4
+SHLIB_VERSION = 0.84.0
 SHLIB_COMPAT_VERSION = 0.81
 
 MODULES=dessert_core.o dessert_log.o dessert_tun.o dessert_iface.o dessert_msg.o dessert_cli.o dessert_periodic.o
@@ -40,7 +40,7 @@ export LD_LIBRARY_PATH=.:../contrib/libcli/
 all: libdessert.a $(SHLIB)
 
 clean:
-	rm -r *.o *.a *.so *.so.* *.dylib *.tar.gz ||  true
+	rm -r *.o *.a *.so *.so.* *.dylib ||  true
 
 #install:
 #	mkdir -p $(DIR_LIB)
@@ -66,5 +66,5 @@ $(SHLIB): $(MODULES)
 	ln -fs $(SHLIB) $(SHLIB_COMPAT)
 	ln -fs $(SHLIB) $(SHLIB_DEFAULT)
 
-tarball:
-	tar -czf libdessert-$(SHLIB_VERSION).tar.gz *.h *.c Makefile
+tarball: clean
+	tar -czf ../libdessert-$(SHLIB_VERSION).tar.gz ../$(SHLIB_VERSION)
