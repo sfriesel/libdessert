@@ -53,7 +53,7 @@ int _dessert_tunif_init_getmachack (struct ether_header *eth, size_t len, desser
 
 
 
-/** Initalizes the tun/tap Interface dev for desproute.
+/** Initializes the tun/tap Interface dev for des-sert.
  * @arg *device interface name
  * @arg flags  @see DESSERT_TUN @see DESSERT_TAP @see DESSERT_MAKE_DEFSRC 
  * @return 0       -- on success
@@ -69,7 +69,7 @@ int dessert_tunif_init(char* device, uint8_t flags)
     struct ifreq ifr;
 #endif
     
-    /* initalize _dessert_tunif */
+    /* initialize _dessert_tunif */
     _dessert_tunif = malloc(sizeof(dessert_tunif_t));
     if(_dessert_tunif == NULL)
         return(-errno);
@@ -87,7 +87,7 @@ int dessert_tunif_init(char* device, uint8_t flags)
     snprintf(buf, IF_NAMESIZE+6, "/dev/%s", device);
     _dessert_tunif->fd = open(buf, O_RDWR);
     if(_dessert_tunif->fd < 0) {
-        dessert_err("could not open interfcae %s using %s: %s", device, buf, strerror(errno));
+        dessert_err("could not open interface %s using %s: %s", device, buf, strerror(errno));
         free(buf);
         return (-errno);
     }
@@ -98,7 +98,7 @@ int dessert_tunif_init(char* device, uint8_t flags)
     if(flags & DESSERT_TUN) {
         const int one = 1;
         if(ioctl(_dessert_tunif->fd, TUNSIFHEAD, &one, sizeof one) == -1) {
-            dessert_err("settig TUNSIFHEAD failed: %s",strerror(errno));
+            dessert_err("setting TUNSIFHEAD failed: %s",strerror(errno));
             goto dessert_tunif_init_err;
             return (-errno);
         }
@@ -145,7 +145,7 @@ int dessert_tunif_init(char* device, uint8_t flags)
     /* get hardware address in tap mode is possible */
     if(flags&DESSERT_TAP) {
         if(_dessert_meshif_gethwaddr((dessert_meshif_t *) _dessert_tunif) != 0) {
-            dessert_err("failed to get hwaddr of interface %s(%d) - hope src of first packet recvied from is it", 
+            dessert_err("failed to get hwaddr of interface %s(%d) - hope src of first packet received from is it",
                 _dessert_tunif->if_name, _dessert_tunif->if_index, _dessert_tunif);
             _dessert_tunif->flags |= _DESSERT_TAP_NOMAC;
             dessert_tunrxcb_add(_dessert_tunif_init_getmachack, 0);
@@ -191,12 +191,12 @@ int dessert_tunif_init(char* device, uint8_t flags)
     return(-errno);
 }
 
-/** internal callback which gets registred if we can't find out mac address of tap interfcae */
+/** internal callback which gets registered if we can't find out mac address of tap interface */
 int _dessert_tunif_init_getmachack (struct ether_header *eth, size_t len, dessert_msg_proc_t *proc, dessert_tunif_t *tunif, dessert_frameid_t id) {
 
-    /* hack to get the hwaddress */
+    /* hack to get the hardware address */
     if(tunif->flags & _DESSERT_TAP_NOMAC) {
-        /* copy from first packet recvied */
+        /* copy from first packet received */
         memcpy(tunif->hwaddr, eth->ether_shost, ETHER_ADDR_LEN);
         dessert_info("guessed hwaddr for %s: %02x:%02x:%02x:%02x:%02x:%02x",  tunif->if_name,
                 tunif->hwaddr[0], tunif->hwaddr[1], tunif->hwaddr[2],
@@ -266,7 +266,7 @@ void *_dessert_tunif_init_thread(void* arg) {
                 cbllen++;
             cbl = realloc(cbl, cbllen*sizeof(dessert_tunrxcb_t *));
             if (cbl == NULL) {
-                dessert_err("failed to alloctate memory for internal callback list");
+                dessert_err("failed to allocate memory for internal callback list");
                 pthread_rwlock_unlock(&dessert_cfglock);
                 return(NULL);
             }
@@ -308,7 +308,7 @@ void *_dessert_tunif_init_thread(void* arg) {
 
 
 
-/** removes all occurences of the callback function from the list of callbacks.
+/** removes all occurrences of the callback function from the list of callbacks.
  * @arg c callback function
  * @return DESSERT_OK   on success, DESSERT_ERR  on error
 **/
@@ -353,7 +353,7 @@ dessert_tunrxcb_del_out:
 
 
 /** adds a callback function to call if a packet should be injected into dessert via a tun/tap interface
- * @arg *c   callpack function
+ * @arg *c   callback function
  * @arg prio priority of the function - lower first!
  * @return DESSERT_OK   on success
  * @return -errno       on error
@@ -364,12 +364,12 @@ int dessert_tunrxcb_add(dessert_tunrxcb_t* c, int prio)
     
     cb = (struct dessert_tunrxcbe*) malloc(sizeof(struct dessert_tunrxcbe));
     if(cb == NULL) {
-        dessert_err("faild to allocate memory for registering tun callback: %s", strerror(errno));
+        dessert_err("failed to allocate memory for registering tun callback: %s", strerror(errno));
         return(-errno);
     }
     
     if(c == NULL) {
-        dessert_err("tried to add a nullpointer as dessert_tunrxcb");
+        dessert_err("tried to add a null pointer as dessert_tunrxcb");
         return(-EINVAL);
     }
     

@@ -42,7 +42,7 @@ char *_dessert_logrbuf = NULL; /* pointer to begin */
 int _dessert_logrbuf_len = 0; /* length in lines (DESSERT_LOGLINE_MAX*_dessert_logrbuf_len*sizeof(char) would be in bytes) */
 int _dessert_logrbuf_cur = 0; /* current position */
 int _dessert_logrbuf_used = 0; /* used slots */
-pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; /* for resizeing */
+pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; /* for resizing */
 pthread_mutex_t _dessert_logrbuf_mutex = PTHREAD_MUTEX_INITIALIZER; /* for moving _dessert_logrbuf_cur */
 
 char* _dessert_log_rbuf_nextline() {
@@ -68,7 +68,7 @@ char* _dessert_log_rbuf_nextline() {
  * @arg *file file name called from
  * @arg *line line called from
  * @arg *fmt printf format string
- * @arg ... (va-arg) printf like variables
+ * @arg ... (var-arg) printf like variables
 **/
 void _dessert_log(int level, const char* func, const char* file, int line, const char *fmt, ...) {
     va_list args;
@@ -335,7 +335,7 @@ int dessert_logcfg(uint16_t opts)
     /* configure logging */
     if((opts & DESSERT_LOG_SYSLOG) && !(opts & DESSERT_LOG_NOSYSLOG)){
         if(!(_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG)) {
-            /* initalize syslog channel */
+            /* initialize syslog channel */
             openlog(dessert_logprefix, LOG_PID, LOG_DAEMON);
         }
         _dessert_logflags |= _DESSERT_LOGFLAG_SYSLOG;

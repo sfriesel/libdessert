@@ -43,27 +43,27 @@ void *_dessert_meshif_add_thread(void* arg);
 
 
 /** internal function to send packet via a single interface */
-inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *despif) 
+inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *iface) 
 {
     int res;
     uint8_t oldflags;
     size_t msglen = ntohs(msg->hlen)+ntohs(msg->plen);
     
-    /* check for null despif */
-    if(despif == NULL) {
+    /* check for null meshInterface */
+    if(iface == NULL) {
         dessert_err("NULL-pointer given as interface - programming error!");
         return EINVAL;
     }
     
-    /* send packet - temorally setting DESSERT_FLAG_SPARSE */
+    /* send packet - temporally setting DESSERT_FLAG_SPARSE */
     oldflags = msg->flags;
     msg->flags &= ~DESSERT_FLAG_SPARSE;
-    res = pcap_inject(despif->pcap, (u_char *) msg, msglen);
+    res = pcap_inject(iface->pcap, (u_char *) msg, msglen);
     msg->flags = oldflags;
     
     if(res != msglen) {
         if(res == -1) {
-            dessert_warn("couldn't send message: %s\n", pcap_geterr(despif->pcap));
+            dessert_warn("couldn't send message: %s\n", pcap_geterr(iface->pcap));
         } else {
             dessert_warn("couldn't send message: sent only %d of %d bytes\n",
                 res, msglen);
@@ -71,10 +71,10 @@ inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *despif)
         return(EIO);        
     }
     
-    pthread_mutex_lock(&(despif->cnt_mutex));
-    despif->opkts++;
-    despif->obytes+=res;
-    pthread_mutex_unlock(&(despif->cnt_mutex));
+    pthread_mutex_lock(&(iface->cnt_mutex));
+    iface->opkts++;
+    iface->obytes+=res;
+    pthread_mutex_unlock(&(iface->cnt_mutex));
     
     return(DESSERT_OK);
     
@@ -88,7 +88,7 @@ inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *despif)
  * @arg *iface interface to send from - use NULL for all interfaces
  * @return DESSERT_OK on success
  * @return EINVAL     if message is broken
- * @return EIO        if message was not sent sucsessfully
+ * @return EIO        if message was not sent successfully
  * %DESCRIPTION:
 **/
 int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface)
@@ -120,7 +120,7 @@ int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface)
  * @arg *iface interface to send from
  * @return DESSERT_OK   on success
  * @return EINVAL       if message is broken
- * @return EIO          if message was not sent sucsessfully
+ * @return EIO          if message was not sent successfully
  * %DESCRIPTION:
 **/
 int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface) 
@@ -159,7 +159,7 @@ int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface)
  * @arg *iface interface to send from
  * @return DESSERT_OK   on success
  * @return EINVAL       if message is broken
- * @return EIO          if message was not sent sucsessfully
+ * @return EIO          if message was not sent successfully
  * %DESCRIPTION:
 **/
 int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface) 
@@ -185,9 +185,9 @@ int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface)
 
 
 
-/** removes all occurences of the callback function from the list of callbacks
- * @arg c callpack function pointer
- * @return DESSERT_OK   on success, DESSERT_ERR oetherwise
+/** removes all occurrences of the callback function from the list of callbacks
+ * @arg c callback function pointer
+ * @return DESSERT_OK   on success, DESSERT_ERR otherwise
 **/
 int dessert_meshrxcb_del(dessert_meshrxcb_t* c)
 {
@@ -231,7 +231,7 @@ dessert_meshrxcb_del_out:
 
 
 
-/** adds a callback function to call if a packet is recvied via a dessert interface
+/** adds a callback function to call if a packet is received via a dessert interface
  * @arg c    callback function
  * @arg prio priority of the function - lower first!
  * @return DESSERT_OK -- on success
@@ -280,7 +280,7 @@ int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio)
     return DESSERT_OK;
 }
 
-/** run all registerd callbacks - use with care - never register as callback! 
+/** run all registered callbacks - use with care - never register as callback!
   * @returns return status of the last callback called
   */
 int dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t *proc_in, const dessert_meshif_t *despif, dessert_frameid_t id) 
@@ -300,7 +300,7 @@ int dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_
         cbllen++;
     cbl = malloc(cbllen*sizeof(dessert_meshrxcb_t *));
     if (cbl == NULL) {
-        dessert_err("failed to alloctate memory for internal callback list");
+        dessert_err("failed to allocate memory for internal callback list");
         pthread_rwlock_unlock(&dessert_cfglock);
         return DESSERT_MSG_DROP;
     }
@@ -311,7 +311,7 @@ int dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_
     
     pthread_rwlock_unlock(&dessert_cfglock);
     
-    /* call the intrested */
+    /* call the interested */
     res = 0;
     cblcur = 0;
     while(res > DESSERT_MSG_DROP && cblcur < cbllen) {
@@ -324,7 +324,7 @@ int dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_
             len = DESSERT_MAXFRAMEBUFLEN;
             goto _dessert_packet_process_cbagain;
         } else if(res == DESSERT_MSG_NEEDNOSPARSE && msg != msg_in) {
-            dessert_warn("bogous DESSERT_MSG_NEEDNOSPARSE returned from callback!");
+            dessert_warn("bogus DESSERT_MSG_NEEDNOSPARSE returned from callback!");
         }
         
         if(res == DESSERT_MSG_NEEDMSGPROC && proc == NULL) {
@@ -332,7 +332,7 @@ int dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_
             memset(proc, 0, DESSERT_MSGPROCLEN);
             goto _dessert_packet_process_cbagain;
         } else if (res == DESSERT_MSG_NEEDMSGPROC && proc != NULL) {
-            dessert_warn("bogous DESSERT_MSG_NEEDMSGPROC returned from callback!");
+            dessert_warn("bogus DESSERT_MSG_NEEDMSGPROC returned from callback!");
         }
         
         cblcur++;
@@ -350,7 +350,7 @@ int dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_
 }
 
 
-/** callback doing the main work for packets recvied through a dessert interface
+/** callback doing the main work for packets received through a dessert interface
  * @param arg    - despif-pointer carried by libpcap in something else
  * @param header - pointer to the header by libpcap
  * @param packet - pointer to the packet by libpcap
@@ -363,7 +363,7 @@ void _dessert_packet_process (u_char *args, const struct pcap_pkthdr *header, co
     dessert_frameid_t id;
     dessert_msg_proc_t proc;
     
-    /* is it something I underdstand? */
+    /* is it something I understand? */
     if(ntohs(msg->l2h.ether_type) != DESSERT_ETHPROTO) {
         dessert_debug("got packet with ethertype %04x - discarding", ntohs(msg->l2h.ether_type));
         return;
@@ -395,9 +395,9 @@ void _dessert_packet_process (u_char *args, const struct pcap_pkthdr *header, co
 
 
 /** callback to set the local processing flags in dessert_msg_proc_t on an arriving dessert_msg_t
- * @arg *msg dessert_msg_t frame recvied
- * @arg len length of ethernet frame recvied
- * @arg *iface interface recvied packet on
+ * @arg *msg dessert_msg_t frame received
+ * @arg len length of ethernet frame received
+ * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP or DESSERT_MSG_NEEDMSGPROC
 **/
 int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *riface, dessert_frameid_t id)
@@ -418,7 +418,7 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
                      | DESSERT_LFLAG_NEXTHOP_SELF      | DESSERT_LFLAG_PREVHOP_SELF
                      | DESSERT_LFLAG_NEXTHOP_BROADCAST );
     
-    /* checks aganinst defaults */
+    /* checks against defaults */
     if(l25h != NULL && memcmp(l25h->ether_dhost, ether_broadcast, ETHER_ADDR_LEN) == 0) {
         proc->lflags |= DESSERT_LFLAG_DST_BROADCAST;
     }
@@ -442,7 +442,7 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
         proc->lflags |= DESSERT_LFLAG_NEXTHOP_BROADCAST;
     }
 
-    /* checks aganinst interfaces in list */
+    /* checks against interfaces in list */
     pthread_rwlock_rdlock(&dessert_cfglock);
     for(iface = _dessert_meshiflist; iface != NULL; iface = iface->next) {
         if(l25h != NULL && memcmp(l25h->ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
@@ -466,7 +466,7 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
 
 
 
-/** looks for infertface with name dev in _dessert_meshiflist and returns pointer
+/** looks for interface with name dev in _dessert_meshiflist and returns pointer
  * @arg *dev interface name
  * @return pointer when interface found, NULL otherwise
 **/
@@ -488,7 +488,7 @@ dessert_meshif_t* dessert_meshif_get(const char* dev)
 
 
 
-/** removes the corresponding desp2_if struct from _dessert_meshiflist and does some clenaup.
+/** removes the corresponding desp2_if struct from _dessert_meshiflist and does some cleanup.
  * @arg dev interface name to remove from list
  * %RETURNS:
  * @return DESSERT_OK   on success 
@@ -534,7 +534,7 @@ int dessert_meshif_del(const char* dev)
     
 }
 
-/** internal routine called before interfce thead finishes */
+/** internal routine called before interface thread finishes */
 void _dessert_meshif_cleanup (dessert_meshif_t *despif) 
 {
     pcap_close(despif->pcap);
@@ -543,7 +543,7 @@ void _dessert_meshif_cleanup (dessert_meshif_t *despif)
 
 
 
-/** Initalizes the dessert Interfacee, starts packet processor thread and registers all
+/** Initializes the des-sert Interface, starts packet processor thread and registers all
  * @arg dev interface name
  * @return DESSERT_OK   on success
  * @return DESSERT_ERR  on error
@@ -559,7 +559,7 @@ int dessert_meshif_add(const char* dev, uint8_t flags)
     snprintf(fe, 64, "ether proto 0x%04x", DESSERT_ETHPROTO);
     
     
-    /* init new interface enty */
+    /* init new interface entry */
     despif = (dessert_meshif_t*) malloc(sizeof(dessert_meshif_t));
     if(despif == NULL)
         return(-errno);
@@ -576,10 +576,10 @@ int dessert_meshif_add(const char* dev, uint8_t flags)
     }
     
     
-    /* initalize libpcap */
+    /* initialize libpcap */
     despif->pcap = pcap_open_live(despif->if_name, DESSERT_MAXFRAMELEN, promisc, 10, despif->pcap_err);
     if (despif->pcap == NULL) {
-        dessert_err("pcap_open_live faild for interface %s(%d):\n%s", 
+        dessert_err("pcap_open_live failed for interface %s(%d):\n%s",
             despif->if_name, despif->if_index, despif->pcap_err);
         goto dessert_meshif_add_err;
     }
@@ -609,7 +609,7 @@ int dessert_meshif_add(const char* dev, uint8_t flags)
         goto dessert_meshif_add_err;
     }
     
-    /* check whether we need to set defsrc */
+    /* check whether we need to set defsrc (default source) */
     if (memcmp(dessert_l25_defsrc, ether_null, ETHER_ADDR_LEN) == 0) {
         memcpy(dessert_l25_defsrc, despif->hwaddr, ETHER_ADDR_LEN);
         dessert_info("set dessert_l25_defsrc to hwaddr %02x:%02x:%02x:%02x:%02x:%02x", 
@@ -618,7 +618,7 @@ int dessert_meshif_add(const char* dev, uint8_t flags)
     }
     
     
-    dessert_info("starting worker thread for interfcae %s(%d) hwaddr %02x:%02x:%02x:%02x:%02x:%02x", 
+    dessert_info("starting worker thread for interface %s(%d) hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
         despif->if_name, despif->if_index, 
         despif->hwaddr[0], despif->hwaddr[1], despif->hwaddr[2],
         despif->hwaddr[3], despif->hwaddr[4], despif->hwaddr[5]);
@@ -665,12 +665,12 @@ void *_dessert_meshif_add_thread(void* arg) {
 
 }
 
-/** get hardware address oth the ethernet device behind despif
- * this more are plattform depending functions!
+/** get hardware address of the ethernet device behind despif
+ * this more are platform depending functions!
  * @arg *despif pointer to desp2_if to query
- * @return DESSERT_OK on succsess
+ * @return DESSERT_OK on success
 **/
-int _dessert_meshif_gethwaddr(dessert_meshif_t *despif)
+int _dessert_meshif_gethwaddr(dessert_meshif_t *iface)
 #ifdef TARGET_DARWIN
 {
     /* the Apple way... */
@@ -690,17 +690,17 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t *despif)
     mib[5] = 0;
     
     if (sysctl(mib, 6, NULL, &len, NULL, 0) < 0) {
-            dessert_err("aquireing hwaddr faild: sysctl 1 error");
+            dessert_err("Acquiring hwaddr failed: sysctl 1 error");
             return(DESSERT_ERR);
     }
     
     if ((buf = malloc(len)) == NULL) {
-            dessert_err("aquireing hwaddr faild: malloc error");
+            dessert_err("acquiring hwaddr failed: malloc error");
             return(DESSERT_ERR);
     }
     
     if (sysctl(mib, 6, buf, &len, NULL, 0) < 0) {
-            dessert_err("aquireing hwaddr faild: sysctl 2 error");
+            dessert_err("acquiring hwaddr failed: sysctl 2 error");
             return(DESSERT_ERR);
     }
     
@@ -757,7 +757,7 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t *despif)
     /* we need some socket to do that */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     
-    /* set interface options and get hardwareaddr */
+    /* set interface options and get hardware address */
     strncpy(ifr.ifr_name,despif->if_name,sizeof(ifr.ifr_name));
     
     
@@ -775,14 +775,14 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t *despif)
         close(sockfd);
         return(DESSERT_OK);
     } else {
-        dessert_err("aquireing hwaddr faild");
+        dessert_err("acquiring hwaddr failed");
         close(sockfd);
         return(DESSERT_ERR);
     }
 }
 #else
-int _dessert_meshif_gethwaddr(dessert_meshif_t *despif) {
-    dessert_err("aquireing hwaddr faild - platform not supported");
+int _dessert_meshif_gethwaddr(dessert_meshif_t *iface) {
+    dessert_err("acquiring hwaddr failed - platform not supported");
     return(DESSERT_ERR);
 }
 #endif

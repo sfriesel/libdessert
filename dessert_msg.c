@@ -26,7 +26,7 @@
 #include "dessert.h"
 
 
-/** creates a new dessert_msg_t and initalizes it.
+/** creates a new dessert_msg_t and initializes it.
  * @arg **msgout (out) pointer to return message address
  * @return 0 on success, -errno on error
 **/
@@ -37,7 +37,7 @@ int dessert_msg_new(dessert_msg_t **msgout)
     msg = malloc(DESSERT_MAXFRAMEBUFLEN);
     
     if(msg == NULL) {
-        dessert_err("faild to allocate buffer for new message!");
+        dessert_err("failed to allocate buffer for new message!");
         return(-ENOMEM);
     }
     
@@ -60,7 +60,7 @@ int dessert_msg_new(dessert_msg_t **msgout)
 
 
 /** creates a new dessert_msg from an ethernet frame.
- * @arg *eth ethernet frame to encapsuclate
+ * @arg *eth ethernet frame to encapsulate
  * @arg len length of the ethernet frame
  * @arg **msgout (out) pointer to return message address
  * @return DESSERT_OK on success, -errno otherwise
@@ -216,7 +216,7 @@ int dessert_msg_proc_clone(dessert_msg_proc_t **procnew, const dessert_msg_proc_
 }
 
 
-/** checks whether a dessert_msg is consistend
+/** checks whether a dessert_msg is consistent
  * @arg msg the message to be checked
  * @arg len the length of the buffer
  * @return  DESSERT_OK on success
@@ -277,10 +277,10 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len)
 
 
 
-/** callback that checks whether a dessert_msg is consistend
- * @arg *msg dessert_msg_t frame recvied
- * @arg len length of ethernet frame recvied
- * @arg *iface interface recvied packet on
+/** callback that checks whether a dessert_msg is consistent
+ * @arg *msg dessert_msg_t frame received
+ * @arg len length of ethernet frame received
+ * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP if message is valid, DESSERT_MSG_DROP otherwise
 **/
 int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id)
@@ -417,9 +417,9 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 
 
 /** dump a desp2_msg to debug log
- * @arg *msg dessert_msg_t frame recvied
- * @arg len length of ethernet frame recvied
- * @arg *iface interface recvied packet on
+ * @arg *msg dessert_msg_t frame received
+ * @arg len length of ethernet frame received
+ * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP always
 **/
 int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id)
@@ -427,7 +427,7 @@ int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc
     char buf[1024];
     
     dessert_msg_proc_dump(msg, len, proc, buf, 1024);
-    dessert_debug("recvied frame #%lu on interface %s - dump:\n%s", (unsigned long) id, iface->if_name, buf);
+    dessert_debug("received frame #%lu on interface %s - dump:\n%s", (unsigned long) id, iface->if_name, buf);
   
     return DESSERT_MSG_KEEP;
 }
@@ -435,9 +435,9 @@ int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc
 
 
 /** add an extension record to a dessert_msg
- * @arg *msg  the message the extension sould be added to
+ * @arg *msg  the message the extension should be added to
  * @arg **ext (out) the extension pointer to the reserved extension space
- * @arg type the type of the externsion
+ * @arg type the type of the extension
  * @arg len  the length of the ext data (without 2 byte extension header)
  * @return DESSERT_OK on success,
 **/
@@ -450,7 +450,7 @@ int dessert_msg_addext(dessert_msg_t *msg, dessert_ext_t **ext, uint8_t type, si
         return -1;
     }
     
-    /* add DESSERT_EXTLEN to len for convinience*/
+    /* add DESSERT_EXTLEN to len for convenience*/
     len += DESSERT_EXTLEN;
     
     /* check ext */
@@ -466,7 +466,7 @@ int dessert_msg_addext(dessert_msg_t *msg, dessert_ext_t **ext, uint8_t type, si
     }
     
     
-    /* move payload if neccessary */
+    /* move payload if necessary */
     if(ntohs(msg->plen)>0) {
         memmove( ((uint8_t *)msg + ntohs(msg->hlen) + len), ((uint8_t *)msg + ntohs(msg->hlen)), ntohs(msg->plen));
     }
@@ -485,7 +485,7 @@ int dessert_msg_addext(dessert_msg_t *msg, dessert_ext_t **ext, uint8_t type, si
 }
 
 /** remove an extension record from a dessert_msg
- * @arg *msg  the message the extension sould be added to
+ * @arg *msg  the message the extension should be added to
  * @arg *ext (out) the extension pointer to the extension to be removed
  * @return DESSERT_OK on success,
 **/
@@ -509,7 +509,7 @@ int dessert_msg_delext(dessert_msg_t *msg, dessert_ext_t *ext)
 }
 
 /** add or replace payload to a dessert_msg
- * @arg *msg the message the payload sould be added to
+ * @arg *msg the message the payload should be added to
  * @arg **payload (out) the pointer to place the payload
  * @arg len the length of the payload
  * @return DESSERT_OK on success, DESSERT_ERR otherwise
@@ -536,7 +536,7 @@ int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len)
  * @arg **ext (out) pointer to extracted extension
  *                  sets *ext=NULL if  extension not found 
  *                  my be NULL in this case only count/existence matters
- * @arg type type of the ext to retive - use DESSERT_EXT_ANY to get any ext
+ * @arg type type of the ext to retrieve - use DESSERT_EXT_ANY to get any ext
  * @arg index the index if the extension of that type, starting with 0
  * @return  0 if the message has no such extension,
  * @return count of extensions of that type if count > index
@@ -594,10 +594,10 @@ struct ether_header* dessert_msg_getl25ether (const dessert_msg_t* msg) {
 
 
 /** check if the message carries a trace extension and add the current trace info
- * if iface is NULL, the packet iss ignored
- * @arg *msg dessert_msg_t frame recvied
- * @arg len length of ethernet frame recvied
- * @arg *iface interface recvied packet on
+ * if iface is NULL, the packet is ignored
+ * @arg *msg dessert_msg_t frame received
+ * @arg len length of ethernet frame received
+ * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP always
 **/
 int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id)
@@ -633,10 +633,10 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *pro
 
 
 
-/** add inital trace header to dessert message
+/** add initial trace header to dessert message
  * @arg *msg dessert_msg_t message used for tracing
  * @arg mode trace mode
- *           use DESSERT_MSG_TRACE_HOST to only recod default mac of hosts on the way
+ *           use DESSERT_MSG_TRACE_HOST to only record default mac of hosts on the way
  *           use DESSERT_MSG_TRACE_IFACE to also trace input interface and last hop
  * ®return DESSERT_OK on success
 **/
@@ -671,7 +671,7 @@ int dessert_msg_trace_initiate(dessert_msg_t* msg, int mode)
 /** dump packet trace to string
  * @arg *msg dessert_msg_t message used for tracing
  * @arg *buf char buffer to place string
- *           use DESSERT_MSG_TRACE_HOST to only recod default mac of hosts on the way
+ *           use DESSERT_MSG_TRACE_HOST to only record default mac of hosts on the way
  *           use DESSERT_MSG_TRACE_IFACE to also trace input interface and last hop
  * ®return length of the string - 0 if msg has no trace header
 **/
@@ -693,7 +693,7 @@ int dessert_msg_trace_dump(const dessert_msg_t* msg, char* buf, int blen)
         ext->data[3], ext->data[4], ext->data[5]);
         
     if(dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-        _dessert_msg_trace_dump_append("\t\t  recvied on   %02x:%02x:%02x:%02x:%02x:%02x\n", 
+        _dessert_msg_trace_dump_append("\t\t  received on   %02x:%02x:%02x:%02x:%02x:%02x\n",
             ext->data[6], ext->data[7], ext->data[8],
             ext->data[9], ext->data[10], ext->data[11]);
         _dessert_msg_trace_dump_append("\t\t  l2.5 src     %02x:%02x:%02x:%02x:%02x:%02x\n", 
@@ -708,10 +708,10 @@ int dessert_msg_trace_dump(const dessert_msg_t* msg, char* buf, int blen)
             ext->data[3], ext->data[4], ext->data[5]);
 
         if(dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-            _dessert_msg_trace_dump_append("\t\t  recvied from  %02x:%02x:%02x:%02x:%02x:%02x\n", 
+            _dessert_msg_trace_dump_append("\t\t  received from  %02x:%02x:%02x:%02x:%02x:%02x\n",
                 ext->data[12], ext->data[13], ext->data[14],
                 ext->data[15], ext->data[16], ext->data[17]);
-            _dessert_msg_trace_dump_append("\t\t  recvie iface  %02x:%02x:%02x:%02x:%02x:%02x\n", 
+            _dessert_msg_trace_dump_append("\t\t  receiving iface  %02x:%02x:%02x:%02x:%02x:%02x\n",
                 ext->data[6], ext->data[7], ext->data[8],
                 ext->data[9], ext->data[10], ext->data[11]);
         }

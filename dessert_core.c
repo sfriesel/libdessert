@@ -59,8 +59,8 @@ int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[], 
 }
 
 
-/** generates a new, runtime-uniqe frame id 
-  * @returns runtime-uniqe frame id
+/** generates a new, runtime-unique frame id
+  * @returns runtime-unique frame id
 **/
 dessert_frameid_t dessert_newframeid () {
     dessert_frameid_t x;
@@ -146,7 +146,7 @@ int _dessert_pid(char* pidfile) {
     return DESSERT_OK;
 }
 
-/** initalizes dessert framework and sets up logging
+/** Initializes dessert framework and sets up logging
  * @arg *proto 4 char string for protocol name
  * @arg version version number of protocol
  * @arg opts @see DESSERT_OPT_*
@@ -162,7 +162,7 @@ int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile)
     strncpy(dessert_proto, proto, DESSERT_PROTO_STRLEN);
     dessert_ver = version;
     
-    /* initalize pseudo constants */
+    /* initialize pseudo constants */
     memset(ether_broadcast, 255, ETHER_ADDR_LEN);
     memset(ether_null, 0, ETHER_ADDR_LEN);
         
@@ -179,7 +179,7 @@ int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile)
         _dessert_pid(pidfile);
 	}
     
-    /* initalize cli */    
+    /* initialize cli */
     _dessert_cli_init();
     
     /* start periodic thread */
@@ -188,7 +188,7 @@ int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile)
     return DESSERT_OK;
 }
 
-/** internal funcion to clean up things */
+/** internal function to clean up things */
 void _desp2_cleanup() {
     /* remove pidfile */
     if(dessert_pidfile_name != NULL) {

@@ -32,7 +32,7 @@ pthread_cond_t _dessert_periodic_changed = PTHREAD_COND_INITIALIZER;
 pthread_t _dessert_periodic_worker;
 int _dessert_periodic_worker_running = 0;
 
-/* internal task list modifyer - only call while holding _dessert_periodic_mutex */
+/* internal task list modifier - only call while holding _dessert_periodic_mutex */
 int _dessert_periodic_add_periodic_t(dessert_periodic_t *task) 
 {
     
@@ -101,7 +101,7 @@ dessert_periodic_t *dessert_periodic_add(dessert_periodiccallback_t* c, void *da
         scheduled = &now;
     }
     
-    /* sainity checks */
+    /* sanity checks */
     if(c == NULL) {
         return(NULL);
     }
@@ -133,7 +133,7 @@ dessert_periodic_t *dessert_periodic_add(dessert_periodiccallback_t* c, void *da
 }
 
 /** add a delayed task to the task list 
-  * this is an easyer version of dessert_periodic_add taking a singel delay as parameter
+  * this is an easier version of dessert_periodic_add taking a single delay as parameter
   * @arg c callback to call when task is scheduled
   * @arg data data to give to the callback
   * @arg scheduled when should the callback be called the first time

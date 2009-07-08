@@ -26,7 +26,7 @@
 #ifndef DESSERT
 #define DESSERT
 
-/* laod needed libs - quite dirty */
+/* load needed libs - quite dirty */
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -110,7 +110,7 @@ extern u_int8_t    dessert_l25_defsrc[ETHER_ADDR_LEN];
 /** the config funnel */
 extern pthread_rwlock_t dessert_cfglock;
 
-/** the config-flag v ariable */
+/** the config-flag variable */
 extern uint16_t dessert_cfgflags;
 
 /** logfile file pointer to use with DESSERT_OPT_LOGFILE */
@@ -125,7 +125,7 @@ extern u_char      ether_null[ETHER_ADDR_LEN];
 
 
 
-/** type for local uniqe packet identification */
+/** type for local unique packet identification */
 typedef uint64_t dessert_frameid_t;
 #define DESSERT_FRAMEID_MAX ((uint64_t)-1)
 #define dessert_frameid_overflow(x, y) ((x>y)&&((x-y)>(DESSERT_FRAMEID_MAX/2)))
@@ -180,14 +180,14 @@ typedef struct dessert_msg_proc {
 /** size of a dessert_msg buffer */
 #define dessert_msg_buflen(x) ((x->flags&DESSERT_FLAG_SPARSE)?(x->hlen+x->plen):(DESSERT_MAXFRAMELEN+DESSERT_MSGPROCLEN))
 
-/** flag for dessert_msg.flags - messgae len is hlen+plen
+/** flag for dessert_msg.flags - message len is hlen+plen
   * if not set buffer len is assumed as DESSERT_MAXFRAMELEN + DESSERT_MSGPROCLEN */
 #define DESSERT_FLAG_SPARSE 0x1
 
 /** flag for dessert_msg_proc.lflags - l25 src is one of our interfaces */
 #define DESSERT_LFLAG_SRC_SELF 0x0002
 
-/** flag for dessert_msg_proc.lflags - l25 dst is multicast addss*/
+/** flag for dessert_msg_proc.lflags - l25 dst is multicast address*/
 #define DESSERT_LFLAG_DST_MULTICAST 0x0004
 
 /** flag for dessert_msg_proc.lflags - l25 dst is one of our interfaces */
@@ -245,13 +245,13 @@ typedef struct __attribute__ ((__packed__)) dessert_ext {
 
 /** an interface used for dessert_msg frames */
 typedef struct dessert_meshif {
-    /** ponter to next interface */
+    /** pointer to next interface */
     struct dessert_meshif    *next;
     /** name of interface */
     char                if_name[IFNAMSIZ];
     /** system ifindex */
     unsigned int        if_index;
-    /** hardware address iof interface */
+    /** hardware address of interface */
     uint8_t             hwaddr[ETHER_ADDR_LEN];
     /** counter mutex */
     pthread_mutex_t     cnt_mutex;
@@ -265,7 +265,7 @@ typedef struct dessert_meshif {
     uint64_t            obytes;
     /** libpcap descriptor for the interface */
     pcap_t              *pcap;
-    /* libpcap error message bufer */
+    /* libpcap error message buffer */
     char                pcap_err[PCAP_ERRBUF_SIZE];
     /** pthread running the request loop */
     pthread_t           worker;
@@ -274,9 +274,9 @@ typedef struct dessert_meshif {
 
 
 /** an tun/tap interface used to inject packets to dessert implemented daemons
-  * please make shure first fields are equal to dessert_meshif to re-use _dessert_meshif_gethwaddr */
+  * please make sure first fields are equal to dessert_meshif to re-use _dessert_meshif_gethwaddr */
 typedef struct dessert_tunif {
-    /** ponter to next interface */
+    /** pointer to next interface */
     struct dessert_tunif   *next;
     /** name of interface */
     char                if_name[IFNAMSIZ];
@@ -413,16 +413,16 @@ int dessert_tunif_init(char* name, uint8_t flags);
 
 
 
-/** callbacks type to call if a packed should be injected into dessert via a tun/tap interface
+/** callback type to call if a packed should be injected into dessert via a tun/tap interface
  *
  * The callbacks are invoked with no locks hold by the thread,
  * YOU MUST make sure the thread holds no locks after the callback exits.
  * YOU MUST also make sure not to do anything blocking in a callback!
  * 
- * @arg *eth ethernet frame recvied (ether_[sd]host is null when tun if is used)
- * @arg len length of ethernet frame recvied
- * @arg *proc local processing buffer bassed along the callback pipline - may be NULL
- * @arg *tunif interface recvied packet on
+ * @arg *eth ethernet frame received (ether_[sd]host is null when tun if is used)
+ * @arg len length of ethernet frame received
+ * @arg *proc local processing buffer passed along the callback pipeline - may be NULL
+ * @arg *tunif interface received packet on
  * @arg id unique internal frame id of the packet
  * ®return DESSERT_MSG_KEEP to continue processing the packet, DESSERT_MSG_DROP to drop it
 */
@@ -431,11 +431,11 @@ typedef int dessert_tunrxcb_t(struct ether_header *eth, size_t len, dessert_msg_
 int dessert_tunrxcb_add(dessert_tunrxcb_t* c, int prio);
 int dessert_tunrxcb_del(dessert_tunrxcb_t* c);
 
-/** callback list entry for tun/tap collbacks */
+/** callback list entry for tun/tap callbacks */
 typedef struct dessert_tunrxcbe {
     /** pointer to callback to call */
     dessert_tunrxcb_t    *c;
-    /** priorirty - lowest first */
+    /** priority - lowest first */
     int                     prio;
     /** next entry in list */
     struct dessert_tunrxcbe    *next;
@@ -447,10 +447,10 @@ int dessert_tunsend(const struct ether_header *eth, size_t len);
 
 /* interface handling */
 
-/** flag for dessert_meshif_add - set interface in promiscus-mode (default) */
+/** flag for dessert_meshif_add - set interface in promiscuous-mode (default) */
 #define DESSERT_IF_PROMISC 0x0
 
-/** flag for dessert_meshif_add - do not set interface in promiscus-mode */
+/** flag for dessert_meshif_add - do not set interface in promiscuous-mode */
 #define DESSERT_IF_NOPROMISC 0x1
 
 /** flag for dessert_meshif_add - filter out non-des-sert frames in libpcap (default) */
@@ -470,20 +470,20 @@ int dessert_meshsend(const dessert_msg_t* msg, const dessert_meshif_t *iface);
 int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface);
 int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface); 
 
-/** callbacks type to call if a packed are recvied via a dessert interface
+/** callbacks type to call if a packed are received via a dessert interface
  *
  * The callbacks are invoked with no locks hold by the thread,
  * YOU MUST make sure the thread holds no locks after the callback exits.
  * YOU MUST also make sure not to do anything blocking in a callback!
  *
  * If the callback exits with DESSERT_MSG_NEEDMSGPROC or DESSERT_MSG_NEEDNOSPARSE
- * and the respective buffer is NULL or saprse, the callback is called again after
- * providing the requested ressource
+ * and the respective buffer is NULL or sparse, the callback is called again after
+ * providing the requested resource
  *
- * @arg *msg dessert_msg_t frame recvied
+ * @arg *msg dessert_msg_t frame received
  * @arg len length of the buffer pointed to from dessert_msg_t
- * @arg *proc local processing buffer bassed along the callback pipline - may be NULL
- * @arg *iface interface recvied packet on - may be NULL
+ * @arg *proc local processing buffer passed along the callback pipeline - may be NULL
+ * @arg *iface interface received packet on - may be NULL
  * @arg id unique internal frame id of the packet
  * @return DESSERT_MSG_KEEP to continue processing the packet
  * @return DESSERT_MSG_DROP to drop it
@@ -492,11 +492,11 @@ int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface);
  */
 typedef int dessert_meshrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
 
-/** callback list entry for dessert interface collbacks */
+/** callback list entry for dessert interface callbacks */
 typedef struct dessert_meshrxcbe {
     /** pointer to callback to call */
     dessert_meshrxcb_t   *c;
-    /** priorirty - lowest first */
+    /** priority - lowest first */
     int                     prio;
     /** next entry in list */
     struct dessert_meshrxcbe   *next;
@@ -538,7 +538,7 @@ extern struct cli_command *dessert_cli_cfg_no_logging;
  * @arg *data void pointer to pass to the callback
  * @arg scheduled when this call was scheduled
  * @arg interval how often this call should be scheduled
- * ®return should be 0, otherwise the callback is unregisterd
+ * ®return should be 0, otherwise the callback is unregistered
  */
 typedef int dessert_periodiccallback_t(void *data, struct timeval *scheduled, struct timeval *interval);
 
