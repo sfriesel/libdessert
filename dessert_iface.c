@@ -670,7 +670,7 @@ void *_dessert_meshif_add_thread(void* arg) {
  * @arg *despif pointer to desp2_if to query
  * @return DESSERT_OK on success
 **/
-int _dessert_meshif_gethwaddr(dessert_meshif_t *iface)
+int _dessert_meshif_gethwaddr(dessert_meshif_t *despif)
 #ifdef TARGET_DARWIN
 {
     /* the Apple way... */
@@ -760,7 +760,7 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t *iface)
     /* set interface options and get hardware address */
     strncpy(ifr.ifr_name,despif->if_name,sizeof(ifr.ifr_name));
     
-    
+
     #ifdef SIOCGIFHWADDR
     if ( ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0 ) {
         memcpy( despif->hwaddr, &ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN );
