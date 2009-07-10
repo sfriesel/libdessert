@@ -288,7 +288,7 @@ void *_dessert_tunif_init_thread(void* arg) {
         tunif->ibytes+=len;
         pthread_mutex_unlock(&(tunif->cnt_mutex));
         
-        /* call the intrested */
+        /* call the interested */
         res = 0;
         cblcur = 0;
         memset(&proc, 0, DESSERT_MSGPROCLEN);
