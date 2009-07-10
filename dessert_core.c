@@ -207,5 +207,10 @@ int dessert_run() {
     return(_dessert_exit_code);
 }
 
+/**Causes dessert_run() to break out of the main loop.
+ */
+void dessert_exit() {
+	pthread_cond_signal(&_dessert_exit_do);
+}
 
 

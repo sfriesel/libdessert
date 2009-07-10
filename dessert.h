@@ -330,6 +330,7 @@ void dessert_msg_proc_destroy(dessert_msg_proc_t* proc);
 int dessert_logcfg(uint16_t opts);
 int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile);
 int dessert_run();
+void dessert_exit();
 dessert_frameid_t dessert_newframeid();
 
 /** flag for dessert_logcfg - enable syslog logging */
