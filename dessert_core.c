@@ -189,7 +189,7 @@ int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile)
 }
 
 /** internal function to clean up things */
-void _desp2_cleanup() {
+void _dessert_cleanup() {
     /* remove pidfile */
     if(dessert_pidfile_name != NULL) {
         unlink(dessert_pidfile_name);
@@ -202,7 +202,7 @@ void _desp2_cleanup() {
 int dessert_run() {
     pthread_mutex_lock(&_dessert_exit_mutex);
     pthread_cond_wait(&_dessert_exit_do, &_dessert_exit_mutex);
-    _desp2_cleanup();
+    _dessert_cleanup();
     pthread_mutex_unlock(&_dessert_exit_mutex);
     return(_dessert_exit_code);
 }
