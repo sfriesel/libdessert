@@ -259,7 +259,7 @@ void *_dessert_periodic_thread(void* arg)
 
 
 /** internal function to start periodic worker */
-void _desp2_periodic_init() {
+void _dessert_periodic_init() {
     if(_dessert_periodic_worker_running == 0 ) {
         _dessert_periodic_worker_running = 1;
         pthread_create(&_dessert_periodic_worker, NULL, _dessert_periodic_thread, NULL);

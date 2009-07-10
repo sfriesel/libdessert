@@ -183,7 +183,7 @@ int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile)
     _dessert_cli_init();
     
     /* start periodic thread */
-    _desp2_periodic_init();
+    _dessert_periodic_init();
     
     return DESSERT_OK;
 }

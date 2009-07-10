@@ -560,7 +560,7 @@ typedef struct dessert_periodic {
 dessert_periodic_t *dessert_periodic_add(dessert_periodiccallback_t* c, void *data, const struct timeval *scheduled, const struct timeval *interval);
 dessert_periodic_t *dessert_periodic_add_delayed(dessert_periodiccallback_t* c, void *data, int delay);
 int dessert_periodic_del(dessert_periodic_t *p);
-void _desp2_periodic_init();
+void _dessert_periodic_init();
 
 
 #define likely(x)       (__builtin_expect((x),1))
