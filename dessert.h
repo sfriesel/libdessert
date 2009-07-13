@@ -273,7 +273,7 @@ typedef struct dessert_meshif {
 
 
 
-/** an tun/tap interface used to inject packets to dessert implemented daemons
+/** a tun/tap interface used to inject packets to dessert implemented daemons
   * please make sure first fields are equal to dessert_meshif to re-use _dessert_meshif_gethwaddr */
 typedef struct dessert_tunif {
     /** pointer to next interface */

@@ -124,25 +124,25 @@ int dessert_cli_run(int port) {
     return DESSERT_OK;
 }
 
-/** internal function to initalize libcli */
+/** internal function to initialize libcli */
 int _dessert_cli_init() {
 
    dessert_cli = cli_init();
    
-   /* set hostname */
+   /* set host name */
    memset(_dessert_cli_hostname, 0x0, HOST_NAME_MAX+DESSERT_PROTO_STRLEN+1);
    gethostname(_dessert_cli_hostname, HOST_NAME_MAX);
    strncpy(_dessert_cli_hostname+strlen(_dessert_cli_hostname), ":", 1);
    strncpy(_dessert_cli_hostname+strlen(_dessert_cli_hostname), dessert_proto, DESSERT_PROTO_STRLEN);
    cli_set_hostname(dessert_cli, _dessert_cli_hostname);
    
-   /* initalize show commands */
+   /* initialize show commands */
    dessert_cli_show = cli_register_command(dessert_cli, NULL, "show", NULL, PRIVILEGE_UNPRIVILEGED, MODE_EXEC, "display information");
    cli_register_command(dessert_cli, dessert_cli_show, "dessert-info", _dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC, "display information about this program");
    cli_register_command(dessert_cli, dessert_cli_show, "logging", _dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC, "show logging ringbuffer");
    
-   /* initalize config mode commands */
-   dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL, "interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "crearte or configure interfaces");
+   /* initialize config mode commands */
+   dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL, "interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "create or configure interfaces");
    dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
    dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "remove interface or negate interface config");
    dessert_cli_cfg_logging = cli_register_command(dessert_cli, NULL, "logging", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "change logging config");
@@ -150,9 +150,9 @@ int _dessert_cli_init() {
    cli_register_command(dessert_cli, dessert_cli_cfg_logging, "ringbuffer", _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set logging ringbuffer size (in lines)");
    cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "ringbuffer", _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "disable logging to ringbuffer");
    cli_register_command(dessert_cli, dessert_cli_cfg_logging, "file", _dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set logfile and enable file logging");
-   cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "file", _dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set logfile disbale file logging");
+   cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "file", _dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set logfile disable file logging");
    
-   /* initalize other commands */
+   /* initialize other commands */
    cli_register_command(dessert_cli, NULL, "shutdown", _dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC, "shut daemon down");
    
    return DESSERT_OK;

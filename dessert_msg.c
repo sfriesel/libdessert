@@ -84,7 +84,7 @@ int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert
         return res;
     }
     
-    /* add etherheader */
+    /* add ether header */
     res = dessert_msg_addext(*msgout, &ext, DESSERT_EXT_ETH, ETHER_HDR_LEN);
     if(res) {
         return res;

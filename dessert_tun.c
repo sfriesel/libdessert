@@ -165,19 +165,19 @@ int dessert_tunif_init(char* device, uint8_t flags)
     
     /* info message */
     if(flags&DESSERT_TAP) {
-        dessert_info("starting worker thread for tap interfcae %s(%d) hwaddr %02x:%02x:%02x:%02x:%02x:%02x", 
+        dessert_info("starting worker thread for tap interface %s(%d) hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
             _dessert_tunif->if_name, _dessert_tunif->if_index, 
             _dessert_tunif->hwaddr[0], _dessert_tunif->hwaddr[1], _dessert_tunif->hwaddr[2],
             _dessert_tunif->hwaddr[3], _dessert_tunif->hwaddr[4], _dessert_tunif->hwaddr[5]);
     } else {
-        dessert_info("starting worker thread for tap interfcae %s(%d) fd %d",
+        dessert_info("starting worker thread for tap interface %s(%d) fd %d",
             _dessert_tunif->if_name, _dessert_tunif->if_index, _dessert_tunif->fd);
     }
         
     
     /* start worker thread */
     if(pthread_create(&(_dessert_tunif->worker), NULL, _dessert_tunif_init_thread, (void *) _dessert_tunif)) {
-        dessert_err("creating worker thread failed for interfcae %s(%d)",
+        dessert_err("creating worker thread failed for interface %s(%d)",
             _dessert_tunif->if_name, _dessert_tunif->if_index);
         goto dessert_tunif_init_err;
     }
