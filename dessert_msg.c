@@ -535,9 +535,9 @@ int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len)
  * @arg *msg the message 
  * @arg **ext (out) pointer to extracted extension
  *                  sets *ext=NULL if  extension not found 
- *                  my be NULL in this case only count/existence matters
+ *                  may be NULL in this case only count/existence matters
  * @arg type type of the ext to retrieve - use DESSERT_EXT_ANY to get any ext
- * @arg index the index if the extension of that type, starting with 0
+ * @arg index the index of the extension of that type, starting with 0
  * @return  0 if the message has no such extension,
  * @return count of extensions of that type if count > index
  * @return -count of extensions of that type if count <= index
