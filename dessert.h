@@ -214,7 +214,7 @@ typedef struct __attribute__ ((__packed__)) dessert_ext {
     
     /** length of the extension in bytes
       * including the 2 bytes of the extension
-      * header itself  - must be a multiple of 4! */
+      * header itself*/
     uint8_t    len;             
     
     /** pointer to the data - real length is len-2 bytes */

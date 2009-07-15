@@ -263,7 +263,7 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len)
             dessert_info("extension %x too long", ext->type);
             return (-3);
         }
-        if (ext->len < 4) {
+        if (ext->len < 2) {
             dessert_info("extension %x too short", ext->type);
             return (-3);
         }
@@ -369,7 +369,7 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
         /* does current extension fit into the header? */
         if((( (uint8_t *)ext + (size_t) ext->len  ) > 
             ( (uint8_t *)msg + (size_t) ntohs(msg->hlen) ) ) ||
-           (  ext->len < 4))
+           (  ext->len < 2))
         {
             _dessert_msg_check_append("\t\tbroken extension - giving up!\n");
             break;
