@@ -570,7 +570,17 @@ int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t ty
     
 }
 
-
+/** get an specific or all extensions
+ *
+ * @arg *msg the message
+ * @arg type type of the ext to retrieve - use DESSERT_EXT_ANY to get any ext
+ * @return  0 if the message has no such extension,
+ * @return count of extensions of that type
+**/
+int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type)
+{
+    return dessert_msg_getext(msg,NULL,type,0);
+}
 
 /** get the ether_header sent as DESSERT_EXT_ETH in a dessert_msg
  * @arg *msg the message

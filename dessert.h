@@ -312,6 +312,7 @@ int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len);
 int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, size_t len);
 int dessert_msg_delext(dessert_msg_t *msg, dessert_ext_t *ext);
 int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index);
+int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type);
 #define dessert_ext_getdatalen(ext) (ext->len - DESSERT_EXTLEN)
 struct ether_header* dessert_msg_getl25ether (const dessert_msg_t* msg);
 int dessert_msg_check(const dessert_msg_t* msg, size_t len);
