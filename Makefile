@@ -11,7 +11,7 @@ DIR_LIB=$(PREFIX)/lib
 DIR_INCLUDE=$(PREFIX)/include
 
 ifeq ($(UNAME),LINUX)
-	LIBS = pthread pcap cli crypt
+	LIBS = pthread pcap cli
 	CFLAGS += -ggdb -Wall -fPIC -DTARGET_$(UNAME) -D_GNU_SOURCE -DSHLIB_VERSION=\"$(SHLIB_VERSION)\"
 	LDFLAGS += -dy -static-libgcc $(addprefix -l,$(LIBS))
 	SHLIB = libdessert.so.$(SHLIB_VERSION)
@@ -27,7 +27,7 @@ else ifeq ($(UNAME),DARWIN)
 	SHLIB_DEFAULT = libdessert.dylib
 	SHLIB_LDFLAGS = -dynamiclib -compatibility_version $(SHLIB_COMPAT_VERSION) -current_version $(SHLIB_VERSION) -o $(SHLIB)
 else ifeq ($(UNAME),FREEBSD)
-	LIBS = pcap cli crypt
+	LIBS = pcap cli
 	CFLAGS += -ggdb -Wall  -fPIC -DTARGET_$(UNAME) -DTARGET_BSD -DSHLIB_VERSION=\"$(SHLIB_VERSION)\" -pthread -I/usr/local/include -I/usr/include
 	LDFLAGS += -dy -L/usr/local/lib -L/usr/lib $(addprefix -l,$(LIBS))
 	SHLIB = libdessert.so.$(SHLIB_VERSION)
