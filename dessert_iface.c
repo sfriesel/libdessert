@@ -96,7 +96,7 @@ int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface)
     dessert_msg_t* msg;
     int res;
     
-    /* check massage - we only send valid messages! */
+    /* check message - we only send valid messages! */
     if(dessert_msg_check(msgin, msgin->hlen+msgin->plen)) {
         dessert_warn("will not send invalid message - aborting");
         return EINVAL;
@@ -464,6 +464,12 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
     
 }
 
+/** returns the head of the list of mesh interfaces (_desert_meshiflist)
+ * @return pointer if list is not empty, NULL otherwise
+ */
+dessert_meshif_t* dessert_meshiflist_get() {
+	return _dessert_meshiflist;
+}
 
 
 /** looks for interface with name dev in _dessert_meshiflist and returns pointer
