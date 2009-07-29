@@ -49,7 +49,7 @@ int _dessert_tunrxcblistver = 0;
 
 /* internal functions */
 void *_dessert_tunif_init_thread(void* arg);
-int _dessert_tunif_init_getmachack (struct ether_header *eth, size_t len, dessert_msg_proc_t *proc, dessert_tunif_t *tunif, dessert_frameid_t id);
+int _dessert_tunif_init_getmachack (dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_tunif_t *tunif, dessert_frameid_t id);
 
 
 
@@ -142,7 +142,7 @@ int dessert_tunif_init(char* device, uint8_t flags)
     system(buf);
     free(buf);
     
-    /* get hardware address in tap mode is possible */
+    /* get hardware address in tap mode if possible */
     if(flags&DESSERT_TAP) {
         if(_dessert_meshif_gethwaddr((dessert_meshif_t *) _dessert_tunif) != 0) {
             dessert_err("failed to get hwaddr of interface %s(%d) - hope src of first packet received from is it",
@@ -192,7 +192,10 @@ int dessert_tunif_init(char* device, uint8_t flags)
 }
 
 /** internal callback which gets registered if we can't find out mac address of tap interface */
-int _dessert_tunif_init_getmachack (struct ether_header *eth, size_t len, dessert_msg_proc_t *proc, dessert_tunif_t *tunif, dessert_frameid_t id) {
+int _dessert_tunif_init_getmachack (dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_tunif_t *tunif, dessert_frameid_t id) {
+
+	struct ether_header *eth;
+	dessert_msg_ethdecap(msg, &eth);
 
     /* hack to get the hardware address */
     if(tunif->flags & _DESSERT_TAP_NOMAC) {
@@ -292,8 +295,13 @@ void *_dessert_tunif_init_thread(void* arg) {
         res = 0;
         cblcur = 0;
         memset(&proc, 0, DESSERT_MSGPROCLEN);
-        while(res >= 0 && cblcur < cbllen)
-            res = cbl[cblcur++]((struct ether_header *) buf, len, &proc, tunif, id);
+        while(res >= 0 && cblcur < cbllen) {
+        	dessert_msg_t *msg;
+        	if (dessert_msg_ethencap((struct ether_header *) buf,len, &msg) <0){
+        		dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
+        	};
+        	res = cbl[cblcur++](msg, len, &proc, tunif, id);
+        }
         
     }
     dessert_info("stopped reading on %s (fd %d): %s", tunif->if_name, tunif->fd, strerror(errno));
