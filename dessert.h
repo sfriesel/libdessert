@@ -421,14 +421,14 @@ int dessert_tunif_init(char* name, uint8_t flags);
  * YOU MUST make sure the thread holds no locks after the callback exits.
  * YOU MUST also make sure not to do anything blocking in a callback!
  * 
- * @arg *eth ethernet frame received (ether_[sd]host is null when tun if is used)
+ * @arg *msg dessert msg received - original ethernet frame is encapsulated within
  * @arg len length of ethernet frame received
  * @arg *proc local processing buffer passed along the callback pipeline - may be NULL
  * @arg *tunif interface received packet on
  * @arg id unique internal frame id of the packet
  * ®return DESSERT_MSG_KEEP to continue processing the packet, DESSERT_MSG_DROP to drop it
 */
-typedef int dessert_tunrxcb_t(struct ether_header *eth, size_t len, dessert_msg_proc_t *proc, dessert_tunif_t *tunif, dessert_frameid_t id);
+typedef int dessert_tunrxcb_t(dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_tunif_t *tunif, dessert_frameid_t id);
 
 int dessert_tunrxcb_add(dessert_tunrxcb_t* c, int prio);
 int dessert_tunrxcb_del(dessert_tunrxcb_t* c);
@@ -461,6 +461,7 @@ int dessert_tunsend(const struct ether_header *eth, size_t len);
 /** flag for dessert_meshif_add - do not filter out non-des-sert frames in libpcap */
 #define DESSERT_IF_NOFILTER 0x2
 
+struct dessert_meshif* dessert_meshiflist_get();
 int dessert_meshif_add(const char* dev, uint8_t flags);
 struct dessert_meshif* dessert_meshif_get(const char* dev);
 int _dessert_meshif_gethwaddr(dessert_meshif_t *despif);
