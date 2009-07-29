@@ -242,7 +242,8 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len)
     /* right protocol and version */
     if( msg->proto[0] != dessert_proto[0] ||
         msg->proto[1] != dessert_proto[1] ||
-        msg->proto[2] != dessert_proto[2] )
+        msg->proto[2] != dessert_proto[2] ||
+    	msg->proto[3] != dessert_proto[3] )
     {
         dessert_info("wrong dessert protocol");
         return (-2);
