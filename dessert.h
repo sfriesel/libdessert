@@ -470,7 +470,9 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t *despif);
 
 /* send packet */
 int dessert_meshsend(const dessert_msg_t* msg, const dessert_meshif_t *iface);
+int dessert_meshsend_allbutone(const dessert_msg_t* msg, const dessert_meshif_t *iface);
 int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface);
+int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, const dessert_meshif_t *iface);
 int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface); 
 
 /** callbacks type to call if a packed are received via a dessert interface

@@ -112,6 +112,36 @@ int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface)
 
 }
 
+/**sends a dessert_msg via all interfaces, except via the specified interface
+ * the original message buffer will not be altered, and the ethernet
+ * src address will be set correctly
+ * @arg *msg message to send
+ * @arg *iface interface NOT to send from - use NULL for all interfaces
+ * @return DESSERT_OK on success
+ * @return EINVAL     if message is broken
+ * @return EIO        if message was not sent successfully
+ * %DESCRIPTION:
+**/
+int dessert_meshsend_allbutone(const dessert_msg_t* msgin, const dessert_meshif_t *iface)
+{
+    dessert_msg_t* msg;
+    int res;
+
+    /* check message - we only send valid messages! */
+    if(dessert_msg_check(msgin, msgin->hlen+msgin->plen)) {
+        dessert_warn("will not send invalid message - aborting");
+        return EINVAL;
+    }
+
+
+    /* clone message */
+    dessert_msg_clone(&msg, msgin, 1);
+    res = dessert_meshsend_fast_allbutone(msg, iface);
+    dessert_msg_destroy(msg);
+
+    return res;
+
+}
 
 /**sends a dessert_meshsend_fast via the specified interface or all interfaces
  * this method is faster than dessert_meshsend, but does not check the message
@@ -149,6 +179,52 @@ int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface)
     
     return(res);
     
+}
+
+/**sends a dessert_meshsend_fast via all interface, except  the specified interface
+ * this method is faster than dessert_meshsend, but does not check the message
+ * and may alter the message buffer.
+ * @arg *msg message to send
+ * @arg *iface interface to NOT send from - use NULL for all interfaces
+ * @return DESSERT_OK   on success
+ * @return EINVAL       if message is broken
+ * @return EIO          if message was not sent successfully
+ * %DESCRIPTION:
+**/
+int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, const dessert_meshif_t *iface)
+{
+	dessert_meshif_t *cur_iface;
+    int res;
+
+    /* we have no iface - send on all! */
+    if(iface == NULL) {
+        pthread_rwlock_rdlock(&dessert_cfglock);
+        for(iface = _dessert_meshiflist; iface != NULL; iface = iface->next) {
+            /* set shost */
+            memcpy(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN);
+            /* send */
+            res = _dessert_meshsend_if2(msg, iface);
+            if(res) {
+                break;
+            }
+        }
+        pthread_rwlock_unlock(&dessert_cfglock);
+    } else {
+    	pthread_rwlock_rdlock(&dessert_cfglock);
+		for(curr_iface = _dessert_meshiflist; curr_iface != iface; curr_iface = curr_iface->next) {
+			/* set shost */
+			memcpy(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN);
+			/* send */
+			res = _dessert_meshsend_if2(msg, curr_iface);
+			if(res) {
+				break;
+			}
+		}
+		pthread_rwlock_unlock(&dessert_cfglock);
+    }
+
+    return(res);
+
 }
 
 /**sends a dessert message via the specified interface or all interfaces
