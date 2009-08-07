@@ -136,8 +136,7 @@ dessert_periodic_t *dessert_periodic_add(dessert_periodiccallback_t* c, void *da
   * this is an easier version of dessert_periodic_add taking a single delay as parameter
   * @arg c callback to call when task is scheduled
   * @arg data data to give to the callback
-  * @arg scheduled when should the callback be called the first time
-  * @arg interval how often should it be called (set to NULL if only once)
+  * @arg delay the delay in seconds
   */
 dessert_periodic_t *dessert_periodic_add_delayed(dessert_periodiccallback_t* c, void *data, int delay)
 {
