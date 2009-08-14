@@ -193,7 +193,7 @@ int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface)
 **/
 int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, const dessert_meshif_t *iface)
 {
-	dessert_meshif_t *cur_iface;
+	dessert_meshif_t *curr_iface;
     int res;
 
     /* we have no iface - send on all! */
