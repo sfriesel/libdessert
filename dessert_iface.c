@@ -490,9 +490,11 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
     l25h = dessert_msg_getl25ether(msg);
 
     /* clear flags */
-    proc->lflags &= ~( DESSERT_LFLAG_DST_SELF          | DESSERT_LFLAG_SRC_SELF
-                     | DESSERT_LFLAG_NEXTHOP_SELF      | DESSERT_LFLAG_PREVHOP_SELF
-                     | DESSERT_LFLAG_NEXTHOP_BROADCAST );
+	proc->lflags &= ~(DESSERT_LFLAG_DST_SELF | DESSERT_LFLAG_SRC_SELF
+			| DESSERT_LFLAG_NEXTHOP_SELF | DESSERT_LFLAG_PREVHOP_SELF
+			| DESSERT_LFLAG_NEXTHOP_BROADCAST
+			| DESSERT_LFLAG_DST_SELF_OVERHEARD
+			| DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD);
     
     /* checks against defaults */
     if(l25h != NULL && memcmp(l25h->ether_dhost, ether_broadcast, ETHER_ADDR_LEN) == 0) {
@@ -519,25 +521,33 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
     }
 
     /* checks against interfaces in list */
-    pthread_rwlock_rdlock(&dessert_cfglock);
-    for(iface = _dessert_meshiflist; iface != NULL; iface = iface->next) {
-        if(l25h != NULL && memcmp(l25h->ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_DST_SELF;
-        }
-        if(l25h != NULL && memcmp(l25h->ether_shost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_SRC_SELF;
-        }
-        if(memcmp(msg->l2h.ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF;
-        }
-        if(memcmp(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_PREVHOP_SELF;
-        }
-    }
-    pthread_rwlock_unlock(&dessert_cfglock);
-    
-    return DESSERT_MSG_KEEP;
-    
+	pthread_rwlock_rdlock(&dessert_cfglock);
+	for (iface = _dessert_meshiflist; iface != NULL; iface = iface->next) {
+		if (l25h != NULL && memcmp(l25h->ether_dhost, iface->hwaddr,
+				ETHER_ADDR_LEN) == 0) {
+			proc->lflags |= DESSERT_LFLAG_DST_SELF;
+			if (memcmp(l25h->ether_dhost, riface->hwaddr, ETHER_ADDR_LEN) != 0) {
+				proc->lflags |= DESSERT_LFLAG_DST_SELF_OVERHEARD;
+			}
+		}
+		if (l25h != NULL && memcmp(l25h->ether_shost, iface->hwaddr,
+				ETHER_ADDR_LEN) == 0) {
+			proc->lflags |= DESSERT_LFLAG_SRC_SELF;
+		}
+		if (memcmp(msg->l2h.ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
+			proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF;
+			if (memcmp(msg->l2h.ether_dhost, riface->hwaddr, ETHER_ADDR_LEN)
+					!= 0) {
+				proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD;
+			}
+		}
+		if (memcmp(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
+			proc->lflags |= DESSERT_LFLAG_PREVHOP_SELF;
+		}
+	}
+	pthread_rwlock_unlock(&dessert_cfglock);
+
+	return DESSERT_MSG_KEEP;
 }
 
 /** returns the head of the list of mesh interfaces (_desert_meshiflist)

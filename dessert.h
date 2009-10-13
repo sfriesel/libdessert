@@ -205,6 +205,18 @@ typedef struct dessert_msg_proc {
 /** flag for dessert_msg_proc.lflags - l2 dst is broadcast */
 #define DESSERT_LFLAG_NEXTHOP_BROADCAST 0x0080
 
+/** flag for dessert_msg_proc.lflags - l25 dst is one of our interfaces,
+ * but we received the message not via the indented interface, e.g. we
+ * overheard it  */
+#define DESSERT_LFLAG_DST_SELF_OVERHEARD 0x0100
+
+/** flag for dessert_msg_proc.lflags - l2 dst is one of our interfaces,
+ * but we received the message not via the indented interface, e.g. we
+ * overheard it */
+#define DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD 0x0200
+
+
+
 
 /** a extension record to add to a dessert_msg */
 typedef struct __attribute__ ((__packed__)) dessert_ext {
