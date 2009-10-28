@@ -233,6 +233,10 @@ void *_dessert_periodic_thread(void* arg)
         {
             next_task->scheduled.tv_sec += next_task->interval.tv_sec;
             next_task->scheduled.tv_usec += next_task->interval.tv_usec;
+            if (next_task->scheduled.tv_usec >= 1000000) {
+				next_task->scheduled.tv_sec -= 1;
+				next_task->scheduled.tv_usec -= 1000000;
+			}
             _dessert_periodic_add_periodic_t(next_task);
         }
         /* otherwise free memory */
