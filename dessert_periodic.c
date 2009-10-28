@@ -50,8 +50,9 @@ int _dessert_periodic_add_periodic_t(dessert_periodic_t *task)
         pthread_cond_broadcast(&_dessert_periodic_changed);
     }
     /* is next task.... */
-    else if (_tasklist->scheduled.tv_sec > task->scheduled.tv_sec && 
-             _tasklist->scheduled.tv_usec > task->scheduled.tv_usec )
+    else if (task->scheduled.tv_sec < _tasklist->scheduled.tv_sec
+			|| (task->scheduled.tv_sec == _tasklist->scheduled.tv_sec
+					&& task->scheduled.tv_usec < _tasklist->scheduled.tv_usec))
     {
         task->next = _tasklist;
         _tasklist = task;
@@ -62,9 +63,9 @@ int _dessert_periodic_add_periodic_t(dessert_periodic_t *task)
     {
         i = _tasklist;
         while(i->next != NULL && 
-               ( i->scheduled.tv_sec < task->scheduled.tv_sec ||
-                 (i->scheduled.tv_sec == task->scheduled.tv_sec &&
-                  i->scheduled.tv_usec <= task->scheduled.tv_usec )))
+               ( i->next->scheduled.tv_sec < task->scheduled.tv_sec ||
+                 (i->next->scheduled.tv_sec == task->scheduled.tv_sec &&
+                  i->next->scheduled.tv_usec <= task->scheduled.tv_usec )))
         {
             i = i->next;
             if (i->next == task) {
