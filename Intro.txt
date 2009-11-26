@@ -123,12 +123,12 @@ Copyright
    via an interface used on the mesh network.
    
    You can register callbacks to be added to one of these pipelines with 
-   "dessert_tunrxcb_add" or "dessert_meshrxcb_add". Both take an additional
+   "dessert_sysrxcb_add" or "dessert_meshrxcb_add". Both take an additional
    integer argument ("priority") specifying the order the callbacks should
    be called. Higher "priority" value results in being called later
    within the pipeline.
    
-      int dessert_tunrxcb_add(dessert_tunrxcb_t* c, int prio);
+      int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio);
       
       int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio);
 
@@ -172,24 +172,24 @@ Copyright
    you should choose a TAP interface. If you intend to implement
    a custom layer 2 to layer 3 mapping, you should use a TUN interface.
    
-   Currently, you can only initialize and use a single TUN/TAP interface.
-   This is done by "dessert_tunif_init". You must then set up the interface
+   Currently, you can only initialize and use a single sys (TUN/TAP) interface.
+   This is done by "dessert_sysif_init". You must then set up the interface
    config in the kernel yourself e.g. by calling "ifconfig".
    
-      int dessert_tunif_init(char* name, uint8_t flags);
+      int dessert_sysif_init(char* name, uint8_t flags);
    
    In either case, frames you receive from a TUN/TAP interface will be
-   passed along the callbacks added by "dessert_tunrxcb_add" to the 
+   passed along the callbacks added by "dessert_sysrxcb_add" to the 
    processing pipeline. Each of them will be called with a pointer to an
    Ethernet frame. In case of a TUN interface, "ether_shost" and "ether_dhost"
    are set to "00:00:00:00:00:00", and ether_type reflects whether the packet
    received is IPv4 oder IPv6.
    
-   Packets are sent to the kernel network stack with "dessert_tunsend".
+   Packets are sent to the kernel network stack with "dessert_syssend".
    In case of a TUN Interface "ether_shost" and "ether_dhost" will be
    ignored.
    
-       int dessert_tunsend(const struct ether_header *eth, size_t len);
+       int dessert_syssend(const struct ether_header *eth, size_t len);
 
 
 2.3.2. Using a mesh interface

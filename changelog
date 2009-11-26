@@ -1,0 +1,7 @@
+20091126 - 0.86.13
+	- The sysrxpipeline now properly destroys the passed message on DESSERT_MSG_DROP. 
+	  Developers, make sure to NOT destroy the msg by yourselves anymore!
+
+20091126 - 0.86.12
+	- Added int dessert_msg_getpayload(dessert_msg_t *msg, void **payload) to 
+	  retrieve the length of the payload and a pointer to the payload, if any.
