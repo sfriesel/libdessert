@@ -1,5 +1,5 @@
-SHLIB_VERSION = 0.86.14
-SHLIB_COMPAT_VERSION = 0.86
+SHLIB_VERSION = 0.87.0
+SHLIB_COMPAT_VERSION = 0.87
 
 MODULES=dessert_core.o dessert_log.o dessert_sysiface.o dessert_meshiface.o dessert_msg.o dessert_cli.o dessert_periodic.o dessert_agentx.o
 
