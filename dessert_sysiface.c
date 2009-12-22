@@ -415,10 +415,14 @@ static void *_dessert_sysif_init_thread(void* arg) {
 	while (!ex) {
 
 		memset(buf, 0, buflen);
-
 		if (sysif->flags & DESSERT_TUN) {
+#ifdef TARGET_LINUX
+			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2)-2, buflen
+					- (ETHER_ADDR_LEN * 2)-2);
+#else
 			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2), buflen
 					- (ETHER_ADDR_LEN * 2));
+#endif
 		} else {
 			len = read((sysif->fd), buf, buflen);
 		}
