@@ -444,7 +444,7 @@ static void *_dessert_sysif_init_thread(void* arg) {
 			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next)
 				cbllen++;
 			cbl = realloc(cbl, cbllen * sizeof(dessert_sysrxcb_t *));
-			if (cbl == NULL) {
+			if (cbl == NULL && cbllen > 0) {
 				dessert_err("failed to allocate memory for internal callback list");
 				pthread_rwlock_unlock(&dessert_cfglock);
 				return (NULL);
