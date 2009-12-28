@@ -366,12 +366,17 @@ int dessert_meshsend_fast_randomized(dessert_msg_t* msgin) {
 
 	pthread_mutex_lock(&_dessert_meshiflist_mutex);
 	for (i = 0; i < _dessert_meshiflist_len; i++) {
-		res = dessert_meshsend_fast(msgin, _dessert_meshiflist_perms[_dessert_meshiflist_current_perm][i]);
+		res = dessert_meshsend_fast(msgin,
+				_dessert_meshiflist_perms[_dessert_meshiflist_current_perm][i]);
 		if (res) {
 			break;
 		}
 	}
-	_dessert_meshiflist_current_perm = (_dessert_meshiflist_current_perm+1) % _dessert_meshiflist_perm_count;
+
+	if (_dessert_meshiflist_perm_count > 0) {
+		_dessert_meshiflist_current_perm = (_dessert_meshiflist_current_perm
+				+ 1) % _dessert_meshiflist_perm_count;
+	}
 	pthread_mutex_unlock(&_dessert_meshiflist_mutex);
 
 	return res;
