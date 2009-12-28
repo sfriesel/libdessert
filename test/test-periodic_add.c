@@ -22,7 +22,13 @@ int callback4(void *data, struct timeval *scheduled, struct timeval
 
 int main(int argc, char** argv) {
 
+	dessert_logcfg(DESSERT_LOG_DEBUG | DESSERT_LOG_NOSTDERR | DESSERT_LOG_NOSYSLOG
+					| DESSERT_LOG_NORBUF | DESSERT_LOG_NOFILE);
+
 	dessert_init("BUG", 0x01, DESSERT_OPT_NODAEMONIZE, NULL);
+
+
+
 
 	struct timeval callback1_interval;
 	callback1_interval.tv_sec = 1;

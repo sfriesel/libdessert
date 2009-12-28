@@ -172,7 +172,7 @@ void _dessert_log(int level, const char* func, const char* file, int line,
 	va_end(args);
 	buf_slen = strlen(buf);
 
-	if (_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) {
+	if (_dessert_logflags | _DESSERT_LOGFLAG_SYSLOG) {
 		syslog(level, "%s%s", buf, lf);
 	}
 
@@ -181,7 +181,7 @@ void _dessert_log(int level, const char* func, const char* file, int line,
 		rbuf_line = _dessert_log_rbuf_nextline();
 	}
 
-	if (_dessert_logflags & (_DESSERT_LOGFLAG_LOGFILE | _DESSERT_LOGFLAG_STDERR
+	if (_dessert_logflags | (_DESSERT_LOGFLAG_LOGFILE | _DESSERT_LOGFLAG_STDERR
 			| _DESSERT_LOGFLAG_RBUF)) {
 
 		time(&ldi);
