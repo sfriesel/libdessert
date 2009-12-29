@@ -364,7 +364,7 @@
 #define DESSERT_MAXFRAMELEN ETHER_MAX_LEN
 
 /** maximum size of the data part in dessert_ext */
-#define DESSERT_MAXEXTDATALEN 130
+#define DESSERT_MAXEXTDATALEN 253
 
 /** length of protocol string used in dessert_msg */
 #define DESSERT_PROTO_STRLEN 4
