@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
 	dessert_periodic_add(callback4, NULL, &callback4_schedule,
 		NULL);
 
+	dessert_cli_run(1023);
 	dessert_run();
 
 }
