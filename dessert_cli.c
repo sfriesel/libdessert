@@ -47,11 +47,16 @@ int _dessert_cli_sock;
 struct sockaddr_in6 _dessert_cli_addr;
 char _dessert_cli_hostname[HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1];
 pthread_t _dessert_cli_worker;
+int _dessert_cli_running = 0;
+uint16_t _cli_port = 4519; // should be default port number
+
+
 
 /* internal functions forward declarations*/
 static void *_dessert_cli_accept_thread(void* arg);
 static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
 		char *argv[], int argc);
+static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc);
 
 /******************************************************************************
  *
@@ -103,6 +108,22 @@ FILE* dessert_cli_get_cfg(int argc, char** argv) {
 	return cfg;
 }
 
+int dessert_set_cli_port(unint16_t port) {
+    if (_dessert_cli_running == 1) {
+		dessert_err("CLI is already running!");
+    	return DESSERT_ERR;
+    }
+
+	if (port >= 1024 && port <= 49151)
+		_cli_port = port;
+	else {
+		port = 0;
+		dessert_err("Port number has to be in [1024, 49151]");
+	}
+	dessert_info("CLI on port %d", _cli_port);
+	return (port == 0 ? DESSERT_ERR : DESSERT_OK);
+}
+
 /** CLI command - config mode - interface sys $iface, $ipv4-addr, $netmask */
 int cli_addsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
 	char buf[255];
@@ -149,7 +170,8 @@ int cli_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc) {
  * %DESCRIPTION:
  *
  */
-int dessert_cli_run(int port) {
+int dessert_cli_run() {
+	_dessert_cli_running = 1;
 	int on = 1;
 
 	/* listen for connections */
@@ -158,10 +180,10 @@ int dessert_cli_run(int port) {
 	memset(&_dessert_cli_addr, 0, sizeof(_dessert_cli_addr));
 	_dessert_cli_addr.sin6_family = AF_INET6;
 	_dessert_cli_addr.sin6_addr = in6addr_any;
-	_dessert_cli_addr.sin6_port = htons(port);
+	_dessert_cli_addr.sin6_port = htons(_cli_port);
 	if (bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr,
 			sizeof(_dessert_cli_addr))) {
-		dessert_err("cli socket bind to port %d failed - %s", port, strerror(errno));
+		dessert_err("cli socket bind to port %d failed - %s", _cli_port, strerror(errno));
 		return -errno;
 	}
 	listen(_dessert_cli_sock, 8);
@@ -235,6 +257,10 @@ int _dessert_cli_init() {
 			_dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC,
 			"shut daemon down");
 
+	cli_register_command(dessert_cli, NULL, "port", _dessert_cli_cmd_setport,
+				PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+				"configure TCP port the daemon is listening on");
+
 	return DESSERT_OK;
 }
 
@@ -245,6 +271,14 @@ int _dessert_cli_init() {
  * C L I - C O M M A N D   L I N E   I N T E R F A C E
  *
  ******************************************************************************/
+
+static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc) {
+    if (_dessert_cli_running == 1) {
+    	cli_print(dessert_cli,"CLI is already running!");
+    	return CLI_ERROR;
+    }
+    return (dessert_set_cli_port(t)==DESSERT_ERR?CLI_ERROR:CLI_OK);
+}
 
 /** command "show dessert-info" */
 static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
