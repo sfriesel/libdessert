@@ -108,7 +108,7 @@ FILE* dessert_cli_get_cfg(int argc, char** argv) {
 	return cfg;
 }
 
-int dessert_set_cli_port(unint16_t port) {
+int dessert_set_cli_port(uint16_t port) {
     if (_dessert_cli_running == 1) {
 		dessert_err("CLI is already running!");
     	return DESSERT_ERR;
@@ -277,7 +277,8 @@ static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *ar
     	cli_print(dessert_cli,"CLI is already running!");
     	return CLI_ERROR;
     }
-    return (dessert_set_cli_port(t)==DESSERT_ERR?CLI_ERROR:CLI_OK);
+
+    return (dessert_set_cli_port((uint16_t) atoi(argv[0]))==DESSERT_ERR?CLI_ERROR:CLI_OK);
 }
 
 /** command "show dessert-info" */
