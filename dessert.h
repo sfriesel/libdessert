@@ -662,6 +662,9 @@ extern struct cli_command *dessert_cli_cfg_no_logging;
 int dessert_cli_run(int port);
 FILE* dessert_cli_get_cfg(int argc, char** argv);
 
+int cli_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+int cli_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
+
 /***************************************************************************//**
  * @}
  *
