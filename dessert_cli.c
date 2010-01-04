@@ -61,6 +61,49 @@ static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
  *
  ******************************************************************************/
 
+/**
+ *
+ */
+FILE* dessert_cli_get_cfg(int argc, char** argv) {
+	FILE* cfg;
+
+	const char* path_head = "/etc/";
+	const char* path_tail = ".conf";
+
+	char* str = alloca(strlen(argv[0])+1);
+	strcpy(str, argv[0]);
+	char* ptr = strtok(str, "/");
+	char* daemon = ptr;
+	while (ptr != NULL) {
+		daemon = ptr;
+		ptr = strtok(NULL, "/");
+	}
+
+	if (argc != 2) {
+		char
+				* path =
+						alloca(strlen(path_head)+1 +strlen(path_tail)+1 +strlen(daemon)+1);
+		strcat(path, path_head);
+		strcat(path, daemon);
+		strcat(path, path_tail);
+		cfg = fopen(path, "r");
+		if (cfg == NULL) {
+			dessert_err("specify configuration file\nusage: \"%s configfile\"\nusage: \"%s\" if /etc/%s.conf is present", daemon, daemon, daemon);
+			exit(1);
+		}
+	} else {
+		cfg = fopen(argv[1], "r");
+		if (cfg == NULL) {
+			dessert_err("failed to open configfile %s", argv[1]);
+			exit(2);
+		} else {
+			dessert_info("using file %s as configuration file", argv[1]);
+		}
+	}
+	return cfg;
+}
+
+
 /** Start up the command line interface.
  *
  * @param[in] port port to listen on

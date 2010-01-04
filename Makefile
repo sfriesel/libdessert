@@ -151,4 +151,8 @@ test-agentx-appstats: test/test-agentx-appstats.o $(MODULES)
 
 test-meshif-iterator: test/test-meshif-iterator.o $(MODULES)
 	$(CC)  -ggdb -Wall -DTARGET_$(UNAME) -D_GNU_SOURCE   $(NETSNMPCFLAGS) $(LDFLAGS)  -o test-meshif-iterator test/test-meshif-iterator.o $(MODULES)	
+
+test-cli_getcfg: test/test-cli_getcfg.o $(MODULES)
+	$(CC)  -ggdb -Wall -DTARGET_$(UNAME) -D_GNU_SOURCE   $(NETSNMPCFLAGS) $(LDFLAGS)  -o test-cli_getcfg test/test-cli_getcfg.o $(MODULES)	
+	
 	

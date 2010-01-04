@@ -660,6 +660,7 @@ extern struct cli_command *dessert_cli_cfg_no_logging;
  ******************************************************************************/
 
 int dessert_cli_run(int port);
+FILE* dessert_cli_get_cfg(int argc, char** argv);
 
 /***************************************************************************//**
  * @}
