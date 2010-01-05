@@ -663,8 +663,8 @@ int dessert_cli_run(void);
 FILE* dessert_cli_get_cfg(int argc, char** argv);
 int dessert_set_cli_port(uint16_t port);
 
-int cli_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
-int cli_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
 
 /***************************************************************************//**
  * @}

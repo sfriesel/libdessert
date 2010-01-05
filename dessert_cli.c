@@ -66,6 +66,42 @@ static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *ar
  *
  ******************************************************************************/
 
+/** CLI command - config mode - interface sys $iface, $ipv4-addr, $netmask */
+int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
+	char buf[255];
+	int i;
+
+	if (argc != 3) {
+		cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask]\n",
+				command);
+		return CLI_ERROR;
+	}
+	dessert_info("initializing sys interface");
+	dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
+	sprintf(buf, "ifconfig %s %s netmask %s mtu 1300 up", argv[0], argv[1],
+			argv[2]);
+	i = system(buf);
+	dessert_info("running ifconfig on sys interface returned %i", i);
+	return (i == 0 ? CLI_OK : CLI_ERROR);
+}
+
+/** CLI command - config mode - interface mesh $iface */
+int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc) {
+	char buf[255];
+	int i;
+
+	if (argc != 1) {
+		cli_print(cli, "usage %s [mesh-interface]\n", command);
+		return CLI_ERROR;
+	}
+	dessert_info("initializing mesh interface %s", argv[0]);
+	dessert_meshif_add(argv[0], DESSERT_IF_PROMISC);
+	sprintf(buf, "ifconfig %s up", argv[0]);
+	i = system(buf);
+	dessert_info("running ifconfig on mesh interface %s returned %i",argv[0], i);
+	return (i == 0 ? CLI_OK : CLI_ERROR);
+}
+
 /**
  *
  */
@@ -122,42 +158,6 @@ int dessert_set_cli_port(uint16_t port) {
 	}
 	dessert_info("CLI on port %d", _cli_port);
 	return (port == 0 ? DESSERT_ERR : DESSERT_OK);
-}
-
-/** CLI command - config mode - interface sys $iface, $ipv4-addr, $netmask */
-int cli_addsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
-	char buf[255];
-	int i;
-
-	if (argc != 3) {
-		cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask]\n",
-				command);
-		return CLI_ERROR;
-	}
-	dessert_info("initializing sys interface");
-	dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
-	sprintf(buf, "ifconfig %s %s netmask %s mtu 1300 up", argv[0], argv[1],
-			argv[2]);
-	i = system(buf);
-	dessert_info("running ifconfig on sys interface returned %i", i);
-	return (i == 0 ? CLI_OK : CLI_ERROR);
-}
-
-/** CLI command - config mode - interface mesh $iface */
-int cli_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc) {
-	char buf[255];
-	int i;
-
-	if (argc != 1) {
-		cli_print(cli, "usage %s [mesh-interface]\n", command);
-		return CLI_ERROR;
-	}
-	dessert_info("initializing mesh interface %s", argv[0]);
-	dessert_meshif_add(argv[0], DESSERT_IF_PROMISC);
-	sprintf(buf, "ifconfig %s up", argv[0]);
-	i = system(buf);
-	dessert_info("running ifconfig on mesh interface %s returned %i",argv[0], i);
-	return (i == 0 ? CLI_OK : CLI_ERROR);
 }
 
 /** Start up the command line interface.
