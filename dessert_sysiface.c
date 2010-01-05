@@ -471,7 +471,7 @@ static void *_dessert_sysif_init_thread(void* arg) {
 		res = 0;
 		cblcur = 0;
 		memset(&proc, 0, DESSERT_MSGPROCLEN);
-		dessert_msg_t *msg;
+		dessert_msg_t *msg = NULL;
 		while (res > DESSERT_MSG_DROP && cblcur < cbllen) {
 			if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg)
 					< 0) {
@@ -479,7 +479,7 @@ static void *_dessert_sysif_init_thread(void* arg) {
 			};
 			res = cbl[cblcur++](msg, len, &proc, sysif, id);
 		}
-		dessert_msg_destroy(msg);
+		if (msg != NULL) dessert_msg_destroy(msg);
 
 	}
 	dessert_info("stopped reading on %s (fd %d): %s", sysif->if_name, sysif->fd, strerror(errno));
