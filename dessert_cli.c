@@ -54,10 +54,15 @@ uint16_t _cli_port = 4519; // should be default port number
 
 /* internal functions forward declarations*/
 static void *_dessert_cli_accept_thread(void* arg);
+static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
+		char *argv[], int argc);
+static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command,
+		char *argv[], int argc);
 static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
 		char *argv[], int argc);
 static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc);
 
+static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif);
 /******************************************************************************
  *
  * EXTERNAL / PUBLIC
@@ -219,10 +224,16 @@ int _dessert_cli_init() {
 			PRIVILEGE_UNPRIVILEGED, MODE_EXEC, "display information");
 	cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",
 			_dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"display information about this program");
+			"Display information about this program.");
 	cli_register_command(dessert_cli, dessert_cli_show, "logging",
 			_dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"show logging ringbuffer");
+	cli_register_command(dessert_cli, dessert_cli_show, "meshifs",
+			_dessert_cli_cmd_showmeshifs, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+			"Print list of registered interfaces used by the daemon.");
+	cli_register_command(dessert_cli, dessert_cli_show, "sysif", _dessert_cli_cmd_showsysif,
+			PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+			"Print the name of the TUN/TAP interface used as system interface.");
 
 	/* initialize config mode commands */
 	dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
@@ -252,14 +263,16 @@ int _dessert_cli_init() {
 			_dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"set logfile disable file logging");
 
+	cli_register_command(dessert_cli, NULL, "port", _dessert_cli_cmd_setport,
+					PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+					"configure TCP port the daemon is listening on");
+
 	/* initialize other commands */
 	cli_register_command(dessert_cli, NULL, "shutdown",
 			_dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC,
 			"shut daemon down");
 
-	cli_register_command(dessert_cli, NULL, "port", _dessert_cli_cmd_setport,
-				PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-				"configure TCP port the daemon is listening on");
+
 
 	return DESSERT_OK;
 }
@@ -281,6 +294,37 @@ static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *ar
     return (dessert_set_cli_port((uint16_t) atoi(argv[0]))==DESSERT_ERR?CLI_ERROR:CLI_OK);
 }
 
+/** command "show meshifs" */
+static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
+		char *argv[], int argc) {
+
+	dessert_meshif_t *meshif = NULL;
+
+	MESHIFLIST_ITERATOR_START(meshif) {
+		_dessert_cli_cmd_showmeshifs_print_helper(cli, meshif);
+	} MESHIFLIST_ITERATOR_STOP;
+
+	return CLI_OK;
+}
+
+/** command "show sysif" */
+static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command,
+		char *argv[], int argc) {
+
+	dessert_sysif_t *sysif = _dessert_sysif;
+
+	cli_print(cli, "\nStatistics for system interface [%s]", sysif->if_name);
+	cli_print(cli, "    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
+			sysif->hwaddr[0], sysif->hwaddr[1], sysif->hwaddr[2],
+			sysif->hwaddr[3], sysif->hwaddr[4], sysif->hwaddr[5]);
+	cli_print(cli, "    Packets received      : [%"PRIi64"]", sysif->ipkts);
+	cli_print(cli, "    Packets send          : [%"PRIi64"]", sysif->opkts);
+	cli_print(cli, "    Bytes received        : [%"PRIi64"]", sysif->ibytes);
+	cli_print(cli, "    Bytes send            : [%"PRIi64"]", sysif->obytes);
+
+	return CLI_OK;
+}
+
 /** command "show dessert-info" */
 static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
 		char *argv[], int argc) {
@@ -291,7 +335,7 @@ static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
 			" ------------------------------------------------------------------------------ ");
 	cli_print(
 			cli,
-			" Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).              ");
+			" Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).            ");
 	cli_print(
 			cli,
 			" All rights reserved.                                                           ");
@@ -365,4 +409,20 @@ static void *_dessert_cli_accept_thread(void* arg) {
 	cli_done(dessert_cli); /* free data structures */
 
 	return (NULL);
+}
+
+/** internal helper function to _dessert_cli_cmd_showmeshifs */
+static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif) {
+
+	cli_print(cli, "\nStatistics for mesh interface [%s]", meshif->if_name);
+	cli_print(cli,
+			"    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
+			meshif->hwaddr[0], meshif->hwaddr[1], meshif->hwaddr[2],
+			meshif->hwaddr[3], meshif->hwaddr[4], meshif->hwaddr[5]);
+	cli_print(cli, "    Packets received      : [%"PRIi64"]", meshif->ipkts);
+	cli_print(cli, "    Packets send          : [%"PRIi64"]", meshif->opkts);
+	cli_print(cli, "    Bytes received        : [%"PRIi64"]", meshif->ibytes);
+	cli_print(cli, "    Bytes send            : [%"PRIi64"]", meshif->obytes);
+
+	return CLI_OK;
 }
