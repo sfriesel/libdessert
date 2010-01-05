@@ -1,3 +1,24 @@
+20100105 - 0.87.0
+    - Developers, please be advised that the prototype of function dessert_cli_run no longer 
+      contains the port as parameter. Use the function dessert_set_cli_port(uint16_t port) 
+      instead or utilize the new port command within a configuration file. The default port is 4519 (D-E-S).
+       
+    - Fixes 'Printing mesh and sys interfaces in CLI' [https://trac.mi.fu-berlin.de/des-testbed/ticket/30]
+    
+    - Fixes 'Set port via CLI' [https://trac.mi.fu-berlin.de/des-testbed/ticket/31]
+    
+    - Fixes 'Default mesh/sys cli functions' [https://trac.mi.fu-berlin.de/des-testbed/ticket/29]
+    
+    - Fixes 'Get configuration file object' [https://trac.mi.fu-berlin.de/des-testbed/ticket/28]
+    
+    - Fixes 'DESSERT_MAXEXTDATALEN vs. 253' [https://trac.mi.fu-berlin.de/des-testbed/ticket/35]
+    
+    - Fixes 'meshsend*randomized divide by zero' [https://trac.mi.fu-berlin.de/des-testbed/ticket/37]
+    
+    - Fixes 'Allocation Error' [https://trac.mi.fu-berlin.de/des-testbed/ticket/32]
+   
+    - Fixes 'Disable syslog logging didn't work' [https://trac.mi.fu-berlin.de/des-testbed/ticket/33]
+
 20091126 - 0.86.13
 	- The sysrxpipeline now properly destroys the passed message on DESSERT_MSG_DROP. 
 	  Developers, make sure to NOT destroy the msg by yourselves anymore!
