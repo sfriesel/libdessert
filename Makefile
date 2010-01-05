@@ -8,7 +8,7 @@ TARFILES = *.c *.h Makefile Intro.txt DES-SERT.doxyfile AUTHORS
 
 PREFIX ?= $(DESTDIR)/usr
 DIR_LIB=$(PREFIX)/lib
-DIR_INCLUDE=$(PREFIX)/include/dessert
+DIR_INCLUDE=$(PREFIX)/include
 
 ifeq ($(UNAME),LINUX)
 	LIBS = pthread pcap cli
@@ -102,7 +102,6 @@ install:
 	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_COMPAT))
 	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_DEFAULT))
 	install -m644 dessert.h $(DIR_INCLUDE)
-	install -m644 utlist.h  $(DIR_INCLUDE)
 	
 
 libdessert.a: $(MODULES) 
