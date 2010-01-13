@@ -92,7 +92,7 @@ clean:
 	rm test-agentx-appstats || true
 	rm test-agentx-appparams || true
 	rm test-agentx || true
-	rm -rf doxygen || true
+#	rm -rf doxygen || true
 	rm Manual.pdf || true
 
 install:
