@@ -79,7 +79,7 @@ DOXYGENTARFILES = doxygen/html/*
 CFLAGS +=
 LDFLAGS +=
 
-all: doxygen libdessert.a $(SHLIB)
+all: libdessert.a $(SHLIB)
 
 clean:
 	rm -r *.o *.a *.so *.so.* *.dylib *.tar.gz ||  true
