@@ -298,13 +298,20 @@ static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *ar
 static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
 		char *argv[], int argc) {
 
-	dessert_meshif_t *meshif = NULL;
+	dessert_meshif_t *meshif = dessert_meshiflist_get();
 
-	MESHIFLIST_ITERATOR_START(meshif) {
-		_dessert_cli_cmd_showmeshifs_print_helper(cli, meshif);
-	} MESHIFLIST_ITERATOR_STOP;
+	if (meshif == NULL) {
+		cli_print(dessert_cli, "No mesh interfaces registered!");
 
-	return CLI_OK;
+		return CLI_ERROR;
+
+	} else {
+		MESHIFLIST_ITERATOR_START(meshif) {
+			_dessert_cli_cmd_showmeshifs_print_helper(cli, meshif);
+		}MESHIFLIST_ITERATOR_STOP;
+
+		return CLI_OK;
+	}
 }
 
 /** command "show sysif" */
@@ -313,16 +320,23 @@ static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command,
 
 	dessert_sysif_t *sysif = _dessert_sysif;
 
-	cli_print(cli, "\nStatistics for system interface [%s]", sysif->if_name);
-	cli_print(cli, "    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
-			sysif->hwaddr[0], sysif->hwaddr[1], sysif->hwaddr[2],
-			sysif->hwaddr[3], sysif->hwaddr[4], sysif->hwaddr[5]);
-	cli_print(cli, "    Packets received      : [%"PRIi64"]", sysif->ipkts);
-	cli_print(cli, "    Packets send          : [%"PRIi64"]", sysif->opkts);
-	cli_print(cli, "    Bytes received        : [%"PRIi64"]", sysif->ibytes);
-	cli_print(cli, "    Bytes send            : [%"PRIi64"]", sysif->obytes);
+	if (sysif == NULL) {
+		cli_print(cli, "\nNo system interface registered!");
 
-	return CLI_OK;
+		return CLI_ERROR;
+	} else {
+		cli_print(cli, "\nStatistics for system interface [%s]", sysif->if_name);
+		cli_print(cli,
+				"    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
+				sysif->hwaddr[0], sysif->hwaddr[1], sysif->hwaddr[2],
+				sysif->hwaddr[3], sysif->hwaddr[4], sysif->hwaddr[5]);
+		cli_print(cli, "    Packets received      : [%"PRIi64"]", sysif->ipkts);
+		cli_print(cli, "    Packets send          : [%"PRIi64"]", sysif->opkts);
+		cli_print(cli, "    Bytes received        : [%"PRIi64"]", sysif->ibytes);
+		cli_print(cli, "    Bytes send            : [%"PRIi64"]", sysif->obytes);
+
+		return CLI_OK;
+	}
 }
 
 /** command "show dessert-info" */
