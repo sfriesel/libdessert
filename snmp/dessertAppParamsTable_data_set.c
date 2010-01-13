@@ -386,7 +386,7 @@ dessertAppParamsTable_commit(dessertAppParamsTable_rowreq_ctx * rowreq_ctx)
             /*
              * set flag, in case we need to undo appParamsOctetString
              */
-        	dessert_debug("dessertAppParamsTable column appParamsOctetString commited");
+        	dessert_debug("dessertAppParamsTable column appParamsOctetString committed");
             rowreq_ctx->column_set_flags |=
                 COLUMN_APPPARAMSOCTETSTRING_FLAG;
         }
@@ -448,7 +448,7 @@ dessertAppParamsTable_undo_commit(dessertAppParamsTable_rowreq_ctx *
 
 
     /*
-     * if we successfully un-commited this row, clear the dirty flag.
+     * if we successfully un-committed this row, clear the dirty flag.
      */
     if (MFD_SUCCESS == rc) {
         rowreq_ctx->rowreq_flags &= ~MFD_ROW_DIRTY;
