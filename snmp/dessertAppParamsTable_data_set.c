@@ -35,9 +35,9 @@
  **********************************************************************
  **********************************************************************/
 /*
- * DESSERT-MIB::dessertAppParamsTable is subid 11 of dessertObjects.
+ * DESSERT-MIB::dessertAppParamsTable is subid 9 of dessertObjects.
  * Its status is Current.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11, length: 13
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9, length: 13
  */
     /*
      * NOTE: if you update this chart, please update the versions in
@@ -467,7 +467,7 @@ dessertAppParamsTable_undo_commit(dessertAppParamsTable_rowreq_ctx *
  * DESSERT-MIB::dessertAppParamsEntry.appParamsTruthValue
  * appParamsTruthValue is subid 5 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.5
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.5
  * Description:
 A parameter with TruthValue semantics.
  *
@@ -670,7 +670,7 @@ appParamsTruthValue_undo(dessertAppParamsTable_rowreq_ctx * rowreq_ctx)
  * DESSERT-MIB::dessertAppParamsEntry.appParamsInteger32
  * appParamsInteger32 is subid 6 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.6
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.6
  * Description:
 A parameter with Integer32 semantics.
  *
@@ -853,7 +853,7 @@ appParamsInteger32_undo(dessertAppParamsTable_rowreq_ctx * rowreq_ctx)
  * DESSERT-MIB::dessertAppParamsEntry.appParamsUnsigned32
  * appParamsUnsigned32 is subid 7 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.7
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.7
  * Description:
 A parameter with Unsigned32 semantics.
  *
@@ -1034,7 +1034,7 @@ appParamsUnsigned32_undo(dessertAppParamsTable_rowreq_ctx * rowreq_ctx)
  * DESSERT-MIB::dessertAppParamsEntry.appParamsOctetString
  * appParamsOctetString is subid 9 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.9
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.9
  * Description:
 A parameter containing of up to 1024 octets.
  *

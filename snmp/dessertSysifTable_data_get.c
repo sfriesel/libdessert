@@ -36,9 +36,9 @@
  **********************************************************************
  **********************************************************************/
 /*
- * DESSERT2-MIB::dessertSysifTable is subid 7 of dessertObjects.
+ * DESSERT-MIB::dessertSysifTable is subid 7 of dessertObjects.
  * Its status is Current.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7, length: 12
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7, length: 12
  */
 
 /*
@@ -115,10 +115,10 @@ dessertSysifTable_indexes_set(dessertSysifTable_rowreq_ctx * rowreq_ctx,
 
 
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifName
+ * DESSERT-MIB::dessertSysifEntry.sysifName
  * sysifName is subid 2 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.2
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.2
  * Description:
 name of interface
  *
@@ -210,10 +210,10 @@ sysifName_get(dessertSysifTable_rowreq_ctx * rowreq_ctx,
 }                               /* sysifName_get */
 
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifMacAddress
+ * DESSERT-MIB::dessertSysifEntry.sysifMacAddress
  * sysifMacAddress is subid 3 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.3
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.3
  * Description:
 hardware address of interface
  *
@@ -307,10 +307,10 @@ sysifMacAddress_get(dessertSysifTable_rowreq_ctx * rowreq_ctx,
 }                               /* sysifMacAddress_get */
 
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifInPkts
+ * DESSERT-MIB::dessertSysifEntry.sysifInPkts
  * sysifInPkts is subid 4 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.4
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.4
  * Description:
 packet counter in
  *
@@ -356,10 +356,10 @@ sysifInPkts_get(dessertSysifTable_rowreq_ctx * rowreq_ctx,
 }                               /* sysifInPkts_get */
 
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifOutPkts
+ * DESSERT-MIB::dessertSysifEntry.sysifOutPkts
  * sysifOutPkts is subid 5 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.5
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.5
  * Description:
 packet counter out
  *
@@ -405,10 +405,10 @@ sysifOutPkts_get(dessertSysifTable_rowreq_ctx * rowreq_ctx,
 }                               /* sysifOutPkts_get */
 
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifInOctets
+ * DESSERT-MIB::dessertSysifEntry.sysifInOctets
  * sysifInOctets is subid 6 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.6
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.6
  * Description:
 octet counter in
  *
@@ -454,10 +454,10 @@ sysifInOctets_get(dessertSysifTable_rowreq_ctx * rowreq_ctx,
 }                               /* sysifInOctets_get */
 
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifOutOctets
+ * DESSERT-MIB::dessertSysifEntry.sysifOutOctets
  * sysifOutOctets is subid 7 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.7
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.7
  * Description:
 octet counter out
  *

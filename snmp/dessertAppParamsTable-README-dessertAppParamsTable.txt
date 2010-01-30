@@ -637,16 +637,16 @@ Table / column details
  **********************************************************************
  **********************************************************************/
 /*
- * DESSERT-MIB::dessertAppParamsTable is subid 11 of dessertObjects.
+ * DESSERT-MIB::dessertAppParamsTable is subid 9 of dessertObjects.
  * Its status is Current.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11, length: 13
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9, length: 13
 */
 
 /*---------------------------------------------------------------------
  * DESSERT-MIB::dessertAppParamsEntry.appParamsIndex
  * appParamsIndex is subid 1 of dessertAppParamsEntry.
  * Its status is Current, and its access level is NoAccess.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.1
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.1
  * Description:
 Index of the parameter.
  *
@@ -671,7 +671,7 @@ Index of the parameter.
  * DESSERT-MIB::dessertAppParamsEntry.appParamsName
  * appParamsName is subid 2 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.2
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.2
  * Description:
 The name of the parameter.
  *
@@ -691,7 +691,7 @@ The name of the parameter.
  * DESSERT-MIB::dessertAppParamsEntry.appParamsDesc
  * appParamsDesc is subid 3 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.3
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.3
  * Description:
 A short description of the parameter
  *
@@ -711,7 +711,7 @@ A short description of the parameter
  * DESSERT-MIB::dessertAppParamsEntry.appParamsValueType
  * appParamsValueType is subid 4 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.4
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.4
  * Description:
 Indicates which of the columns (appParamsTruthValue, 
         appParamsInterger32, appParamsUInteger32, appParamsOctetString) in the 
@@ -731,7 +731,7 @@ Indicates which of the columns (appParamsTruthValue,
  * DESSERT-MIB::dessertAppParamsEntry.appParamsTruthValue
  * appParamsTruthValue is subid 5 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.5
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.5
  * Description:
 A parameter with TruthValue semantics.
  *
@@ -749,7 +749,7 @@ A parameter with TruthValue semantics.
  * DESSERT-MIB::dessertAppParamsEntry.appParamsInteger32
  * appParamsInteger32 is subid 6 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.6
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.6
  * Description:
 A parameter with Integer32 semantics.
  *
@@ -766,7 +766,7 @@ A parameter with Integer32 semantics.
  * DESSERT-MIB::dessertAppParamsEntry.appParamsUnsigned32
  * appParamsUnsigned32 is subid 7 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.7
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.7
  * Description:
 A parameter with Unsigned32 semantics.
  *
@@ -783,7 +783,7 @@ A parameter with Unsigned32 semantics.
  * DESSERT-MIB::dessertAppParamsEntry.appParamsOctetString
  * appParamsOctetString is subid 9 of dessertAppParamsEntry.
  * Its status is Current, and its access level is ReadWrite.
- * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11.1.9
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9.1.9
  * Description:
 A parameter containing of up to 1024 octets.
  *

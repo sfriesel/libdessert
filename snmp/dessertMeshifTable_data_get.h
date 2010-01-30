@@ -38,7 +38,7 @@ extern          "C" {
     /*
      * DESSERT-MIB::dessertMeshifTable is subid 5 of dessertObjects.
      * Its status is Current.
-     * OID: .1.3.6.1.4.1.18898.0.19.42.1.5, length: 12
+     * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5, length: 12
      */
     /*
      * indexes

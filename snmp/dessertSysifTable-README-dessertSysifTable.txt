@@ -443,16 +443,16 @@ Table / column details
  **********************************************************************
  **********************************************************************/
 /*
- * DESSERT2-MIB::dessertSysifTable is subid 7 of dessertObjects.
+ * DESSERT-MIB::dessertSysifTable is subid 7 of dessertObjects.
  * Its status is Current.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7, length: 12
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7, length: 12
 */
 
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifIndex
+ * DESSERT-MIB::dessertSysifEntry.sysifIndex
  * sysifIndex is subid 1 of dessertSysifEntry.
  * Its status is Current, and its access level is NoAccess.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.1
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.1
  * Description:
 system ifindex
  *
@@ -472,10 +472,10 @@ system ifindex
  *
  */
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifName
+ * DESSERT-MIB::dessertSysifEntry.sysifName
  * sysifName is subid 2 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.2
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.2
  * Description:
 name of interface
  *
@@ -492,10 +492,10 @@ name of interface
  * This data type requires a length.  (Max 255)
  */
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifMacAddress
+ * DESSERT-MIB::dessertSysifEntry.sysifMacAddress
  * sysifMacAddress is subid 3 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.3
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.3
  * Description:
 hardware address of interface
  *
@@ -512,10 +512,10 @@ hardware address of interface
  * This data type requires a length.  (Max 6)
  */
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifInPkts
+ * DESSERT-MIB::dessertSysifEntry.sysifInPkts
  * sysifInPkts is subid 4 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.4
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.4
  * Description:
 packet counter in
  *
@@ -529,10 +529,10 @@ packet counter in
  * The net-snmp type is ASN_COUNTER64. The C type decl is U64 (U64)
  */
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifOutPkts
+ * DESSERT-MIB::dessertSysifEntry.sysifOutPkts
  * sysifOutPkts is subid 5 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.5
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.5
  * Description:
 packet counter out
  *
@@ -546,10 +546,10 @@ packet counter out
  * The net-snmp type is ASN_COUNTER64. The C type decl is U64 (U64)
  */
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifInOctets
+ * DESSERT-MIB::dessertSysifEntry.sysifInOctets
  * sysifInOctets is subid 6 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.6
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.6
  * Description:
 octet counter in
  *
@@ -563,10 +563,10 @@ octet counter in
  * The net-snmp type is ASN_COUNTER64. The C type decl is U64 (U64)
  */
 /*---------------------------------------------------------------------
- * DESSERT2-MIB::dessertSysifEntry.sysifOutOctets
+ * DESSERT-MIB::dessertSysifEntry.sysifOutOctets
  * sysifOutOctets is subid 7 of dessertSysifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.7.1.7
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7.1.7
  * Description:
 octet counter out
  *

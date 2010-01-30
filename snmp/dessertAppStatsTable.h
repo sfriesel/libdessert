@@ -58,9 +58,9 @@ config_require(DESSERT-MIB/dessertAppStatsTable/dessertAppStatsTable_data_set)
  **********************************************************************
  **********************************************************************/
     /*
-     * DESSERT-MIB::dessertAppStatsTable is subid 9 of dessertObjects.
+     * DESSERT-MIB::dessertAppStatsTable is subid 8 of dessertObjects.
      * Its status is Current.
-     * OID: .1.3.6.1.4.1.18898.0.19.42.1.9, length: 12
+     * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8, length: 12
      */
     /*
      *********************************************************************

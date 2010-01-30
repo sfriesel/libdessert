@@ -36,9 +36,9 @@ extern          "C" {
  **********************************************************************
  **********************************************************************/
     /*
-     * DESSERT2-MIB::dessertSysifTable is subid 7 of dessertObjects.
+     * DESSERT-MIB::dessertSysifTable is subid 7 of dessertObjects.
      * Its status is Current.
-     * OID: .1.3.6.1.4.1.18898.0.19.42.1.7, length: 12
+     * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7, length: 12
      */
     /*
      * indexes

@@ -36,9 +36,9 @@ extern          "C" {
  **********************************************************************
  **********************************************************************/
     /*
-     * DESSERT-MIB::dessertAppParamsTable is subid 11 of dessertObjects.
+     * DESSERT-MIB::dessertAppParamsTable is subid 9 of dessertObjects.
      * Its status is Current.
-     * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.11, length: 13
+     * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.9, length: 13
      */
     /*
      * indexes

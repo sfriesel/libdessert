@@ -468,16 +468,16 @@ Table / column details
  **********************************************************************
  **********************************************************************/
 /*
- * DESSERT-MIB::dessertAppStatsTable is subid 9 of dessertObjects.
+ * DESSERT-MIB::dessertAppStatsTable is subid 8 of dessertObjects.
  * Its status is Current.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9, length: 12
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8, length: 12
 */
 
 /*---------------------------------------------------------------------
  * DESSERT-MIB::dessertAppStatsEntry.appStatsIndex
  * appStatsIndex is subid 1 of dessertAppStatsEntry.
  * Its status is Current, and its access level is NoAccess.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.1
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.1
  * Description:
 Index of the statistical datum
  *
@@ -500,7 +500,7 @@ Index of the statistical datum
  * DESSERT-MIB::dessertAppStatsEntry.appStatsName
  * appStatsName is subid 2 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.2
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.2
  * Description:
 The name of the statistical datum
  *
@@ -520,7 +520,7 @@ The name of the statistical datum
  * DESSERT-MIB::dessertAppStatsEntry.appStatsDesc
  * appStatsDesc is subid 3 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.3
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.3
  * Description:
 A short description of the statistical datum
  *
@@ -540,7 +540,7 @@ A short description of the statistical datum
  * DESSERT-MIB::dessertAppStatsEntry.appStatsNodeOrLink
  * appStatsNodeOrLink is subid 4 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.4
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.4
  * Description:
 Determines which of the appStatsMacAddress{1,2} coloumns
         is valid and therefore indicates whether the information provided
@@ -560,7 +560,7 @@ Determines which of the appStatsMacAddress{1,2} coloumns
  * DESSERT-MIB::dessertAppStatsEntry.appStatsValueType
  * appStatsValueType is subid 5 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.5
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.5
  * Description:
 Indicates which of the coloumns (appStatsTruthValue, 
         appStatsInterger32, appStatsUInteger32, appStatsCounter64, 
@@ -580,7 +580,7 @@ Indicates which of the coloumns (appStatsTruthValue,
  * DESSERT-MIB::dessertAppStatsEntry.appStatsMacAddress1
  * appStatsMacAddress1 is subid 6 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.6
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.6
  * Description:
 The hardware address of a node.
  *
@@ -600,7 +600,7 @@ The hardware address of a node.
  * DESSERT-MIB::dessertAppStatsEntry.appStatsMacAddress2
  * appStatsMacAddress2 is subid 7 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.7
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.7
  * Description:
 The hardware address of a second node.
  *
@@ -620,7 +620,7 @@ The hardware address of a second node.
  * DESSERT-MIB::dessertAppStatsEntry.appStatsTruthValue
  * appStatsTruthValue is subid 8 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.8
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.8
  * Description:
 A statistical datum with TruthValue semantics.
  *
@@ -638,7 +638,7 @@ A statistical datum with TruthValue semantics.
  * DESSERT-MIB::dessertAppStatsEntry.appStatsInteger32
  * appStatsInteger32 is subid 9 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.9
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.9
  * Description:
 A statistical datum with Integer32 semantics.
  *
@@ -655,7 +655,7 @@ A statistical datum with Integer32 semantics.
  * DESSERT-MIB::dessertAppStatsEntry.appStatsUnsigned32
  * appStatsUnsigned32 is subid 10 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.10
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.10
  * Description:
 A statistical datum with Unsigned32 semantics.
  *
@@ -672,7 +672,7 @@ A statistical datum with Unsigned32 semantics.
  * DESSERT-MIB::dessertAppStatsEntry.appStatsCounter64
  * appStatsCounter64 is subid 11 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.11
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.11
  * Description:
 A statistical datum with Counter64 semantics.
  *
@@ -689,7 +689,7 @@ A statistical datum with Counter64 semantics.
  * DESSERT-MIB::dessertAppStatsEntry.appStatsOctetString
  * appStatsOctetString is subid 12 of dessertAppStatsEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.9.1.12
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.8.1.12
  * Description:
 A statistical datum containing of up to 1024 octets.
  *

@@ -22,11 +22,11 @@ extern          "C" {
      * other required module components 
      */
     /* *INDENT-OFF*  */
-config_add_mib(DESSERT2-MIB)
-config_require(DESSERT2-MIB/dessertSysifTable/dessertSysifTable_interface)
-config_require(DESSERT2-MIB/dessertSysifTable/dessertSysifTable_data_access)
-config_require(DESSERT2-MIB/dessertSysifTable/dessertSysifTable_data_get)
-config_require(DESSERT2-MIB/dessertSysifTable/dessertSysifTable_data_set)
+config_add_mib(DESSERT-MIB)
+config_require(DESSERT-MIB/dessertSysifTable/dessertSysifTable_interface)
+config_require(DESSERT-MIB/dessertSysifTable/dessertSysifTable_data_access)
+config_require(DESSERT-MIB/dessertSysifTable/dessertSysifTable_data_get)
+config_require(DESSERT-MIB/dessertSysifTable/dessertSysifTable_data_set)
     /* *INDENT-ON*  */
 
     /*
@@ -60,9 +60,9 @@ config_require(DESSERT2-MIB/dessertSysifTable/dessertSysifTable_data_set)
  **********************************************************************
  **********************************************************************/
     /*
-     * DESSERT2-MIB::dessertSysifTable is subid 7 of dessertObjects.
+     * DESSERT-MIB::dessertSysifTable is subid 7 of dessertObjects.
      * Its status is Current.
-     * OID: .1.3.6.1.4.1.18898.0.19.42.1.7, length: 12
+     * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.7, length: 12
      */
     /*
      *********************************************************************

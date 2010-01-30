@@ -445,14 +445,14 @@ Table / column details
 /*
  * DESSERT-MIB::dessertMeshifTable is subid 5 of dessertObjects.
  * Its status is Current.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5, length: 12
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5, length: 12
 */
 
 /*---------------------------------------------------------------------
  * DESSERT-MIB::dessertMeshifEntry.meshifIndex
  * meshifIndex is subid 1 of dessertMeshifEntry.
  * Its status is Current, and its access level is NoAccess.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5.1.1
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5.1.1
  * Description:
 system ifindex
  *
@@ -475,7 +475,7 @@ system ifindex
  * DESSERT-MIB::dessertMeshifEntry.meshifName
  * meshifName is subid 2 of dessertMeshifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5.1.2
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5.1.2
  * Description:
 name of interface
  *
@@ -495,7 +495,7 @@ name of interface
  * DESSERT-MIB::dessertMeshifEntry.meshifMacAddress
  * meshifMacAddress is subid 3 of dessertMeshifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5.1.3
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5.1.3
  * Description:
 hardware address of interface
  *
@@ -515,7 +515,7 @@ hardware address of interface
  * DESSERT-MIB::dessertMeshifEntry.meshifInPkts
  * meshifInPkts is subid 4 of dessertMeshifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5.1.4
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5.1.4
  * Description:
 packet counter in
  *
@@ -532,7 +532,7 @@ packet counter in
  * DESSERT-MIB::dessertMeshifEntry.meshifOutPkts
  * meshifOutPkts is subid 5 of dessertMeshifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5.1.5
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5.1.5
  * Description:
 packet counter out
  *
@@ -549,7 +549,7 @@ packet counter out
  * DESSERT-MIB::dessertMeshifEntry.meshifInOctets
  * meshifInOctets is subid 6 of dessertMeshifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5.1.6
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5.1.6
  * Description:
 octet counter in
  *
@@ -566,7 +566,7 @@ octet counter in
  * DESSERT-MIB::dessertMeshifEntry.meshifOutOctets
  * meshifOutOctets is subid 7 of dessertMeshifEntry.
  * Its status is Current, and its access level is ReadOnly.
- * OID: .1.3.6.1.4.1.18898.0.19.42.1.5.1.7
+ * OID: .1.3.6.1.4.1.18898.0.19.10.1.1.5.1.7
  * Description:
 octet counter out
  *
