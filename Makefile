@@ -1,14 +1,15 @@
-SHLIB_VERSION = 0.87.1
+SHLIB_VERSION = 0.87.2
 SHLIB_COMPAT_VERSION = 0.87
 
 MODULES=dessert_core.o dessert_log.o dessert_sysiface.o dessert_meshiface.o dessert_msg.o dessert_cli.o dessert_periodic.o dessert_agentx.o
 
 UNAME = $(shell uname | tr 'a-z' 'A-Z')
-TARFILES = *.c *.h Makefile Intro.txt DES-SERT.doxyfile AUTHORS
+TARFILES = *.c *.h Makefile Intro.txt DES-SERT.doxyfile AUTHORS DESSERT-MIB.txt
 
 PREFIX ?= $(DESTDIR)/usr
 DIR_LIB=$(PREFIX)/lib
 DIR_INCLUDE=$(PREFIX)/include
+MIB_DIR=$(PREFIX)/share/mibs
 
 ifeq ($(UNAME),LINUX)
 	LIBS = pthread pcap cli
@@ -102,6 +103,7 @@ install:
 	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_COMPAT))
 	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_DEFAULT))
 	install -m644 dessert.h $(DIR_INCLUDE)
+	install -m644 DESSERT-MIB.txt $(MIB_DIR)
 	
 
 libdessert.a: $(MODULES) 
