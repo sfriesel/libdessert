@@ -9,7 +9,8 @@ TARFILES = *.c *.h Makefile Intro.txt DES-SERT.doxyfile AUTHORS DESSERT-MIB.txt
 PREFIX ?= $(DESTDIR)/usr
 DIR_LIB=$(PREFIX)/lib
 DIR_INCLUDE=$(PREFIX)/include
-DIR_MIBS=$(PREFIX)/share/mibs
+DIR_SHARE=$(PREFIX)/share
+DIR_MIBS=$(DIR_SHARE)/mibs
 
 ifeq ($(UNAME),LINUX)
 	LIBS = pthread pcap cli
@@ -103,7 +104,7 @@ install:
 	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_COMPAT))
 	(cd $(DIR_LIB) ; ln -fs $(SHLIB) $(SHLIB_DEFAULT))
 	install -m644 dessert.h $(DIR_INCLUDE)
-	install -d $(DIR_MIBS)
+	install -d $(DIR_SHARE) $(DIR_MIBS)
 	install -m644 DESSERT-MIB.txt $(DIR_MIBS)
 	
 
