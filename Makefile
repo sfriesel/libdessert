@@ -69,7 +69,7 @@ SNMPMODULES = snmp/dessertObjects                    \
 CFLAGS += $(NETSNMPCFLAGS)
 LDFLAGS += $(NETSNMPLIBS)
 MODULES += $(addsuffix .o,$(SNMPMODULES))
-SNMPTARFILES = snmp/*.c snmp/*.h
+SNMPTARFILES = snmp/*.c snmp/*.h snmp/*.txt
 ## <<< SNMP ##
 
 DOXYGEN = /usr/bin/doxygen
