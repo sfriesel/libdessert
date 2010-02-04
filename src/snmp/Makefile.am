@@ -15,6 +15,7 @@ libdessertsnmp_la_SOURCES = \
         dessertAppParamsTable_data_get.h \
         dessertAppParamsTable_data_set.c \
         dessertAppParamsTable_data_set.h \
+		dessertAppParamsTable_enums.h \
         dessertAppParamsTable_interface.c \
         dessertAppParamsTable_interface.h \
         dessertAppStatsTable.c \
