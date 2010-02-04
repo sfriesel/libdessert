@@ -1,0 +1,11 @@
+prefix=/tmp/asdf
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libdessert
+Description: DES-SERT - an Extensible Routing-Framework for Testbeds
+Version: 0.87.18
+Libs: -lpthread -L${libdir} -ldessert
+Cflags:  -I${includedir}
+
