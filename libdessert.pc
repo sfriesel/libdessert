@@ -1,4 +1,4 @@
-prefix=/tmp/asdf
+prefix=/tmp/destest
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

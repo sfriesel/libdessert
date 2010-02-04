@@ -9,7 +9,6 @@ pkgconfig_DATA = libdessert.pc
 include doxygen-include.am
 
 EXTRA_DIST = autogen.sh DES-SERT.doxyfile doxygen/html DESSERT-MIB.txt
-info_TEXINFOS = libdessert.texi
 
 MIBS = DESSERT-MIB.txt
 

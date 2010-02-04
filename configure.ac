@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([libdessert], [0.87.18], [des-sert@spline.inf.fu-berlin.de])
+AC_INIT([libdessert], [0.87.3], [des-sert@spline.inf.fu-berlin.de])
 AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR([src/libdessert/dessert_core.c])
 AC_CONFIG_HEADERS([config.h])
 
-LIBDESSERT_LIBRARY_VERSION=0:87:18
+LIBDESSERT_LIBRARY_VERSION=0:87:3
 AC_SUBST([LIBDESSERT_LIBRARY_VERSION])
 
 # Checks for programs.
