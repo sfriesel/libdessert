@@ -13,9 +13,8 @@ EXTRA_DIST = autogen.sh DES-SERT.doxyfile doxygen/html DESSERT-MIB.txt
 MIBS = DESSERT-MIB.txt
 
 install-mibs: installdirs-mibs
-	echo "installing MIBs to $(with_mibsdir)"
 	@for i in $(MIBS) ; do \
-		$(INSTALL_DATA) $$i $(with_mibsdir) ; \
+		$(INSTALL_DATA) $$i $(DESTDIR)/$(with_mibsdir) ; \
 	done
 
 uninstall-mibs:
@@ -24,5 +23,5 @@ uninstall-mibs:
 	done
 
 installdirs-mibs:
-	@$(SHELL) $(top_srcdir)/mkinstalldirs $(with_mibsdir)
+	@$(SHELL) $(top_srcdir)/mkinstalldirs $(DESTDIR)/$(with_mibsdir)
 	
