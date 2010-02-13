@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([libdessert], [0.87.3], [des-sert@spline.inf.fu-berlin.de])
+AC_INIT([libdessert], [0.90], [des-sert@spline.inf.fu-berlin.de])
 AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR([src/libdessert/dessert_core.c])
 AC_CONFIG_HEADERS([config.h])
 
-LIBDESSERT_LIBRARY_VERSION=0:87:3
+LIBDESSERT_LIBRARY_VERSION=1:0:0
 AC_SUBST([LIBDESSERT_LIBRARY_VERSION])
 
 # Checks for programs.
@@ -100,6 +100,10 @@ AC_ARG_WITH(mibsdir,
 		[ AC_SUBST(with_mibsdir) ])
 
 AS_IF([test -z "$with_mibsdir"], [with_mibsdir="$datarootdir/mibs"; echo "Installing MIBs to default dir: $with_mibsdir"], [echo "Installing MIBs to dir: $with_mibsdir"])
+
+#AC_ARG_VAR([SHLIB_CFLAGS],
+#          [additional CFLAGS used when building shared libraries])
+#AC_SUBST(SHLIB_CFLAGS)
 
 AC_OUTPUT
 
