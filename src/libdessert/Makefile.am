@@ -1,10 +1,11 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
+              -I../callbacks \
               -I../snmp \
               @PCAP_CFLAGS@ \
               @SNMP_CFLAGS@ \
               @PTHREAD_CFLAGS@ \
-			  -DVERSION=\"@VERSION@\"
+              -DVERSION=\"@VERSION@\"
 
 lib_LTLIBRARIES = libdessert.la
 
@@ -18,7 +19,8 @@ libdessert_la_SOURCES = dessert_agentx.c \
                         dessert_sysiface.c \
                         dessert_internal.h
 
-libdessert_la_LIBADD = ../snmp/libdessertsnmp.la \
+libdessert_la_LIBADD = ../callbacks/libdessertcallbacks.la \
+                       ../snmp/libdessertsnmp.la \
                        @SNMP_LIBS@ \
                        @PCAP_LIBS@ \
                        @CLI_LIBS@ \

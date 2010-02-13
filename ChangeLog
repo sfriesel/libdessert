@@ -1,3 +1,13 @@
+20100213 - 0.90
+    - Moved to autotools and libtool versioning; current version = 1.0.0
+    - Added some code from several daemons in src/callbacks dir for general usage
+    - Moved some code from src/libdessert to src/callbacks to slim down library core
+    - Moved prev pointer in dessert_meshif_t to end of structure; dessert_meshif_t and dessert_sysif_t are
+      now equal again in the first few fields
+    - Added type parameter to dessert_msg_trace_initiate and dessert_msg_trace_dump to use these function with new
+      bidirectional tracing feature
+    - Added callback that decrements the IPv4 TTL or IPv6 Hop-Limit field
+
 20100105 - 0.87.0
     - Developers, please be advised that the prototype of function dessert_cli_run no longer 
       contains the port as parameter. Use the function dessert_set_cli_port(uint16_t port) 

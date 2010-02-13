@@ -142,7 +142,7 @@ typedef struct dessert_sysrxcbe {
 	struct dessert_sysrxcbe *next;
 } dessert_sysrxcbe_t;
 
-extern struct dessert_sysif *_dessert_sysif;
+extern dessert_sysif_t *_dessert_sysif;
 
 /******************************************************************************
  *

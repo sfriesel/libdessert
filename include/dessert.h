@@ -552,7 +552,7 @@ typedef int dessert_sysrxcb_t(dessert_msg_t *msg, size_t len, dessert_msg_proc_t
  * @arg *data void pointer to pass to the callback
  * @arg scheduled when this call was scheduled
  * @arg interval how often this call should be scheduled
- * ®return should be 0, otherwise the callback is unregistered
+ * @return should be 0, otherwise the callback is unregistered
  */
 typedef int dessert_periodiccallback_t(void *data, struct timeval *scheduled, struct timeval *interval);
 
@@ -664,9 +664,6 @@ int dessert_cli_run(void);
 FILE* dessert_cli_get_cfg(int argc, char** argv);
 int dessert_set_cli_port(uint16_t port);
 
-int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
-int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
-
 /***************************************************************************//**
  * @}
  *
@@ -688,7 +685,8 @@ int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], 
 #define DESSERT_LOG_NOSYSLOG  0x0002
 
 /** flag for dessert_logcfg - enable logfile logging
- * @warning  before using this you MUST use fopen(dessert_logfd, ...) to open the logfile */
+ * @warning  before using this you MUST use fopen(dessert_logfd, ...) to open the logfile
+ */
 #define DESSERT_LOG_FILE      0x0004
 
 /** flag for dessert_logcfg - disable logfile logging */
@@ -896,17 +894,16 @@ int dessert_syssend(const struct ether_header *eth, size_t len);
 /** length of dessert_ext header */
 #define DESSERT_EXTLEN (sizeof(struct dessert_ext) - DESSERT_MAXEXTDATALEN)
 
-/** dessert_ext type wildcard - any extension */
-#define DESSERT_EXT_ANY 0x00
-
-/** dessert_ext type for ethernet header */
-#define DESSERT_EXT_ETH 0x01
-
-/** dessert_ext type for packet tracing */
-#define DESSERT_EXT_TRACE 0x02
-
-/** first dessert_ext type for usage by the user */
-#define DESSERT_EXT_USER 0x40
+enum dessert_extensions {
+  DESSERT_EXT_ANY    = 0x00, ///< dessert_ext type wildcard - any extension
+  DESSERT_EXT_ETH    = 0x01, ///< ethernet header
+  DESSERT_EXT_TRACE  = 0x02, ///< route trace request: A -> B
+  DESSERT_EXT_TRACE2 = 0x03, ///< route trace reply: B -> A
+  DESSERT_EXT_PING   = 0x04, ///< ping packet
+  DESSERT_EXT_PONG   = 0x05, ///< pong packet
+  /* leave some space for future extensions */
+  DESSERT_EXT_USER   = 0x40, ///< first dessert_ext type for usage by the user
+};
 
 /* *********************** */
 
@@ -946,9 +943,6 @@ int dessert_msg_delext(dessert_msg_t *msg, dessert_ext_t *ext);
 int dessert_msg_resizeext(dessert_msg_t *msg, dessert_ext_t *ext, size_t new_len);
 int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index);
 int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type);
-
-int dessert_msg_trace_initiate(dessert_msg_t* msg, int mode);
-int dessert_msg_trace_dump(const dessert_msg_t* msg, char* buf, int blen);
 
 int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
 int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
@@ -1336,5 +1330,25 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
 
 //#define dessert_frameid_overflow(x, y) ((x>y)&&((x-y)>(DESSERT_FRAMEID_MAX/2)))
 
+/******************************************************************************
+ *
+ * ! ! ! ! MOVED TO CALLBACKS DIR ! ! !
+ *
+ ******************************************************************************/
+/**************************************************************************//**
+ * @}
+ *
+ * @defgroup callbacks U S E F U L L  _  C A L L B A C K S
+ *
+ * @brief EXTERNAL / PUBLIC
+ *
+ * @{
+ ******************************************************************************/
+ 
+int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
+
+int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode);
+int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen);
 
 #endif /* DESSERT_H*/

@@ -277,7 +277,7 @@ struct ether_header* dessert_msg_getl25ether(const dessert_msg_t* msg) {
 int dessert_msg_proc_clone(dessert_msg_proc_t **procnew,
 		const dessert_msg_proc_t *procold) {
 	if (procold == NULL) {
-		*procnew = procold;
+		*procnew = (dessert_msg_proc_t*) procold;
 		return (DESSERT_OK);
 	}
 
@@ -350,8 +350,10 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len,
 	}
 
 	/* we have a trace */
-	if (dessert_msg_trace_dump(msg, buf, blen - strlen(buf)) > 1)
+	if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE, buf, blen - strlen(buf)) > 1)
 		_dessert_msg_check_append("\n");
+    if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE2, buf, blen - strlen(buf)) > 1)
+        _dessert_msg_check_append("\n");
 
 	/* now other extensions.... */
 	ext = (dessert_ext_t *) ((uint8_t *) msg + DESSERT_MSGLEN);
@@ -610,94 +612,6 @@ int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type) {
 	return dessert_msg_getext(msg, NULL, type, 0);
 }
 
-/** add initial trace header to dessert message
- * @arg *msg dessert_msg_t message used for tracing
- * @arg mode trace mode
- *           use DESSERT_MSG_TRACE_HOST to only record default mac of hosts on the way
- *           use DESSERT_MSG_TRACE_IFACE to also trace input interface and last hop
- * ®return DESSERT_OK on success
- **/
-int dessert_msg_trace_initiate(dessert_msg_t* msg, int mode) {
-
-	dessert_ext_t *ext;
-	struct ether_header *l25h;
-
-	if (mode != DESSERT_MSG_TRACE_HOST && mode != DESSERT_MSG_TRACE_IFACE)
-		return EINVAL;
-
-	if (msg->flags & DESSERT_FLAG_SPARSE)
-		return DESSERT_MSG_NEEDNOSPARSE;
-
-	dessert_msg_addext(msg, &ext, DESSERT_EXT_TRACE, mode);
-	memcpy((ext->data), dessert_l25_defsrc, ETHER_ADDR_LEN);
-	if (mode == DESSERT_MSG_TRACE_IFACE) {
-		memcpy((ext->data) + ETHER_ADDR_LEN, msg->l2h.ether_shost,
-				ETHER_ADDR_LEN);
-		l25h = dessert_msg_getl25ether(msg);
-		if (l25h == NULL) {
-			memcpy((ext->data) + ETHER_ADDR_LEN, ether_null, ETHER_ADDR_LEN);
-		} else {
-			memcpy((ext->data) + ETHER_ADDR_LEN * 2, l25h->ether_shost,
-					ETHER_ADDR_LEN);
-		}
-	}
-
-	return DESSERT_OK;
-
-}
-
-/** dump packet trace to string
- * @arg *msg dessert_msg_t message used for tracing
- * @arg *buf char buffer to place string
- *           use DESSERT_MSG_TRACE_HOST to only record default mac of hosts on the way
- *           use DESSERT_MSG_TRACE_IFACE to also trace input interface and last hop
- * ®return length of the string - 0 if msg has no trace header
- **/
-int dessert_msg_trace_dump(const dessert_msg_t* msg, char* buf, int blen) {
-
-	dessert_ext_t *ext;
-	int x, i = 0;
-
-#define _dessert_msg_trace_dump_append(...) snprintf(buf+strlen(buf), blen-strlen(buf), __VA_ARGS__)
-
-	x = dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE, 0);
-	if (x < 1)
-		return 0;
-
-	_dessert_msg_trace_dump_append("\tpacket trace:\n");
-	_dessert_msg_trace_dump_append("\t\tfrom %02x:%02x:%02x:%02x:%02x:%02x\n",
-			ext->data[0], ext->data[1], ext->data[2],
-			ext->data[3], ext->data[4], ext->data[5]);
-
-	if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-		_dessert_msg_trace_dump_append("\t\t  received on   %02x:%02x:%02x:%02x:%02x:%02x\n",
-				ext->data[6], ext->data[7], ext->data[8],
-				ext->data[9], ext->data[10], ext->data[11]);
-		_dessert_msg_trace_dump_append("\t\t  l2.5 src     %02x:%02x:%02x:%02x:%02x:%02x\n",
-				ext->data[12], ext->data[13], ext->data[14],
-				ext->data[15], ext->data[16], ext->data[17]);
-	}
-
-	for (i = 1; i < x; i++) {
-		dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE, i);
-		_dessert_msg_trace_dump_append("\t\t#%3d %02x:%02x:%02x:%02x:%02x:%02x\n", i,
-				ext->data[0], ext->data[1], ext->data[2],
-				ext->data[3], ext->data[4], ext->data[5]);
-
-		if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-			_dessert_msg_trace_dump_append("\t\t  received from  %02x:%02x:%02x:%02x:%02x:%02x\n",
-					ext->data[12], ext->data[13], ext->data[14],
-					ext->data[15], ext->data[16], ext->data[17]);
-			_dessert_msg_trace_dump_append("\t\t  receiving iface  %02x:%02x:%02x:%02x:%02x:%02x\n",
-					ext->data[6], ext->data[7], ext->data[8],
-					ext->data[9], ext->data[10], ext->data[11]);
-		}
-	}
-
-	return strlen(buf);
-
-}
-
 /** callback that checks whether a dessert_msg is consistent
  * @arg *msg dessert_msg_t frame received
  * @arg len length of ethernet frame received
@@ -718,7 +632,7 @@ int dessert_msg_check_cb(dessert_msg_t* msg, size_t len,
  * @arg *msg dessert_msg_t frame received
  * @arg len length of ethernet frame received
  * @arg *iface interface received packet on
- * ®return DESSERT_MSG_KEEP always
+ * @return DESSERT_MSG_KEEP always
  **/
 int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len,
 		dessert_msg_proc_t *proc, const dessert_meshif_t *iface,

@@ -71,44 +71,15 @@ static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, desse
  *
  ******************************************************************************/
 
-/** CLI command - config mode - interface sys $iface, $ipv4-addr, $netmask */
-int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
-	char buf[255];
-	int i;
-
-	if (argc != 3) {
-		cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask]\n",
-				command);
-		return CLI_ERROR;
-	}
-	dessert_info("initializing sys interface");
-	dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
-	sprintf(buf, "ifconfig %s %s netmask %s mtu 1300 up", argv[0], argv[1],
-			argv[2]);
-	i = system(buf);
-	dessert_info("running ifconfig on sys interface returned %i", i);
-	return (i == 0 ? CLI_OK : CLI_ERROR);
-}
-
-/** CLI command - config mode - interface mesh $iface */
-int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc) {
-	char buf[255];
-	int i;
-
-	if (argc != 1) {
-		cli_print(cli, "usage %s [mesh-interface]\n", command);
-		return CLI_ERROR;
-	}
-	dessert_info("initializing mesh interface %s", argv[0]);
-	dessert_meshif_add(argv[0], DESSERT_IF_PROMISC);
-	sprintf(buf, "ifconfig %s up", argv[0]);
-	i = system(buf);
-	dessert_info("running ifconfig on mesh interface %s returned %i",argv[0], i);
-	return (i == 0 ? CLI_OK : CLI_ERROR);
-}
-
-/**
+/** Get pointer to config file
+ * 
+ * Try to get a valid file name from the arguments and if this fails,
+ * guess config file name based on the daemon's name. This function
+ * either terminates the daemon or returns a valid FILE pointer.
  *
+ * @param[in] argc number of arguments in list
+ * @param[in] argv pointer to a list of arguments
+ * @return pointer to config file
  */
 FILE* dessert_cli_get_cfg(int argc, char** argv) {
 	FILE* cfg;
@@ -126,9 +97,7 @@ FILE* dessert_cli_get_cfg(int argc, char** argv) {
 	}
 
 	if (argc != 2) {
-		char
-				* path =
-						alloca(strlen(path_head)+1 +strlen(path_tail)+1 +strlen(daemon)+1);
+		char* path = alloca(strlen(path_head)+1 +strlen(path_tail)+1 +strlen(daemon)+1);
 		strcat(path, path_head);
 		strcat(path, daemon);
 		strcat(path, path_tail);
@@ -149,6 +118,16 @@ FILE* dessert_cli_get_cfg(int argc, char** argv) {
 	return cfg;
 }
 
+/** Set CLI port 
+*
+* Set the TCP port of the command line interface. The Daemon will
+* accept one connection at a time.
+*
+* @param[in] port TCP port number
+*
+* @retval DESSERT_OK on success
+* @retval DESSERT_ERR otherwise
+*/
 int dessert_set_cli_port(uint16_t port) {
     if (_dessert_cli_running == 1) {
 		dessert_err("CLI is already running!");
@@ -438,5 +417,5 @@ static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, desse
 	cli_print(cli, "    Bytes received        : [%"PRIi64"]", meshif->ibytes);
 	cli_print(cli, "    Bytes send            : [%"PRIi64"]", meshif->obytes);
 
-	return CLI_OK;
+	return;
 }
