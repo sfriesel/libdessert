@@ -441,8 +441,6 @@ typedef struct __attribute__ ((__packed__)) dessert_ext {
 typedef struct dessert_meshif {
     /** pointer to next interface */
     struct dessert_meshif    *next;
-    /** pointer to next interface */
-    struct dessert_meshif    *prev;
     /** name of interface */
     char                if_name[IFNAMSIZ];
     /** system ifindex */
@@ -465,6 +463,9 @@ typedef struct dessert_meshif {
     char                pcap_err[PCAP_ERRBUF_SIZE];
     /** pthread running the request loop */
     pthread_t           worker;
+
+    /** pointer to prev interface */
+    struct dessert_meshif    *prev;
 } dessert_meshif_t;
 
 /** A tun/tap interface used to inject packets to dessert implemented daemons.
