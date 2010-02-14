@@ -830,7 +830,7 @@ int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio);
 int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
 
 int dessert_syssend_msg(dessert_msg_t *msg);
-int dessert_syssend(const struct ether_header *eth, size_t len);
+int dessert_syssend(const void *pkt, size_t len);
 
 /***************************************************************************//**
  * @}
@@ -926,6 +926,8 @@ void dessert_msg_destroy(dessert_msg_t* msg);
 int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert_msg_t **msgout);
 int dessert_msg_ethdecap(const dessert_msg_t* msg, struct ether_header** ethout);
 struct ether_header* dessert_msg_getl25ether (const dessert_msg_t* msg);
+int dessert_msg_ipencap(const uint8_t* ip, size_t len, dessert_msg_t** msgout);
+int dessert_msg_ipdecap(const dessert_msg_t* msg, uint8_t** ip);
 
 int dessert_msg_proc_clone(dessert_msg_proc_t **procnew, const dessert_msg_proc_t *procold);
 void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_msg_proc_t *proc, char *buf, size_t blen);

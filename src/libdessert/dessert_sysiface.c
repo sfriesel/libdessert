@@ -119,7 +119,7 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 	_dessert_sysif->fd = open(buf, O_RDWR);
 	memset(&ifr, 0, sizeof(ifr));
 	if (flags & DESSERT_TUN) {
-		ifr.ifr_flags = IFF_TUN; /* we want the service flag - no IFF_NO_PI */
+		ifr.ifr_flags = IFF_TUN | IFF_NO_PI; /* we want the service flag and IFF_NO_PI */
 	} else {
 		ifr.ifr_flags = IFF_TAP | IFF_NO_PI; /* we want the service flag and IFF_NO_PI */
 	}
@@ -300,17 +300,24 @@ int dessert_sysrxcb_del(dessert_sysrxcb_t* c) {
  * @return -EIO         if message failed to be sent
  **/
 int dessert_syssend_msg(dessert_msg_t *msg) {
-	struct ether_header *eth;
-	size_t eth_len;
+    void *pkt;
+    size_t len;
 
-	eth_len = dessert_msg_ethdecap(msg, &eth);
-	if (eth_len == -1) {
-		return (-EIO);
-	}
-	dessert_syssend(eth, eth_len);
-	free(eth);
+    len = dessert_msg_ethdecap(msg, (struct ether_header**) &pkt);
+    // lets see if the message contains an Ethernet frame
+    if (len == -1) {
+        // might only be an ip datagram due to TUN usage
+        size_t len = dessert_msg_ipdecap(msg, (uint8_t**) &pkt);
+        // if neither a Ethernet header or ip datagram are available, something must be wrong
+        // also make sure to forward ip datagrams only to a TUN interface
+        if (len == -1 || !_dessert_sysif|| !(_dessert_sysif->flags & DESSERT_TUN))
+          return (-EIO);
+    }
 
-	return DESSERT_OK;
+    dessert_syssend(pkt, len);
+    free(pkt);
+
+    return DESSERT_OK;  
 }
 
 /** sends a packet via tun/tap interface to the kernel
@@ -319,20 +326,13 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
  * @return DESSERT_OK   on success
  * @return -EIO         if message failed to be sent
  **/
-int dessert_syssend(const struct ether_header *eth, size_t len) {
+int dessert_syssend(const void* pkt, size_t len) {
 	ssize_t res = 0;
 
 	if (_dessert_sysif == NULL)
 		return (-EIO);
 
-	if (_dessert_sysif->flags & DESSERT_TUN) {
-		eth
-				= (struct ether_header *) (((uint8_t *) eth) + (ETHER_ADDR_LEN
-						* 2));
-		len -= (ETHER_ADDR_LEN * 2);
-	}
-
-	res = write(_dessert_sysif->fd, (const void *) eth, len);
+	res = write(_dessert_sysif->fd, (const void *) pkt, len);
 
 	if (res == len) {
 		pthread_mutex_lock(&(_dessert_sysif->cnt_mutex));
@@ -341,7 +341,6 @@ int dessert_syssend(const struct ether_header *eth, size_t len) {
 		pthread_mutex_unlock(&(_dessert_sysif->cnt_mutex));
 		return (DESSERT_OK);
 	} else {
-
 		return (-EIO);
 	}
 }
@@ -416,11 +415,7 @@ static void *_dessert_sysif_init_thread(void* arg) {
 
 		memset(buf, 0, buflen);
 		if (sysif->flags & DESSERT_TUN) { // read IP datagram from TUN interface
-#ifdef __linux__
-			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2)-2, buflen - (ETHER_ADDR_LEN * 2)-2);
-#else
-			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2), buflen - (ETHER_ADDR_LEN * 2));
-#endif
+			len = read((sysif->fd), buf + ETHER_HDR_LEN, buflen - ETHER_HDR_LEN);
 		} else { // read Ethernet frame from TAP interface
 			len = read((sysif->fd), buf, buflen);
 		}
@@ -434,9 +429,6 @@ static void *_dessert_sysif_init_thread(void* arg) {
 			dessert_debug("got %s while reading on %s (fd %d) - is the sys (tun/tap) interface up?", strerror(errno), sysif->if_name, sysif->fd);
 			sleep(1);
 			continue;
-		}
-		if (sysif->flags & DESSERT_TUN) {
-			len += (ETHER_ADDR_LEN * 2);
 		}
 
 		/* copy callbacks to internal list to release dessert_cfglock before invoking callbacks*/
@@ -475,10 +467,17 @@ static void *_dessert_sysif_init_thread(void* arg) {
 		cblcur = 0;
 		memset(&proc, 0, DESSERT_MSGPROCLEN);
 		dessert_msg_t *msg = NULL;
+        if (sysif->flags & DESSERT_TUN) {
+            if (dessert_msg_ipencap((uint8_t*) (buf + ETHER_HDR_LEN), len, &msg) < 0) {
+              dessert_err("failed to encapsulate ip datagram on host-to-network-pipeline: %s", errno);
+            }
+        }
+        else {
+            if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg) < 0) {
+              dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
+            }
+        }
 		while (res > DESSERT_MSG_DROP && cblcur < cbllen) {
-			if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg) < 0) {
-				dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
-			};
 			res = cbl[cblcur++](msg, len, &proc, sysif, id);
 		}
 		if (msg != NULL) dessert_msg_destroy(msg);

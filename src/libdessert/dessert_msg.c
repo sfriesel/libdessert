@@ -185,16 +185,15 @@ void dessert_msg_destroy(dessert_msg_t* msg) {
  * @arg **msgout (out) pointer to return message address
  * @return DESSERT_OK on success, -errno otherwise
  **/
-int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len,
-		dessert_msg_t** msgout) {
+int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert_msg_t** msgout) {
 	int res;
 	dessert_ext_t *ext;
 	void *payload;
 
 	/* check len */
-	if (eth_len > DESSERT_MAXFRAMELEN - DESSERT_MSGLEN + ETHER_HDR_LEN) {
+	if (eth_len > DESSERT_MAXFRAMELEN - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
 		dessert_debug("failed to encapsulate ethernet frame of %d bytes (max=%d)",
-				eth_len, DESSERT_MAXFRAMELEN - DESSERT_MSGLEN + ETHER_HDR_LEN);
+				eth_len, DESSERT_MAXFRAMELEN - (DESSERT_MSGLEN + ETHER_HDR_LEN));
 		return (-EMSGSIZE);
 	}
 
@@ -217,6 +216,36 @@ int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len,
 			(eth_len - ETHER_HDR_LEN));
 
 	return (DESSERT_OK);
+}
+
+/** creates a new dessert_msg from an ip datagram.
+ * @arg *ip datagram to encapsulate
+ * @arg len length of the datagram
+ * @arg **msgout (out) pointer to return message address
+ * @return DESSERT_OK on success, -errno otherwise
+ **/
+int dessert_msg_ipencap(const uint8_t* ip, size_t len, dessert_msg_t** msgout) {
+    int res;
+    void *payload;
+
+    /* check len */
+    if (len > DESSERT_MAXFRAMELEN - DESSERT_MSGLEN) {
+        dessert_debug("failed to encapsulate ip datagram of %d bytes (max=%d)",
+                len, DESSERT_MAXFRAMELEN - DESSERT_MSGLEN);
+        return (-EMSGSIZE);
+    }
+
+    /* create message */
+    res = dessert_msg_new(msgout);
+    if (res) {
+        return res;
+    }
+
+    /* copy message */
+    dessert_msg_addpayload(*msgout, &payload, len);
+    memcpy(payload, ((uint8_t *) ip), len);
+
+    return (DESSERT_OK);
 }
 
 /** extracts an ethernet frame from a dessert_msg 
@@ -248,6 +277,27 @@ int dessert_msg_ethdecap(const dessert_msg_t* msg, struct ether_header** ethout)
 			+ntohs(msg->hlen)), ntohs(msg->plen));
 
 	return (eth_len);
+}
+
+/** extract an ip datagram from a dessert_msg
+ * @arg *msg    pointer to dessert_msg message to decapsulate
+ * @arg **ip (out) pointer to return datagram
+ * @return len of datagram on success, -1 otherwise
+ **/
+int dessert_msg_ipdecap(const dessert_msg_t* msg, uint8_t** ip) {
+    int res;
+
+    /* create message */
+    size_t len = ntohs(msg->plen);
+    *ip = malloc(len);
+    if (*ip == NULL) {
+        return (-1);
+    }
+
+    /* copy message */
+    memcpy(*ip, ((uint8_t *) msg) + ntohs(msg->hlen), ntohs(msg->plen));
+
+    return (len);
 }
 
 /** get the ether_header sent as DESSERT_EXT_ETH in a dessert_msg

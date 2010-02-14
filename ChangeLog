@@ -11,6 +11,10 @@
     - Removed DESSERT_OPT_PID and DESSERT_OPT_NOPID flags because they were never used
     - Added private function _dessert_cli_cmd_pid to include pid file name in conf file; cli callback is automatically registered
     - Replaced dessert_ext_getdatalen macro with inline function
+    - Fixed bug in _dessert_sysif_init_thread
+    - Set IFF_NO_PI flag for TUN interfaces to make packet handling easier
+    - Modified dessert_syssend and dessert_syssend_msg to be able to handle ip datagrams
+    - Fixed max length condition in dessert_msg_ethencap
 
 20100213 - 0.90
     - Moved to autotools and libtool versioning; current libtool version = 1.0.0

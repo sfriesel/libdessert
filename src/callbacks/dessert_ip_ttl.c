@@ -42,6 +42,7 @@ int dessert_rx_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
     void* payload;
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 
+    // TODO: works currently only with encapsulated Ethernet frames
     if (eth == NULL)
         return DESSERT_MSG_KEEP;
 
