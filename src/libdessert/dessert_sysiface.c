@@ -415,17 +415,20 @@ static void *_dessert_sysif_init_thread(void* arg) {
 	while (!ex) {
 
 		memset(buf, 0, buflen);
-		if (sysif->flags & DESSERT_TUN) {
+		if (sysif->flags & DESSERT_TUN) { // read IP datagram from TUN interface
 #ifdef __linux__
-			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2)-2, buflen
-					- (ETHER_ADDR_LEN * 2)-2);
+			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2)-2, buflen - (ETHER_ADDR_LEN * 2)-2);
 #else
-			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2), buflen
-					- (ETHER_ADDR_LEN * 2));
+			len = read((sysif->fd), buf + (ETHER_ADDR_LEN * 2), buflen - (ETHER_ADDR_LEN * 2));
 #endif
-		} else {
+		} else { // read Ethernet frame from TAP interface
 			len = read((sysif->fd), buf, buflen);
 		}
+		/* Right now the packet has been written to the buffer. The packet is aligned so that
+         * the first layer 3 byte is always at the same position independent whether a TUN or 
+         * a TAP interface has been used:
+         * buf: [Ethernet Header Space][Layer 3 Header]
+         */
 
 		if (len == -1) {
 			dessert_debug("got %s while reading on %s (fd %d) - is the sys (tun/tap) interface up?", strerror(errno), sysif->if_name, sysif->fd);
@@ -473,8 +476,7 @@ static void *_dessert_sysif_init_thread(void* arg) {
 		memset(&proc, 0, DESSERT_MSGPROCLEN);
 		dessert_msg_t *msg = NULL;
 		while (res > DESSERT_MSG_DROP && cblcur < cbllen) {
-			if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg)
-					< 0) {
+			if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg) < 0) {
 				dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
 			};
 			res = cbl[cblcur++](msg, len, &proc, sysif, id);
