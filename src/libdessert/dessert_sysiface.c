@@ -307,8 +307,8 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
     // lets see if the message contains an Ethernet frame
     if (len == -1) {
         // might only be an ip datagram due to TUN usage
-        size_t len = dessert_msg_ipdecap(msg, (uint8_t**) &pkt);
-        // if neither a Ethernet header or ip datagram are available, something must be wrong
+        len = dessert_msg_ipdecap(msg, (uint8_t**) &pkt);
+        // if neither a Ethernet header nor ip datagram are available, something must be wrong
         // also make sure to forward ip datagrams only to a TUN interface
         if (len == -1 || !_dessert_sysif|| !(_dessert_sysif->flags & DESSERT_TUN))
           return (-EIO);
