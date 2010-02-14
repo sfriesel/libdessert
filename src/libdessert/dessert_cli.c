@@ -283,7 +283,7 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
     if(dessert_pid(argv[0]) == DESSERT_OK)
       return CLI_OK;
 
-    cli_print(cli, "could not read/write/close file: %s", argv[0]);
+    cli_print(cli, "could not read/write/close file or pid already written: %s", argv[0]);
     return CLI_ERROR;
 }
 

@@ -108,7 +108,7 @@ int dessert_pid(char* pidfile) {
     FILE *fd;
 
     if(dessert_pidfile_name != NULL) {
-        dessert_warn("pid file already written");
+        dessert_warn("pid file already written to: %s\n", dessert_pidfile_name);
         return DESSERT_ERR;
     }
     
@@ -130,6 +130,7 @@ int dessert_pid(char* pidfile) {
     }
 
     dessert_pidfile_name = pidfile;
+    dessert_debug("wrote pid to file: %s\n", dessert_pidfile_name);
     return DESSERT_OK;
 }
 
