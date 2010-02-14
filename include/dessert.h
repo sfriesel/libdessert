@@ -627,8 +627,8 @@ extern pthread_rwlock_t dessert_cfglock;
  * functions
  ******************************************************************************/
 
-int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile);
-
+int dessert_init(const char* proto, int version, uint16_t opts);
+int dessert_pid(char* pidfile);
 int dessert_run(void);
 void dessert_exit(void);
 

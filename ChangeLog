@@ -7,6 +7,8 @@
     - Added type parameter to dessert_msg_trace_initiate and dessert_msg_trace_dump to use these function with new
       bidirectional tracing feature
     - Added callback that decrements the IPv4 TTL or IPv6 Hop-Limit field
+    - Removed pid file parameter from dessert_init; use dessert_pid to write pid file manually
+    - Added private function _dessert_cli_cmd_pid to include pid file name in conf file; cli callback is automatically registered
 
 20100105 - 0.87.0
     - Developers, please be advised that the prototype of function dessert_cli_run no longer 

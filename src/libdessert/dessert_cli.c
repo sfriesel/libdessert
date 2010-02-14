@@ -54,14 +54,11 @@ uint16_t _cli_port = 4519; // should be default port number
 
 /* internal functions forward declarations*/
 static void *_dessert_cli_accept_thread(void* arg);
-static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
-		char *argv[], int argc);
-static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command,
-		char *argv[], int argc);
-static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
-		char *argv[], int argc);
+static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc);
-
+static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc);
 static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif);
 /******************************************************************************
  *
@@ -243,8 +240,12 @@ int _dessert_cli_init() {
 			"set logfile disable file logging");
 
 	cli_register_command(dessert_cli, NULL, "port", _dessert_cli_cmd_setport,
-					PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-					"configure TCP port the daemon is listening on");
+              PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+              "configure TCP port the daemon is listening on");
+
+    cli_register_command(dessert_cli, NULL, "pid", _dessert_cli_cmd_pid,
+                PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                "write process id to file");
 
 	/* initialize other commands */
 	cli_register_command(dessert_cli, NULL, "shutdown",
@@ -271,6 +272,19 @@ static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *ar
     }
 
     return (dessert_set_cli_port((uint16_t) atoi(argv[0]))==DESSERT_ERR?CLI_ERROR:CLI_OK);
+}
+
+static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc) {
+    if(argc != 1) {
+      cli_print(cli, "usage: pid /path/to/file.pid");
+      return CLI_ERROR;
+    }
+
+    if(dessert_pid(argv[0]) == DESSERT_OK)
+      return CLI_OK;
+
+    cli_print(cli, "could not read/write/close file: %s", argv[0]);
+    return CLI_ERROR;
 }
 
 /** command "show meshifs" */

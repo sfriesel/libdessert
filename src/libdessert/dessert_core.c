@@ -44,7 +44,7 @@ pthread_mutex_t _dessert_nextframeid_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t _dessert_exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t _dessert_exit_do = PTHREAD_COND_INITIALIZER;
 int _dessert_exit_code = 0;
-char *dessert_pidfile_name;
+char *dessert_pidfile_name = NULL;
 
 /* internal functions forward declarations*/
 static void _dessert_cleanup(void);
@@ -65,8 +65,7 @@ static int _dessert_pid(char* pidfile);
  * @arg opts @see DESSERT_OPT_*
  * @returns DESSERT_OK on success, DESSERT_ERR otherwise
  **/
-int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile) {
-
+int dessert_init(const char* proto, int version, uint16_t opts) {
 	pthread_rwlock_wrlock(&dessert_cfglock);
 
 	/* save global config */
@@ -85,12 +84,6 @@ int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile) {
 		_dessert_daemonize();
 	}
 
-	/* write pid to file if needed */
-	if (pidfile != NULL) {
-		dessert_pidfile_name = pidfile;
-		_dessert_pid(pidfile);
-	}
-
 	/* initialize cli */
 	_dessert_cli_init();
 
@@ -101,6 +94,43 @@ int dessert_init(const char* proto, int version, uint16_t opts, char* pidfile) {
 	_dessert_agentx_init_subagent();
 
 	return DESSERT_OK;
+}
+
+
+/** Write pid to file
+ *
+ * Write the process id to a file.
+ *
+ * @param pidfile filename of pid file
+ * @return DESSERT_OK if pid written and file closed, else DESSERT_ERR
+ */
+int dessert_pid(char* pidfile) {
+    FILE *fd;
+
+    if(dessert_pidfile_name != NULL) {
+        dessert_warn("pid file already written");
+        return DESSERT_ERR;
+    }
+    
+    fd = fopen(pidfile, "w");
+    if (fd == 0) {
+        dessert_warn("could not open pid file");
+        return DESSERT_ERR;
+    } else {
+        int r;
+        r = fprintf(fd, "%d\n", getpid());
+        if (r < 0) {
+            dessert_warn("could not write to pid file");
+            return DESSERT_ERR;
+        }
+
+        if (fclose(fd) != 0) {
+            dessert_warn("failed to close pid file");
+        }
+    }
+
+    dessert_pidfile_name = pidfile;
+    return DESSERT_OK;
 }
 
 /** main loop - wait until dessert_exit() is called or killed
@@ -214,28 +244,4 @@ void _dessert_daemonize(void) {
 
 	/* adopt logging */
 	dessert_logcfg(0x0);
-}
-
-/** internal pid-write helper */
-int _dessert_pid(char* pidfile) {
-	FILE *fd;
-
-	fd = fopen(pidfile, "w");
-	if (fd == 0) {
-		dessert_warn("could not open pid file");
-		return 1;
-	} else {
-		int r;
-		r = fprintf(fd, "%d\n", getpid());
-		if (r < 0) {
-			dessert_warn("could not write to pid file");
-			return DESSERT_ERR;
-		}
-
-		if (fclose(fd) != 0) {
-			dessert_warn("failed to close pid file");
-		}
-	}
-
-	return DESSERT_OK;
 }
