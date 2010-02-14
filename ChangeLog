@@ -1,5 +1,5 @@
-20100213 - 0.90
-    - Moved to autotools and libtool versioning; current version = 1.0.0
+20100214 - 0.91
+    - libtool version = 1.1.0
     - Added some code from several daemons in src/callbacks dir for general usage
     - Moved some code from src/libdessert to src/callbacks to slim down library core
     - Moved prev pointer in dessert_meshif_t to end of structure; dessert_meshif_t and dessert_sysif_t are
@@ -8,7 +8,12 @@
       bidirectional tracing feature
     - Added callback that decrements the IPv4 TTL or IPv6 Hop-Limit field
     - Removed pid file parameter from dessert_init; use dessert_pid to write pid file manually
+    - Removed DESSERT_OPT_PID and DESSERT_OPT_NOPID flags because they were never used
     - Added private function _dessert_cli_cmd_pid to include pid file name in conf file; cli callback is automatically registered
+    - Replaced dessert_ext_getdatalen macro with inline function
+
+20100213 - 0.90
+    - Moved to autotools and libtool versioning; current libtool version = 1.0.0
 
 20100105 - 0.87.0
     - Developers, please be advised that the prototype of function dessert_cli_run no longer 

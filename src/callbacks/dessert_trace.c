@@ -85,7 +85,8 @@ int dessert_cli_cmd_traceroute(struct cli_def *cli, char *command, char *argv[],
  * The whole trace mechanism is basically a ping/pong with additional tracing.
  */
 int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
-    dessert_ext_t *ext;
+    dessert_ext_t *request_ext;
+    dessert_ext_t *reply_ext;
     struct ether_header *l25h;
     u_char temp[ETHER_ADDR_LEN];
 
@@ -93,7 +94,7 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
 
     if(l25h && proc->lflags & DESSERT_LFLAG_DST_SELF) {
         char buf[1024];
-        if(dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE, 0)) {
+        if(dessert_msg_getext(msg, &request_ext, DESSERT_EXT_TRACE, 0)) {
           memset(buf, 0x0, 1024);
           dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE, buf, 1024);
 
@@ -109,7 +110,7 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
           }
         }
 
-        if(dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE2, 0)) {
+        if(dessert_msg_getext(msg, &reply_ext, DESSERT_EXT_TRACE2, 0)) {
           memset(buf, 0x0, 1024);
           dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE2, buf, 1024);
 
@@ -124,11 +125,11 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
             buf);
           }
         }
-        else {
+        else if(request_ext) {
           memcpy(temp, l25h->ether_shost, ETHER_ADDR_LEN);
           memcpy(l25h->ether_shost, l25h->ether_dhost, ETHER_ADDR_LEN);
           memcpy(l25h->ether_dhost, temp, ETHER_ADDR_LEN);
-          dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE2, DESSERT_MSG_TRACE_IFACE);
+          dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE2, dessert_ext_getdatalen(request_ext)==DESSERT_MSG_TRACE_IFACE?DESSERT_MSG_TRACE_IFACE:DESSERT_MSG_TRACE_HOST);
           dessert_meshsend(msg, NULL);
         }
 

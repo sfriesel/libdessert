@@ -594,12 +594,6 @@ typedef struct dessert_periodic {
 /** flag for dessert_init - do not daemonize when calling */
 #define DESSERT_OPT_NODAEMONIZE  0x0200
 
-/** flag for dessert_init - create and write pid file */
-#define DESSERT_OPT_PID			0x0400
-
-/** flag for dessert_init - do not create and write pid file */
-#define DESSERT_OPT_NOPID		0x0800
-
 /******************************************************************************
  * globals
  ******************************************************************************/
@@ -894,6 +888,7 @@ int dessert_syssend(const struct ether_header *eth, size_t len);
 /** length of dessert_ext header */
 #define DESSERT_EXTLEN (sizeof(struct dessert_ext) - DESSERT_MAXEXTDATALEN)
 
+/** Reserved extension type values */
 enum dessert_extensions {
   DESSERT_EXT_ANY    = 0x00, ///< dessert_ext type wildcard - any extension
   DESSERT_EXT_ETH    = 0x01, ///< ethernet header
@@ -916,7 +911,7 @@ enum dessert_extensions {
 /* *********************** */
 
 /** Returns the length of a given extension. */
-#define dessert_ext_getdatalen(ext) (ext->len - DESSERT_EXTLEN)
+static inline size_t dessert_ext_getdatalen(dessert_ext_t* ext) { return (ext->len - DESSERT_EXTLEN); }
 
 /******************************************************************************
  * functions
@@ -1315,20 +1310,6 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
 #endif
 
 /** @} */
-
-/******************************************************************************
- *
- * ! ! ! ! O L D ! ! ! T O D O ! ! ! !
- *
- ******************************************************************************/
-
-/** the config-flag variable */
-//extern uint16_t dessert_cfgflags;   // TODO not used! to be removed??!?
-
-/** size of a dessert_msg buffer */
-//#define dessert_msg_buflen(x) ((x->flags&DESSERT_FLAG_SPARSE)?(x->hlen+x->plen):(DESSERT_MAXFRAMELEN+DESSERT_MSGPROCLEN))
-
-//#define dessert_frameid_overflow(x, y) ((x>y)&&((x-y)>(DESSERT_FRAMEID_MAX/2)))
 
 /******************************************************************************
  *
