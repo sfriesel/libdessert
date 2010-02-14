@@ -41,13 +41,18 @@ extern dessert_sysif_t *_dessert_sysif;
 int dessert_rx_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
     void* payload;
     struct ether_header* eth = dessert_msg_getl25ether(msg);
-    assert(eth); // if there is not Ethernet header, something is terrible wrong
+
+    if (eth == NULL)
+        return DESSERT_MSG_KEEP;
 
     if (proc->lflags & DESSERT_LFLAG_DST_SELF) {
         // the packet got here, so we can ignore the TTL value
         dessert_debug("ignoring packets destined to me");
         return DESSERT_MSG_KEEP;
     }
+
+    if (!(proc->lflags & DESSERT_LFLAG_NEXTHOP_SELF))
+      return DESSERT_MSG_KEEP;
 
     // IPv4
     if (eth->ether_type == htons(ETHERTYPE_IP) && dessert_msg_getpayload(msg, &payload)) {
