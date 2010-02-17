@@ -98,12 +98,12 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
           memset(buf, 0x0, 1024);
           dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE, buf, 1024);
 
-          dessert_debug("trace request from %x:%x:%x:%x:%x.%x\n%s",
+          dessert_debug("trace request from %x:%x:%x:%x:%x:%x\n%s",
             l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
             l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5],
             buf);
           if(_dessert_callbacks_cli != NULL) {
-            cli_print(_dessert_callbacks_cli, "\ntrace request from %x:%x:%x:%x:%x.%x\n%s",
+            cli_print(_dessert_callbacks_cli, "\ntrace request from %x:%x:%x:%x:%x:%x\n%s",
             l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
             l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5],
             buf);
@@ -114,12 +114,12 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
           memset(buf, 0x0, 1024);
           dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE2, buf, 1024);
 
-          dessert_debug("trace reply from %x:%x:%x:%x:%x.%x\n%s",
+          dessert_debug("trace reply from %x:%x:%x:%x:%x:%x\n%s",
             l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
             l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5],
             buf);
           if(_dessert_callbacks_cli != NULL) {
-            cli_print(_dessert_callbacks_cli, "\ntrace reply from %x:%x:%x:%x:%x.%x\n%s",
+            cli_print(_dessert_callbacks_cli, "\ntrace reply from %x:%x:%x:%x:%x:%x\n%s",
             l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
             l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5],
             buf);

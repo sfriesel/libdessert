@@ -168,7 +168,7 @@ int dessert_cli_run() {
 		return -errno;
 	}
 	listen(_dessert_cli_sock, 8);
-	dessert_debug("starting worker thread for cli");
+	dessert_debug("starting worker thread for CLI on port %d", _cli_port);
 	pthread_create(&_dessert_cli_worker, NULL, _dessert_cli_accept_thread,
 			&_dessert_cli_sock);
 	return DESSERT_OK;

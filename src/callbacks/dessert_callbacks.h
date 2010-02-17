@@ -26,18 +26,23 @@
 #ifndef DESSERT_CALLBACKS_H
 #define DESSERT_CALLBACKS_H
 
+// adding interfaces
 int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
 int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
 
+// ping
 int dessert_cli_cmd_ping(struct cli_def *cli, char *command, char *argv[], int argc);
 int dessert_rx_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
 int dessert_rx_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
 
+// tracing
 int dessert_cli_cmd_traceroute(struct cli_def *cli, char *command, char *argv[], int argc);
 int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
 int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode);
 int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen);
 
+// TTL
 int dessert_rx_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+
 
 #endif
