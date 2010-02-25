@@ -63,9 +63,9 @@ int dessert_cli_cmd_traceroute(struct cli_def *cli, char *command, char *argv[],
     l25h->ether_type = htons(0x0000);
 
     if(argc == 2 && argv[1][0] == 'i') {
-        dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE, DESSERT_MSG_TRACE_IFACE);
+        dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE_REQ, DESSERT_MSG_TRACE_IFACE);
     } else {
-        dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE, DESSERT_MSG_TRACE_HOST);
+        dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE_REQ, DESSERT_MSG_TRACE_HOST);
     }
 
     dessert_meshsend(msg, NULL);
@@ -94,9 +94,9 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
 
     if(l25h && proc->lflags & DESSERT_LFLAG_DST_SELF) {
         char buf[1024];
-        if(dessert_msg_getext(msg, &request_ext, DESSERT_EXT_TRACE, 0)) {
+        if(dessert_msg_getext(msg, &request_ext, DESSERT_EXT_TRACE_REQ, 0)) {
           memset(buf, 0x0, 1024);
-          dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE, buf, 1024);
+          dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_REQ, buf, 1024);
 
           dessert_debug("trace request from %x:%x:%x:%x:%x:%x\n%s",
             l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
@@ -110,9 +110,9 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
           }
         }
 
-        if(dessert_msg_getext(msg, &reply_ext, DESSERT_EXT_TRACE2, 0)) {
+        if(dessert_msg_getext(msg, &reply_ext, DESSERT_EXT_TRACE_RPL, 0)) {
           memset(buf, 0x0, 1024);
-          dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE2, buf, 1024);
+          dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_RPL, buf, 1024);
 
           dessert_debug("trace reply from %x:%x:%x:%x:%x:%x\n%s",
             l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
@@ -129,7 +129,7 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
           memcpy(temp, l25h->ether_shost, ETHER_ADDR_LEN);
           memcpy(l25h->ether_shost, l25h->ether_dhost, ETHER_ADDR_LEN);
           memcpy(l25h->ether_dhost, temp, ETHER_ADDR_LEN);
-          dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE2, dessert_ext_getdatalen(request_ext)==DESSERT_MSG_TRACE_IFACE?DESSERT_MSG_TRACE_IFACE:DESSERT_MSG_TRACE_HOST);
+          dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE_RPL, dessert_ext_getdatalen(request_ext)==DESSERT_MSG_TRACE_IFACE?DESSERT_MSG_TRACE_IFACE:DESSERT_MSG_TRACE_HOST);
           dessert_meshsend(msg, NULL);
         }
 
@@ -141,7 +141,7 @@ int dessert_rx_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, c
 
 /** add initial trace header to dessert message
  * @arg *msg dessert_msg_t message used for tracing
- * @arg type DESSERT_EXT_TRACE or DESSERT_EXT_TRACE2
+ * @arg type DESSERT_EXT_TRACE_REQ or DESSERT_EXT_TRACE_RPL
  * @arg mode trace mode
  *           use DESSERT_MSG_TRACE_HOST to only record default mac of hosts on the way
  *           use DESSERT_MSG_TRACE_IFACE to also trace input interface and last hop
@@ -152,7 +152,7 @@ int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode) {
     dessert_ext_t *ext;
     struct ether_header *l25h;
 
-    if (type != DESSERT_EXT_TRACE && type != DESSERT_EXT_TRACE2)
+    if (type != DESSERT_EXT_TRACE_REQ && type != DESSERT_EXT_TRACE_RPL)
         return EINVAL;
 
     if (mode != DESSERT_MSG_TRACE_HOST && mode != DESSERT_MSG_TRACE_IFACE)
@@ -181,7 +181,7 @@ int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode) {
 
 /** dump packet trace to string
  * @arg *msg dessert_msg_t message used for tracing
- * @arg type DESSERT_EXT_TRACE or DESSERT_EXT_TRACE2
+ * @arg type DESSERT_EXT_TRACE_REQ or DESSERT_EXT_TRACE_RPL
  * @arg *buf char buffer to place string
  *           use DESSERT_MSG_TRACE_HOST to only record default mac of hosts on the way
  *           use DESSERT_MSG_TRACE_IFACE to also trace input interface and last hop
@@ -191,8 +191,8 @@ int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, in
 
     dessert_ext_t *ext;
     int x, i = 0;
-    if(type != DESSERT_EXT_TRACE
-      || type != DESSERT_EXT_TRACE2)
+    if(type != DESSERT_EXT_TRACE_REQ
+      || type != DESSERT_EXT_TRACE_RPL)
       return -1;
 
 #define _dessert_msg_trace_dump_append(...) snprintf(buf+strlen(buf), blen-strlen(buf), __VA_ARGS__)

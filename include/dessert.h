@@ -890,14 +890,14 @@ int dessert_syssend(const void *pkt, size_t len);
 
 /** Reserved extension type values */
 enum dessert_extensions {
-  DESSERT_EXT_ANY    = 0x00, ///< dessert_ext type wildcard - any extension
-  DESSERT_EXT_ETH    = 0x01, ///< ethernet header
-  DESSERT_EXT_TRACE  = 0x02, ///< route trace request: A -> B
-  DESSERT_EXT_TRACE2 = 0x03, ///< route trace reply: B -> A
-  DESSERT_EXT_PING   = 0x04, ///< ping packet
-  DESSERT_EXT_PONG   = 0x05, ///< pong packet
+  DESSERT_EXT_ANY           = 0x00, ///< dessert_ext type wildcard - any extension
+  DESSERT_EXT_ETH           = 0x01, ///< ethernet header
+  DESSERT_EXT_TRACE_REQ     = 0x02, ///< route trace request: A -> B
+  DESSERT_EXT_TRACE_RPL     = 0x03, ///< route trace reply: B -> A
+  DESSERT_EXT_PING          = 0x04, ///< ping packet
+  DESSERT_EXT_PONG          = 0x05, ///< pong packet
   /* leave some space for future extensions */
-  DESSERT_EXT_USER   = 0x40, ///< first dessert_ext type for usage by the user
+  DESSERT_EXT_USER          = 0x40, ///< first dessert_ext type for usage by the user
 };
 
 /* *********************** */
@@ -1341,5 +1341,9 @@ int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode);
 int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen);
 
 int dessert_rx_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+
+int dessert_tx_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_sysif_t *iface, dessert_frameid_t id);
+int dessert_rx_drop_tap(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_rx_drop_tun(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id); 
 
 #endif /* DESSERT_H*/

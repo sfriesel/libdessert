@@ -400,9 +400,9 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len,
 	}
 
 	/* we have a trace */
-	if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE, buf, blen - strlen(buf)) > 1)
+	if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_REQ, buf, blen - strlen(buf)) > 1)
 		_dessert_msg_check_append("\n");
-    if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE2, buf, blen - strlen(buf)) > 1)
+    if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_RPL, buf, blen - strlen(buf)) > 1)
         _dessert_msg_check_append("\n");
 
 	/* now other extensions.... */
@@ -420,7 +420,7 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len,
 		_dessert_msg_check_append("\t\ttype:      0x%02x\n", ext->type);
 		_dessert_msg_check_append("\t\tlen:       %d\n", ext->len);
 
-		if (ext->type != DESSERT_EXT_ETH && ext->type != DESSERT_EXT_TRACE) {
+		if (ext->type != DESSERT_EXT_ETH && ext->type != DESSERT_EXT_TRACE_REQ) {
 			_dessert_msg_check_append("\t\tdata:      ");
 			for (i = 0; i < dessert_ext_getdatalen(ext); i++) {
 				_dessert_msg_check_append("0x%x ", ext->data[i]);
@@ -708,7 +708,7 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len,
 	dessert_ext_t *ext;
 
 	/* abort if message has no trace extension */
-	if (dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE, 0) == 0)
+	if (dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE_REQ, 0) == 0)
 		return DESSERT_MSG_KEEP;
 
 	/* abort if iface is NULL */
@@ -721,10 +721,10 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len,
 
 	/* get the trace mode (hop vs interface) */
 	if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_HOST) {
-		dessert_msg_addext(msg, &ext, DESSERT_EXT_TRACE, DESSERT_MSG_TRACE_HOST);
+		dessert_msg_addext(msg, &ext, DESSERT_EXT_TRACE_REQ, DESSERT_MSG_TRACE_HOST);
 		memcpy((ext->data), dessert_l25_defsrc, ETHER_ADDR_LEN);
 	} else if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-		dessert_msg_addext(msg, &ext, DESSERT_EXT_TRACE,
+		dessert_msg_addext(msg, &ext, DESSERT_EXT_TRACE_REQ,
 				DESSERT_MSG_TRACE_IFACE);
 		memcpy((ext->data), dessert_l25_defsrc, ETHER_ADDR_LEN);
 		memcpy((ext->data) + ETHER_ADDR_LEN, iface->hwaddr, ETHER_ADDR_LEN);

@@ -52,7 +52,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libdessertcallbacks_la_LIBADD =
 am_libdessertcallbacks_la_OBJECTS = dessert_ifaces.lo dessert_ping.lo \
-	dessert_trace.lo dessert_ip_ttl.lo
+	dessert_trace.lo dessert_ip_ttl.lo dessert_drop_ipv6.lo \
+	dessert_drop_tuntap.lo
 libdessertcallbacks_la_OBJECTS = $(am_libdessertcallbacks_la_OBJECTS)
 libdessertcallbacks_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -233,7 +234,9 @@ libdessertcallbacks_la_SOURCES = \
         dessert_ifaces.c \
         dessert_ping.c \
         dessert_trace.c \
-        dessert_ip_ttl.c
+        dessert_ip_ttl.c \
+        dessert_drop_ipv6.c \
+        dessert_drop_tuntap.c
 
 libdessertcallbacks_la_LDFLAGS = -avoid-version
 all: all-am
@@ -288,6 +291,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dessert_drop_ipv6.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dessert_drop_tuntap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dessert_ifaces.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dessert_ip_ttl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dessert_ping.Plo@am__quote@
