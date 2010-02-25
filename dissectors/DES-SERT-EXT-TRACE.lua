@@ -30,18 +30,23 @@ DESTRACEREQ = Proto("dessert_ext_trace_req", "DESSERT-EXT-TRACE-REQ")
 
 -- Create the protocol fields
 local f = DESTRACEREQ.fields
-f.extdata = ProtoField.ether("dessert.trace-req.extdata", "Extension data")
+f.extdata = ProtoField.ether("dessert.trace-req.extdata", "Host")
 
 -- The dissector function
 function DESTRACEREQ.dissector (buffer, pinfo, tree)
     pinfo.cols.protocol = "DESSERT-EXT-TRACE-REQ"
     
-    local subtree = tree:add(DESTRACEREQ, buffer,"Extension Data")
+    local subtree = tree:add(DESTRACEREQ, buffer,"Path")
     local offset = 0
+    local size = buffer:len()
+    local hop = 0
     
-    local extdata = buffer(offset, buffer:len())
-    subtree:add(f.extdata,extdata)
-    offset = offset + 6
+    while offset < size do
+      local ether = buffer(offset, 6)
+      subtree:add(f.extdata, ether) --, "Hop "..tostring(hop))
+      offset = offset + 6
+      hop = hop + 1
+    end
     
     return offset
 end
@@ -59,14 +64,16 @@ r.extdata = ProtoField.ether("dessert.trace-rpl.extdata", "Extension data")
 function DESTRACERPL.dissector (buffer, pinfo, tree)
     pinfo.cols.protocol = "DESSERT-EXT-TRACE-REQ"
     
-    local subtree = tree:add(DESTRACERPL, buffer,"Extension Data")
+    local subtree = tree:add(DESTRACERPL, buffer,"Path")
     local offset = 0
     local size = buffer:len()
+    local hop = 0
     
     while offset < size do
-      local extdata = buffer(offset, buffer:len())
-      subtree:add(r.extdata,extdata)
+      local ether = buffer(offset, 6)
+      subtree:add(r.extdata, ether) --, "Hop "..tostring(hop))
       offset = offset + 6
+      hop = hop + 1
     end
     
     return offset
