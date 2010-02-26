@@ -96,15 +96,40 @@ AC_CONFIG_FILES([Makefile
                 libdessert.pc
                 ])
 
+AC_ARG_ENABLE(dissectors, [  --enable-dissectors     install Wireshark dissectors @<:@Default=no@:>@], [install_dissectors=1], [install_dissectors=0])
+AC_SUBST(install_dissectors)
+
+AC_ARG_WITH(dissectorsdir,
+        [  --with-dissectorsdir=DIR    Directory to install Wireshark dissectors. @<:@LIBDIR/wireshark/plugins/@:>@],
+        [ AC_SUBST(with_dissectorsdir) ])
+
+AS_IF([test "$install_dissectors"],
+    [AS_IF([test -z "$with_dissectorsdir"],
+        [with_dissectorsdir="$libdir/wireshark/plugins/"; echo "Using default dissector dir: $with_dissectorsdir"],
+        [echo "Dissectors dir: $with_dissectorsdir"])
+    ]
+)
+    
+AC_ARG_ENABLE(mibs, [  --enable-mibs           install MIBs @<:@Default=no@:>@], [install_mibs=1], [install_mibs=0])
+AC_SUBST(install_mibs)
+
 AC_ARG_WITH(mibsdir,
-		[  --with-mibsdir=DIR      Directory to install mibs. @<:@DATAROOTDIR/mibs@:>@],
-		[ AC_SUBST(with_mibsdir) ])
+        [  --with-mibsdir=DIR      Directory to MIBs. @<:@DATAROOTDIR/mibs@:>@],
+        [ AC_SUBST(with_mibsdir) ])
 
-AS_IF([test -z "$with_mibsdir"], [with_mibsdir="$datarootdir/mibs"; echo "Installing MIBs to default dir: $with_mibsdir"], [echo "Installing MIBs to dir: $with_mibsdir"])
+AS_IF([test "$install_mibs"],
+    [AS_IF([test -z "$with_mibsdir"],
+        [with_mibsdir="$datarootdir/mibs"; echo "Using default MIBs dir: $with_mibsdir"],
+        [echo "MIBs dir: $with_mibsdir"])
+    ]
+)
 
-#AC_ARG_VAR([SHLIB_CFLAGS],
-#          [additional CFLAGS used when building shared libraries])
-#AC_SUBST(SHLIB_CFLAGS)
+# 
+# AC_ARG_WITH(mibsdir,
+# 		[  --with-mibsdir=DIR      Directory to install mibs. @<:@DATAROOTDIR/mibs@:>@],
+# 		[ AC_SUBST(with_mibsdir) ])
+# 
+# AS_IF([test -z "$with_mibsdir"], [with_mibsdir="$datarootdir/mibs"; echo "Using default MIBs dir: $with_mibsdir"], [echo "MIBs dir: $with_mibsdir"])
 
 AC_OUTPUT
 
