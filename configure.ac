@@ -124,12 +124,5 @@ AS_IF([test "$install_mibs"],
     ]
 )
 
-# 
-# AC_ARG_WITH(mibsdir,
-# 		[  --with-mibsdir=DIR      Directory to install mibs. @<:@DATAROOTDIR/mibs@:>@],
-# 		[ AC_SUBST(with_mibsdir) ])
-# 
-# AS_IF([test -z "$with_mibsdir"], [with_mibsdir="$datarootdir/mibs"; echo "Using default MIBs dir: $with_mibsdir"], [echo "MIBs dir: $with_mibsdir"])
-
 AC_OUTPUT
 
