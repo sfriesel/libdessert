@@ -38,7 +38,7 @@ f.ext_eth_ethertype = ProtoField.uint16("dessert.ext.eth.ethertype", "Type", bas
 -- The dissector function
 function EXTETH.dissector (buffer, pinfo, tree)
     print("\t\t\t\tParsing ETH extension")
-    pinfo.cols.protocol = "DES-SERT-EXT-ETH"
+    pinfo.cols.protocol = "DESSERT_EXT_ETH"
     
     local subtree = tree:add(EXTETH, buffer,"Extension Data")
     local offset = 0

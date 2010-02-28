@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([libdessert], [0.90], [des-sert@spline.inf.fu-berlin.de])
+AC_INIT([libdessert], [0.91], [des-sert@spline.inf.fu-berlin.de])
 AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -100,12 +100,12 @@ AC_ARG_ENABLE(dissectors, [  --enable-dissectors     install Wireshark dissector
 AC_SUBST(install_dissectors)
 
 AC_ARG_WITH(dissectorsdir,
-        [  --with-dissectorsdir=DIR    Directory to install Wireshark dissectors. @<:@LIBDIR/wireshark/plugins/@:>@],
+        [  --with-dissectorsdir=DIR    Directory to install Wireshark dissectors. @<:@DATAROOTDIR/wireshark/@:>@],
         [ AC_SUBST(with_dissectorsdir) ])
 
 AS_IF([test "$install_dissectors"],
     [AS_IF([test -z "$with_dissectorsdir"],
-        [with_dissectorsdir="$libdir/wireshark/plugins/"; echo "Using default dissector dir: $with_dissectorsdir"],
+        [with_dissectorsdir="$datarootdir/wireshark"; echo "Using default dissector dir: $with_dissectorsdir"],
         [echo "Dissectors dir: $with_dissectorsdir"])
     ]
 )

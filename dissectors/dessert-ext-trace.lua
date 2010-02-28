@@ -26,15 +26,15 @@
 -- ----------------------------------------------------------------------------
  
 -- Create a new dissector
-DESTRACEREQ = Proto("dessert_ext_trace_req", "DESSERT-EXT-TRACE-REQ")
+DESTRACEREQ = Proto("dessert_ext_trace_req", "DESSERT_EXT_TRACE_REQ")
 
 -- Create the protocol fields
 local f = DESTRACEREQ.fields
-f.extdata = ProtoField.ether("dessert.trace-req.extdata", "Host")
+f.extdata = ProtoField.ether("dessert.ext.trace.req.extdata", "Host")
 
 -- The dissector function
 function DESTRACEREQ.dissector (buffer, pinfo, tree)
-    pinfo.cols.protocol = "DESSERT-EXT-TRACE-REQ"
+    pinfo.cols.protocol = "DESSERT_EXT_TRACE_REQ"
     
     local subtree = tree:add(DESTRACEREQ, buffer,"Path")
     local offset = 0
@@ -54,15 +54,15 @@ end
 
 
 -- Create a new dissector
-DESTRACERPL = Proto("dessert_ext_trace_rpl", "DESSERT-EXT-TRACE-RPL")
+DESTRACERPL = Proto("dessert_ext_trace_rpl", "DESSERT_EXT_TRACE_RPL")
 
 -- Create the protocol fields
 local r = DESTRACERPL.fields
-r.extdata = ProtoField.ether("dessert.trace-rpl.extdata", "Extension data")
+r.extdata = ProtoField.ether("dessert.ext.trace.rpl.extdata", "Extension data")
 
 -- The dissector function
 function DESTRACERPL.dissector (buffer, pinfo, tree)
-    pinfo.cols.protocol = "DESSERT-EXT-TRACE-REQ"
+    pinfo.cols.protocol = "DESSERT_EXT_TRACE_REQ"
     
     local subtree = tree:add(DESTRACERPL, buffer,"Path")
     local offset = 0

@@ -30,12 +30,12 @@ EXTPING = Proto("dessert_ext_ping", "DESSERT_EXT_PING")
 
 -- Create the protocol fields
 local f = EXTPING.fields
-f.ext_ping_msg = ProtoField.string("dessert.ext_ping", "Message")
+f.ext_ping_msg = ProtoField.string("dessert.ext.ping.msg", "Message")
 
 -- The dissector function
 function EXTPING.dissector(buffer, pinfo, tree)
-    print("\t\t\t\tParsing Ping extension")
-    pinfo.cols.protocol = "DES-SERT-EXT-Ping"
+    -- print("\t\t\t\tParsing Ping extension")
+    pinfo.cols.protocol = "DESSERT_EXT_PING"
     
     local subtree = tree:add(EXTPING, buffer,"Extension Data")
     local ext_ping_msg = buffer(0, buffer:len())
@@ -50,12 +50,12 @@ EXTPONG = Proto("dessert_ext_pong", "DESSERT_EXT_PONG")
 
 -- Create the protocol fields
 local f = EXTPONG.fields
-f.ext_pong_msg = ProtoField.string("dessert.ext_pong", "Message")
+f.ext_pong_msg = ProtoField.string("dessert.ext.pong.msg", "Message")
 
 -- The dissector function
 function EXTPONG.dissector(buffer, pinfo, tree)
-    print("\t\t\t\tParsing Pong extension")
-    pinfo.cols.protocol = "DES-SERT-EXT-Pong"
+    -- print("\t\t\t\tParsing Pong extension")
+    pinfo.cols.protocol = "DESSERT_EXT_PING"
     
     local subtree = tree:add(EXTPONG, buffer,"Extension Data")
     local ext_pong_msg = buffer(0, buffer:len())
