@@ -36,14 +36,14 @@ local extension_types = { [0x01] = "DESSERT_EXT_ETH",
 dessert_dissector_table = DissectorTable.new("desserttable")
 
 _G.dessert_register_ext_dissector = function(ext_type, ext_name, dissector)
-    print("loading extension dissector: "..tostring(ext_name))
+    print("Info: loading extension dissector: "..tostring(ext_name))
     extension_types[ext_type] = ext_name
     dessert_dissector_table:add(ext_type, dissector)
 end
 
-dofile("DES-SERT-EXT-ETH.lua")
-dofile("DES-SERT-EXT-PING.lua")
-dofile("DES-SERT-EXT-TRACE.lua")
+dofile("dessert-ext-eth.lua")
+dofile("dessert-ext-ping.lua")
+dofile("dessert-ext-trace.lua")
  
 -- Create a new dissector
 DESSERT = Proto ("dessert", "DES-SERT")
@@ -75,31 +75,8 @@ f.exts    = ProtoField.string ("dessert.exts", "Extensions")
 
 EXTHDR = Proto("dessert_ext", "DESSERT_EXT");
 local e = EXTHDR.fields
-e.exttype = ProtoField.uint8  ("dessert.exttype", "Extension type", base.HEX )    
-e.extlen  = ProtoField.uint8  ("dessert.extlen", "Extension length (incl. extension header)", base.DEC ,nil,nil, "length of the extension in bytes, including the 2 bytes of the extension header itself")
-
-function EXTHDR.dissector(buffer, pinfo, tree)
-    print("\t\t\t\tParsing ETH extension header")
-    pinfo.cols.protocol = "DES-SERT-EXT"
-    
-    local subtree = tree:add(EXTHDR, buffer,"Extension Header")
-    local offset = 0
-    local exttype = buffer(offset, 1)
-    offset = offset + 1
-    local extlen = buffer(offset, 1)
-    offset = offset + 1
-    subtree:add(e.exttype, exttype)
-    subtree:add(e.extlen, extlen)
-
-    local dissector = dessert_dissector_table:get_dissector(exttype:uint())
-    if dissector ~= nil then
-      r = dissector:call(extdata:tvb(), pinfo, exttreeitem)
-      offset = offset + r
-    else 
-      print("\t\t\tno extension_dissector for ext_type: "..tostring(extension_types[exttype:uint()]))
-    end
-    return offset
-end
+e.exttype = ProtoField.uint8  ("dessert.ext.type", "Extension type", base.HEX )    
+e.extlen  = ProtoField.uint8  ("dessert.ext.len", "Extension length (incl. extension header)", base.DEC ,nil,nil, "length of the extension in bytes, including the 2 bytes of the extension header itself")
 
 -- The dissector function
 function DESSERT.dissector(buffer, pinfo, tree)
@@ -177,16 +154,16 @@ function DESSERT.dissector(buffer, pinfo, tree)
       if dissector ~= nil then
           r  = dissector:call(extdata:tvb(), pinfo, extension)
           if r ~= extdata_real_length then
-            print("Warning: Dissector did not consume all bytes!")
+            print("\t\t\tWarning: Sub-Dissector did not consume all bytes!")
           end
       else 
-          print("\t\t\tno extension_dissector for ext_type: "..tostring(extension_types[exttype:uint()]))
+          print("\t\t\tWarning: No extension_dissector for ext_type: "..tostring(extension_types[exttype:uint()]))
       end
       offset = offset + extdata_real_length
-      print("\t\toffset="..tostring(offset)..", hlen="..tostring(real_hlen))
+      -- print("\t\toffset="..tostring(offset)..", hlen="..tostring(real_hlen))
     end 
       
-    print("\tno more extensions, offset="..tostring(offset))  
+    -- print("\tno more extensions, offset="..tostring(offset))  
     -- dissect paylod based on ext_eth ethertype if any
     if _G.ext_eth_ethertype ~= nil then
         local dissector = ethertype_table:get_dissector(ext_eth_ethertype:uint())
@@ -194,7 +171,7 @@ function DESSERT.dissector(buffer, pinfo, tree)
             local payload = buffer(offset, plen:uint())
             dissector:call(payload:tvb(), pinfo, tree)
         else
-          print("Payload found but no matching dissector")
+          print("Warning: Payload found but no matching dissector")
         end
     end   
     return offset

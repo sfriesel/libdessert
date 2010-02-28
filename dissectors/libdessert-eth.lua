@@ -31,9 +31,9 @@ EXTETH = Proto("dessert_ext_eth", "DESSERT_EXT_ETH")
 -- Create the protocol fields
 local f = EXTETH.fields
 -- f.extdata = ProtoField.ether("ext_eth.extdata", "Extension data")
-f.ext_eth_dhost = ProtoField.ether("dessert.ext_eth_dhost", "Destination")
-f.ext_eth_shost = ProtoField.ether("dessert.ext_eth_shost", "Source")
-f.ext_eth_ethertype = ProtoField.uint16("dessert.ext_eth_ethertype", "Type", base.HEX, nil)
+f.ext_eth_dhost = ProtoField.ether("dessert.ext.eth.dhost", "Destination")
+f.ext_eth_shost = ProtoField.ether("dessert.ext.eth.shost", "Source")
+f.ext_eth_ethertype = ProtoField.uint16("dessert.ext.eth.ethertype", "Type", base.HEX, nil)
 
 -- The dissector function
 function EXTETH.dissector (buffer, pinfo, tree)
