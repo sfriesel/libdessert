@@ -8,7 +8,7 @@ pkgconfig_DATA = libdessert.pc
 
 include doxygen-include.am
 
-DISSECTORS = dissectors/DES-SERT.lua dissectors/DES-SERT-EXT-ETH.lua dissectors/DES-SERT-EXT-PING.lua dissectors/DES-SERT-EXT-TRACE.lua
+DISSECTORS = dissectors/dessert.lua dissectors/dessert-ext-eth.lua dissectors/dessert-ext-ping.lua dissectors/dessert-ext-trace.lua
 MIBS = DESSERT-MIB.txt
 EXTRA_DIST = autogen.sh DES-SERT.doxyfile doxygen/html $(MIBS) $(DISSECTORS)
 
