@@ -31,10 +31,23 @@
 #endif
 
 /* global data storage // P U B L I C */
+
+/** Main CLI Anchor
+ *
+ */
 struct cli_def *dessert_cli;
+
+/** CLI Anchor for show commands
+ *
+ */
 struct cli_command *dessert_cli_show;
-struct cli_command *dessert_cli_cfg_iface;
+
+/** CLI Anchor for deactivation commands
+ *
+ */
 struct cli_command *dessert_cli_cfg_no;
+
+struct cli_command *dessert_cli_cfg_iface;
 struct cli_command *dessert_cli_cfg_no_iface;
 struct cli_command *dessert_cli_cfg_logging;
 struct cli_command *dessert_cli_cfg_no_logging;
