@@ -62,7 +62,7 @@
  * interface mesh eth0
  * @endcode
  * Most often you will not configure the interfaces by hand but let it be 
- * configured automatically (see \ref DaemonUsage "How to use DES-SERT based Daemons").
+ * configured automatically (see \ref DaemonUsage "How to use DES-SERT based Daemons" and \ref sec_example_conf "Parsing Configuration Files").
  *
  * @section sec_example_packets Handling Packets
  *
@@ -71,7 +71,7 @@
  * a callback function that sends packets that are received via the TAP interface
  * over all registered network interfaces and a function that sends packets
  * received from the network interfaces to the user space via the TAP interface.
- * sys and mesh callbacks have to have the prototypes dessert_sysrxcb_t and dessert_meshrxcb_t.
+ * sys and mesh callbacks have to have the prototypes ::dessert_sysrxcb_t and ::dessert_meshrxcb_t.
  * In this example the sys callback is named toSys and the mesh callback toMesh.
  *
  * The mesh callback gets a pointer to the DES-SERT message that already 
@@ -89,14 +89,14 @@
  * The sys callback gets a pointer to the DES-SERT message that was received over
  * the network. The iface parameter is a pointer to the dessert_meshif_t that
  * actually received the DES-SERT message. In this function we assume that the 
- * dessert_msg_ifaceflags_cb callback was registered with higher priority than toSys.
+ * dessert_msg_ifaceflags_cb() callback was registered with higher priority than toSys.
  * Thus the proc pointer will point to a valid processing buffer and the lflags
  * can be used to differentiate message types. When the message is destined
  * to the daemon that received the message and if it is not a broadcast or
  * multicast, than the Ethernet frame is decapsulated and send to the TAP
  * interface via dessert_syssend(). #DESSERT_MSG_KEEP is returned to let
  * lower priority callbacks continue to handle the DES-SERT message. This it not
- * the case in this example but you could for example dump all messages to the
+ * the case in this example but you could dump all messages to the
  * log in another sys callback function.
  * @code
  *  int toSys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
@@ -114,18 +114,81 @@
  *  }
  * @endcode
  *
+ * Now you can send a packet from host A to host B when they have a link to
+ * each other.
+ *
+ * @section sec_example_ext Extensions
+ *
+ * Consider we want to piggyback some data when packets are received from
+ * the sys interface and send over the network. First of all we should
+ * create an enumeration as follows:
+ * @code
+ *  enum extensions {
+ *      EXAMPLE_EXT_1 = DESSERT_EXT_USER,
+ *      EXAMPLE_EXT_2
+ *  };
+ * @endcode
+ * The first entry gets the first value that can be assigned as type value to
+ * user provided extensions. Extension types are specific to a particular
+ * protocol therefore you can use any value => #DESSERT_EXT_USER as you
+ * like.
+ *
+ * Extensions should normally contain a C-struct. Always use the __packed__
+ * attribute or you might otherwise send more bytes than necessary over
+ * the medium.
+ * @code
+ *  typedef struct __attribute__((__packed__)) _my_extension {
+ *      uint8_t value1;
+ *      uint16_t value2;
+ *      char char1;
+ *  } my_extension;
+ * @endcode
+ *
+ * The extension can be added in any callback. In this example we add it
+ * to messages in the toMesh callback.
+ * @code
+ * my_extension *mext = NULL;
+ * dessert_ext_t *ext = NULL;
+ * dessert_msg_addext(msg, &ext, EXAMPLE_EXT_1, sizeof(my_extension));
+ * mext = (my_extension*) &(ext->data);
+ * mext->value1 = 123;
+ * mext->value2 = 45678;
+ * mext->char1 = 'X';
+ * @endcode
+ * dessert_msg_addext() adds a message to a DES-SERT message with
+ * the specified type and size and returns a pointer to the allocated
+ * memory via the second parameter (&ext in this example).
+ *
+ * @section sec_example_conf Parsing Configuration Files
+ *
+ * Last but not least, we probably want to enable the parsing of a 
+ * configuration file. dessert_cli_get_cfg() tries to open the
+ * file provided as parameter to the daemon and if this fail tries
+ * to open /etc/DAEMON_NAME.conf. cli_file() parses the file. You
+ * should include an assert to check whether cfg is a NULL pointer.
+ * @code
+ *  FILE *cfg = dessert_cli_get_cfg(argc, argv);
+ *  cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
+ * @endcode
+ *
  * @section sec_example_missing What You Did Not Learn
  *
  * Because this was a very basic introduction in how to implement daemons 
- * with DES-SERT, some topics are missing:
+ * with DES-SERT, some topics are available in other modules:
  * - removing registered interfaces
  * - multiple callbacks in the sys and mesh pipeline
  * - advanced usage of the processsing buffer
- * - reallocating sparse DES-SERT messages
- * - using a password for the CLI
+ * - \ref sparse_subsec "reallocating sparse DES-SERT messages"
+ * - \ref sec_adv_cli "adding custom CLI commands"
+ * - <a href="http://code.google.com/p/libcli/wiki/DevelopersReference">using CLI passwords</a>
  * - using a TUN interface
+ * - forwarding and routing
+ * - retrieving DES-SERT extensions
+ * - writing Wireshark dissectors
+ * - providing OIDs via AgentX to an SNMP agent
  *
- * This information will be added to the documentation in the next releases.
+ * If there is not link to a topic this information will be added to the
+ * documentation in the later releases.
  *
  * @section sec_example_complete The Complete Example
  *

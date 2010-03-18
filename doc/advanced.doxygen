@@ -4,12 +4,50 @@
  *
  * @section sec_adv_cli Custom CLI Commands
  *
+ * How custom CLI commands can be added to the CLI will be explain using the
+ * following example scenario: Consider you have a routing daemon
+ * that uses the parameter threshold with a value in [0,1]. The
+ * value shall be configurable via the CLI.
+ *
  * First of all we create a "set" CLI anchor. This means all commands
  * that are registered with this anchor have to be prefixed by the word
- * "set" when entered in the CLI. As adding interfaces is a critical task,
+ * "set" when entered in the CLI. As setting options is a critical task,
  * it should only be allowed in the privileged mode.  
- *
  * @code
- *    cli_cfg_set = cli_register_command(dessert_cli, NULL, "set", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set variable");
+ *  struct cli_command *cli_cfg_set;
+ *  cli_cfg_set = cli_register_command(dessert_cli, NULL, "set", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set variable");
+ * @endcode
+ *
+ * The following function can be used to parse the value specified in the CLI
+ * and set the threshold.
+ * @code
+ *  double threshold = 0; 
+ *
+ *  int set_threshold(struct cli_def *cli, char *command, char *argv[], int argc) {
+ *      double d;
+ *      if (argc != 1) {
+ *          cli_print(cli, "usage %s [float]\n", command);
+ *          return CLI_ERROR;
+ *      }
+ *      d = strtod(argv[0], NULL);
+ *      if (d <= 0 || d >= 1) {
+ *          cli_print(cli, "threshold must be in [0,1]\n");
+ *          return CLI_ERROR;
+ *      }
+ *      threshold = d;
+ *      dessert_info("setting threshold to %f", threshold);
+ *      return CLI_OK;
+ *  }
+ * @endcode
+ *
+ * Register the function as child of the set anchor.
+ * @code
+ *  cli_register_command(dessert_cli, cli_cfg_set, "threshold", set_threshold, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set threshold");
+ * @endcode
+ *
+ * When you have compiled and started the daemon connect with telnet. You can
+ * now set the threshold value in the privileged mode as follow.
+ * @code
+ *  set threshold 0.4
  * @endcode
  */

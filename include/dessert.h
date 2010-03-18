@@ -94,8 +94,8 @@
 #include <libcli.h>
 
 /***************************************************************************//**
- *
- * @defgroup global Global #defines, typedefs, and structures
+ * @ingroup libdessert
+ * @defgroup global Global defines, typedefs, and structures
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -321,7 +321,7 @@ typedef struct dessert_periodic {
 
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup core Core
  *
  * @brief EXTERNAL / PUBLIC
@@ -377,7 +377,7 @@ void dessert_exit(void);
 
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup cli Command Line Interface
  *
  * @brief EXTERNAL / PUBLIC
@@ -389,15 +389,15 @@ void dessert_exit(void);
  * globals
  ******************************************************************************/
 
-extern struct cli_def *dessert_cli;
+extern struct cli_def *dessert_cli; ///< DES-SERT CLI
 
-extern struct cli_command *dessert_cli_show;
-extern struct cli_command *dessert_cli_cfg_iface;
-extern struct cli_command *dessert_cli_cfg_no;
-extern struct cli_command *dessert_cli_cfg_no_iface;
-extern struct cli_command *dessert_cli_cfg_set;
-extern struct cli_command *dessert_cli_cfg_logging;
-extern struct cli_command *dessert_cli_cfg_no_logging;
+extern struct cli_command *dessert_cli_show; ///< CLI Anchor for show commands
+extern struct cli_command *dessert_cli_cfg_iface; ///< CLI Anchor interface configuration commands
+extern struct cli_command *dessert_cli_cfg_no; ///< CLI Anchor for deactivation commands
+extern struct cli_command *dessert_cli_cfg_no_iface; ///< CLI Anchor for interface removal commands
+extern struct cli_command *dessert_cli_cfg_set; ///< CLI Anchor for set commands
+extern struct cli_command *dessert_cli_cfg_logging; ///< CLI Anchor to enable logging
+extern struct cli_command *dessert_cli_cfg_no_logging; ///< CLI Anchor to disable logging
 
 /******************************************************************************
  * functions
@@ -409,7 +409,7 @@ int dessert_set_cli_port(uint16_t port);
 
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup log Logging
  *
  * @brief EXTERNAL / PUBLIC
@@ -479,7 +479,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup mesh mesh Interfaces
  *
  * @brief EXTERNAL / PUBLIC
@@ -545,7 +545,7 @@ dessert_meshif_t * dessert_meshiflist_get(void);
 /*\}*/
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup sys sys Interfaces
  *
  * @brief EXTERNAL / PUBLIC
@@ -583,7 +583,7 @@ int dessert_syssend(const void *pkt, size_t len);
 
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup msg Message Handling
  *
  * @brief EXTERNAL / PUBLIC
@@ -697,7 +697,7 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
 
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup periodic Periodic Tasks
  *
  * @brief EXTERNAL / PUBLIC
@@ -711,7 +711,7 @@ int dessert_periodic_del(dessert_periodic_t *p);
 
 /***************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup agentx net-snmp & AgentX
  *
  * @brief EXTERNAL / PUBLIC
@@ -987,7 +987,7 @@ int dessert_agentx_appparams_del(dessert_agentx_appparams_cb_entry_t *e);
 
 /**************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup macros Macros
  *
  * @brief EXTERNAL / PUBLIC
@@ -1075,7 +1075,7 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
  ******************************************************************************/
 /**************************************************************************//**
  * @}
- *
+ * @ingroup libdessert
  * @defgroup callbacks Callbacks
  *
  * @brief EXTERNAL / PUBLIC

@@ -3,3 +3,69 @@
  * This modules provides information on how to use DES-SERT based Daemons.
  *
  * @section sec_usage_confs Configuration Files
+ *
+ * DES-SERT should normally provide the following configuration files:
+ * - /etc/DAEMON_NAME.conf
+ * - /etc/default/DAEMON_NAME
+ *
+ * Both files are merged when using the provided \ref sec_usage_init "init script".
+ *
+ * @subsection subsec_usage_conf1 Protocol Configuration
+ *
+ * Protocol specific configuration shall only be placed in the /etc/DAEMON_NAME.conf
+ * file. Each line should be valid CLI syntax and, besides some CLI commands provided
+ * by DES-SERT, all commands should be parsed by user provided CLI callbacks.
+ *
+ * Example file:
+ * @code
+ *  no logging stderr
+ *  logging ringbuffer 20
+ *  logging file /var/log/des-gossip.log
+ *  set threshold 0.3
+ *  set metric etx
+ * @endcode
+ *
+ * @subsection subsec_usage_conf2 Daemon Configuration
+ *
+ * All values that are used by DES-SERT based daemons and that are protocol
+ * unspecific are placed in /etc/default/DAEMON_NAME. Currently, the
+ * configuration of the interfaces, TCP port of the CLI, and PID file
+ * are supported parameters.
+ * 
+ * Example file:
+ * @code
+ *   PIDFILE="/var/run/des-gossip.pid"
+ *   DAEMON_OPTS="/etc/des-gossip.conf"
+ *   TAP_NAME=tap0
+ *   TAP_IP=10.0.0.1
+ *   TAP_NETMASK=255.255.255.0
+ *   CLI_PORT=4519
+ *   IFACE=eth0
+ * @endcode
+ *
+ * @section sec_usage_init System V Init Script
+ *
+ * DES-SERT daemons should provide an init script to start and stop the daemon.
+ * The example script provided in the des-example package additionally
+ * provides merging of both configurations files. The result is placed in
+ * /tmp/DAEMON_NAME.cli and contains the original content of the protocol 
+ * configuration file and interface configuration in the CLI syntax that
+ * has been compiled from the daemon configuration file.
+ *
+ * @section sec_usage_debconf Debian Package Auto-Configuration
+ *
+ * We also provide sample files to create a Debian package from
+ * DES-SERT daemons that are available as source code release. A debconf
+ * script asks the user during the installation (or reconfiguration) of the
+ * particular Debian package for all the information that is contained in
+ * /etc/default/DAEMON_NAME.
+ *
+ * You should not add new parameters to the daemon configuration file or
+ * modify the init script if you want to make use of updated versions of
+ * des-example.
+ *
+ * @section sec_usage_telnet Accessing the CLI
+ *
+ * You can use the telnet program or similar applications or libraries to get
+ * access to the CLI.
+ */

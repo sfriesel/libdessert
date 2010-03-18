@@ -32,21 +32,10 @@
 
 /* global data storage // P U B L I C */
 
-/** Main CLI Anchor
- *
- */
 struct cli_def *dessert_cli;
 
-/** CLI Anchor for show commands
- *
- */
 struct cli_command *dessert_cli_show;
-
-/** CLI Anchor for deactivation commands
- *
- */
 struct cli_command *dessert_cli_cfg_no;
-
 struct cli_command *dessert_cli_cfg_iface;
 struct cli_command *dessert_cli_cfg_no_iface;
 struct cli_command *dessert_cli_cfg_logging;
@@ -155,8 +144,6 @@ int dessert_set_cli_port(uint16_t port) {
 }
 
 /** Start up the command line interface.
- *
- * @param[in] port port to listen on
  *
  * @retval DESSERT_OK on success
  * @retval -errno otherwise
