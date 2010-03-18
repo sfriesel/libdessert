@@ -71,7 +71,48 @@
  * a callback function that sends packets that are received via the TAP interface
  * over all registered network interfaces and a function that sends packets
  * received from the network interfaces to the user space via the TAP interface.
+ * sys and mesh callbacks have to have the prototypes dessert_sysrxcb_t and dessert_meshrxcb_t.
+ * In this example the sys callback is named toSys and the mesh callback toMesh.
  *
+ * The mesh callback gets a pointer to the DES-SERT message that already 
+ * contains the received Ethernet frame. The message is send with dessert_meshsend()
+ * over all registered mesh interfaces because the interface parameter is NULL.
+ * The callback returns #DESSERT_MSG_DROP and signals DES-SERT to delete the message
+ * and free the memory.
+ * @code
+ *  int toMesh(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *tunif, dessert_frameid_t id) {
+ *      dessert_meshsend(msg, NULL);
+ *      return DESSERT_MSG_DROP;
+ *  }
+ * @endcode
+ *
+ * The sys callback gets a pointer to the DES-SERT message that was received over
+ * the network. The iface parameter is a pointer to the dessert_meshif_t that
+ * actually received the DES-SERT message. In this function we assume that the 
+ * dessert_msg_ifaceflags_cb callback was registered with higher priority than toSys.
+ * Thus the proc pointer will point to a valid processing buffer and the lflags
+ * can be used to differentiate message types. When the message is destined
+ * to the daemon that received the message and if it is not a broadcast or
+ * multicast, than the Ethernet frame is decapsulated and send to the TAP
+ * interface via dessert_syssend(). #DESSERT_MSG_KEEP is returned to let
+ * lower priority callbacks continue to handle the DES-SERT message. This it not
+ * the case in this example but you could for example dump all messages to the
+ * log in another sys callback function.
+ * @code
+ *  int toSys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+ *      struct ether_header *eth;
+ *      size_t eth_len;
+ *
+ *      if (proc->lflags & DESSERT_LFLAG_DST_SELF ||
+ *          proc->lflags & DESSERT_LFLAG_DST_BROADCAST ||
+ *          proc->lflags & DESSERT_LFLAG_DST_MULTICAST ) {
+ *              eth_len = dessert_msg_ethdecap(msg, &eth);
+ *              dessert_syssend(eth, eth_len);
+ *              free(eth);
+ *    }
+ *    return DESSERT_MSG_KEEP;
+ *  }
+ * @endcode
  *
  * @section sec_example_missing What You Did Not Learn
  *
@@ -79,7 +120,7 @@
  * with DES-SERT, some topics are missing:
  * - removing registered interfaces
  * - multiple callbacks in the sys and mesh pipeline
- * - using the processsing buffer
+ * - advanced usage of the processsing buffer
  * - reallocating sparse DES-SERT messages
  * - using a password for the CLI
  * - using a TUN interface
@@ -147,6 +188,7 @@
  *    dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
  *
  *    dessert_sysrxcb_add(toMesh, 100);
+ *    dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
  *    dessert_meshrxcb_add(toSys, 100);
  *
  *    init_cli(); 
