@@ -53,383 +53,24 @@
  * wireless mesh network testbed part of the DES-Testbed at Freie 
  * Universitaet Berlin, Germany.
  *
- * @section dessert_sec DES-SERT
+ * @section dessert_sec Content of the Documentation
  *
  * DES-SERT introduces several concepts to implement routing protocols.
  * When implementing a routing protocol with DES-SERT, you should be
  * familiar with these concepts to achieve an optimal structure and 
  * to make your implementation easier to understand by other developers.
- *
- * @section arch_sec System Architecture
- *
- * DES-SERT uses <a href="http://www.tcpdump.org/">libpcap</a> to receive packets 
- * from network interfaces. User space generated packets are received via 
- * a TUN or TAP interface which the kernel provides for routing
- * daemons based on DES-SERT.
- *
- *  \image html lib-kernel-if.png "DES-SERT System Architecture"
- *  \image latex lib-kernel-if.eps "DES-SERT System Architecture" width=.7\linewidth
- *
- * @subsection messages_subsec DES-SERT Messages
- *
- * Every packet you send or receive is represented as a
- * DES-SERT message. From a programmers point of view, a DES-SERT message
- * is just a C-structure:
- *
- * @code
- *  typedef struct __attribute__ ((__packed__)) dessert_msg {
- *      struct     ether_header l2h;
- *      char       proto[DESSERT_PROTO_STRLEN];
- *      uint8_t    ver;
- *      uint8_t    flags;
- *      union {
- *          uint32_t u32;
- *          struct __attribute__ ((__packed__)) {
- *              uint8_t    ttl;
- *              uint8_t    u8;
- *              uint16_t   u16;
- *          };
- *      };
- *      uint16_t   hlen;
- *      uint16_t   plen;
- *  } dessert_msg_t;
- * @endcode
- *
- * Every message sent via the underlay carries this structure as a packet
- * header. All data in a dessert_msg_t is stored in network byte order.
- * DES-SERT tries to take care of this structure as much as possible.
- * Developers have to only provide a value for the destination in the 
- * Ethernet header (ether_dhost) in dessert_msg_t.l2h.
- *
- * If you need to send some management data with a packet, e.g. some kind of
- * metric value your routing protocol uses, you should try to fit this
- * data into the "u8" or "u16" field.
- * These fields will never be modified by DES-SERT except on initialization
- * via dessert_msg_new(). the "ttl" field shoud be used to implement a time-to-live
- * functionality to limit the forwarding of packets to a particular number of
- * hops. If you do not need such a feature, you can use the dessert_msg_t.ttl field for other
- * tasks.
- *
- * dessert_msg_t is just a simple C-structure but there are several 
- * utility functions available - please have a look at "dessert.h" and the
- * doxygen documentation. The most important ones are: dessert_msg_new() and
- * dessert_msg_destroy(). The first one allocates memory for a DES-SERT 
- * message including space for payload and extensions and initializes the
- * structure. The latter function destroys the DES-SERT message and frees the
- * memory. For normal data packets or received management packets you usually never 
- * need to create or destroy DES-SERT messages as the framework will handle these tasks.
- * You just need to use the functions when sending management packets, e.g., in some
- * specific interval. Last but not least, the dessert_msg_clone() function is provided which
- * creates a copy of the message including extensions and payload.
- *
- *  @code
- *  int dessert_msg_new(dessert_msg_t **msgout);
- *
- *  int dessert_msg_clone(dessert_msg_t **msgnew, const dessert_msg_t *msgold, uint8_t sparse);
- *
- *  void dessert_msg_destroy(dessert_msg_t* msg);
- * @endcode
- *
- *
- * @subsection extensions_subsec DES-SERT Extensions
- *
- * A DES-SERT extension is data piggybacked on a DES-SERT message.
- * The corresponding C-structure consists of a 8-bit user supplied type field, 
- * an 8-bit length field and user supplied data (up to 253 bytes). Extensions
- * are thus type-length-value (TLV) elements and similar to what RFC 5444 tries
- * to provide.
- *
- * @code
- *  typedef struct __attribute__ ((__packed__)) dessert_ext {
- *    uint8_t    type;
- *    uint8_t    len;
- *    uint8_t       data[DESSERT_MAXEXTDATALEN];
- *  } dessert_ext_t;
- * @endcode
- *
- * Extensions can be added to a DES-SERT message via dessert_msg_addext(), 
- * retrieved via dessert_msg_getext() and removed via dessert_msg_delext().
- *
- * @code
- *  int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, size_t len);
- *
- *  int dessert_msg_delext(dessert_msg_t *msg, dessert_ext_t *ext);
- *
- *  int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index);
- *
- * @endcode
- *
- * It is recommended not to put single data fields in extensions, but
- * combine semantically related data in a struct and attach this struct
- * as an extension because every extension introduces 16-bit overhead 
- * to the packet.
- *
- * The extension feature of DES-SERT can be used to add, modify, and delete
- * arbitrary data in a straight forward and easy way. You should try to
- * piggyback as much management data onto data packets to reduce the 
- * data traffic on the medium. Whatever information an extension will provide
- * is entirely up to you: MPLS-like labels, topology information, urgent information, ...
- *
- *  \image html piggybacking.png "Piggybacking of extensions in DES-SERT messages"
- *  \image latex piggybacking.eps "Piggybacking of extensions in DES-SERT messages" width=.6\linewidth
- *
- *
- * @subsection pipelines_subsec Processing Pipelines
- *
- * Routing algorithms are often split up in several parts like packet
- * validation, loop-detection or routing table lookup.
- * To implement these as independent and clear as possible, DES-SERT enables
- * you to split up your packet processing in as many parts as you like.
- *
- * There are two separate processing pipelines - one for packets received
- * from the kernel via a TUN or TAP interface (see ::dessert_sysif_t) and 
- * one for packets received via an interface used on the mesh network
- * (see ::dessert_meshif_t).
- *
- *  \image html pipelining.png "Pipelining in DES-SERT daemons"
- *  \image latex pipelining.eps "Pipelining in DES-SERT daemons" width=.6\linewidth
- *
- * You can register callback functions at these pipelines with
- * dessert_sysrxcb_add() or dessert_meshrxcb_add(). Both take an additional
- * integer argument ("priority") specifying the order the callbacks should
- * be called. Lower values represent a higher priority and thus an earlier position in
- * the pipeline. Thus a callback function represents a stage of a pipeline.
- *
- * @code
- *  int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio);
- *  int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
- *
- *  int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio);
- *  int dessert_meshrxcb_del(dessert_meshrxcb_t* c);
- * @endcode
- *
- * If a callback returns #DESSERT_MSG_KEEP the packed will be processed by
- * further callbacks, if it returns #DESSERT_MSG_DROP the message will be
- * dropped and no further callbacks will be called. In the latter case,
- * DES-SERT will free the memory.
- *
- * @subsection sparse_subsec Message Size Management
- *
- * When packets (IP datagrams or Ethernet frames) are received from user space,
- * they are automatically encapsulated in a DES-SERT message. The allocated memory
- * is of maximum size so that you can start to add extensions.
- *
- * Packets received from the network will probably have a smaller size and are
- * called "sparse" messages. If you need to add extensions or enlarge the payload 
- * of a message, you need to tell DES-SERT to enlarge the buffer for you. In sparse messages
- * the flag #DESSERT_FLAG_SPARSE is set. The buffer will be automatically 
- * enlarged by returning #DESSERT_MSG_NEEDNOSPARSE from the callback. After DES-SERT has
- * reallocated the memory the callback will be called again and the #DESSERT_FLAG_SPARSE 
- * will not be set anymore.
- *
- * @code
- *   if (proc->lflags & DESSERT_FLAG_SPARSE) {
- *       return DESSERT_MSG_NEEDNOSPARSE;
- *   }
- * @endcode
- *
- *
- * @subsection buffer_subsec Processing Buffer
- *
- * If you need to pass information along several callbacks in a pipeline, you can
- * use the processing buffer passed as parameter to the callbacks. This buffer contains
- * local processing flags ("lflags") set by the builtin callback dessert_msg_ifaceflags_cb()
- * (e.g. marking multicast messages or if you received a message sent by yourself due to a loop)
- * and 1KB space to pass along arbitrary data.
- *
- * @code
- *  typedef struct dessert_msg_proc {
- *      uint16_t    lflags;
- *      uint16_t    lreserved;
- *      char        lbuf[DESSERT_LBUF_LEN];
- *  } dessert_msg_proc_t;
- * @endcode
- *
- * This buffer is only be allocated after you explicitly request it. If the proc parameter
- * of a callback function is NULL, you can return the value
- * #DESSERT_MSG_NEEDMSGPROC to let DES-SERT automatically create the processing buffer.
- * The callback will be called again afterwards.
- *
- * @code
- *   if (proc == NULL) {
- *       return DESSERT_MSG_NEEDMSGPROC;
- *   }
- * @endcode
- *
- * The processing buffer can be cloned or destroyed if required.
- *
- * @code
- *  int dessert_msg_proc_clone(dessert_msg_proc_t **procnew, const dessert_msg_proc_t *procold);
- *  
- *  void dessert_msg_proc_destroy(dessert_msg_proc_t* proc);
- * @endcode
- *
- * Always remember that the processing buffer is only used for local processing. It is not 
- * part of the DES-SERT message and therefore will never be sent over the network.
- *
- * @section interfaces_sec Interfaces
- *
- * @subsection sysif_subsec Interfacing with the Kernel and User Space
- *
- * When developing a daemon you have to choose whether you like to use a TUN or 
- * TAP device to receive packets from user space. Packets received or sent via a TUN interface 
- * are IPv4/IPv6 datagrams; packets received or sent via TAP devices are Ethernet frames.
- * If you intend to implement a custom layer 2 to layer 3 mapping and minimize the overhead,
- * you should use a TUN interface.
  * 
- * Currently, you can only use a single sys respectively TUN/TAP interface.
- * The function dessert_sysif_init() enables to create the particular sys interface.
- * You must then set up the interface by calling "ifconfig".
- *
- * Please note that DES-SERT also provides a CLI callback for this task and that you
- * do not have to implement this feature yourself.
- *
- * @code
- *  int dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
- *  sprintf(buf, "ifconfig %s %s netmask %s mtu 1300 up", argv[0], argv[1], argv[2]);
- *  i = system(buf);
- * @endcode
- *
- * Packets received from the TUN/TAP interface will be
- * passed along the callbacks added by dessert_sysrxcb_add to the sys pipeline.
- * Each callack function will be called with a pointer to the DES-SERT message containing
- * the received data from layer 3 upwards as payload. In the case of a TAP interface, the 
- * data from the Ethernet header is copied into a DES-SERT Ethernet extension.
- *
- * Packets are sent to the user space via the kernel network stack with dessert_syssend.
- * Your lowest priority callback in the sys pipeline should always send packets to the
- * user space if the DES-SERT message was not dropped by higher priority callbacks. Even
- * when you make a mistake and the packet is not for this host, the kernel will probably drop
- * it for you.
- *
- * @code
- *  int dessert_syssend_msg(dessert_msg_t *msg);
- * @endcode
- *
- *
- * @subsection meshif_subsec Sending and Receiving Packets from the Network
- *
- * Mesh interfaces are used similar to the TUN/TAP interface with two major
- * differences: You can have multiple mesh interfaces and they send and
- * receive DES-SERT messages instead of Ethernet frames or IP datagrams.
- *
- * A mesh interface is added by dessert_meshif_add() and can be used to send 
- * DES-SERT messages with dessert_meshsend(). If the interface parameter is NULL, the
- * packet will be transmitted over every registered mesh interface (good for flooding).
- *
- * There are several functions to send DES-SERT messages. For further information please
- * refer to their descriptions.
- *
- * @code
- *  int dessert_meshif_add(const char* dev, uint8_t flags);
- *
- *  int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface);
- *
- *  int dessert_meshsend_hwaddr(const dessert_msg_t* msgin, const uint8_t hwaddr[ETHER_ADDR_LEN]);
- *
- *  int dessert_meshsend_allbutone(const dessert_msg_t* msgin, const dessert_meshif_t *iface);
- *
- *  int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface);
- *
- *  int dessert_meshsend_fast_hwaddr(dessert_msg_t* msg, const uint8_t hwaddr[ETHER_ADDR_LEN]);
- *
- *  int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, const dessert_meshif_t *iface);
- *
- *  int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface);
- * @endcode
- *
- * @section logging_sec Logging
- *
- * Log messages can be written by a bunch of macros: #dessert_debug, #dessert_info, 
- * #dessert_notice, #dessert_warn, #dessert_warning, #dessert_err, #dessert_crit,
- * #dessert_alert and #dessert_emerg. Each macro can be used like "printf" supporting 
- * the same syntax. The log messages can be written to Syslog, STDERR, a file or ringbuffer
- * depending on your configuration
- *
- * @code
- *  dessert_logcfg(DESSERT_LOG_DEBUG | DESSERT_LOG_NOSTDERR | DESSERT_LOG_SYSLOG | DESSERT_LOG_RBUF | DESSERT_LOG_FILE);
- * @endcode
- *
- * DES-SERT also ships with a custom #assert macro which acts like
- * the original macro from the standard C library and uses the logging
- * mechanism described above.
- *
- *
- * @section periodics_sec Periodics
- *
- * Periodics help you to perform maintenance or delayed tasks. A task
- * consists of a callback, which will be called at the time you requested.
- * The callback will be passed a void pointer to data that you specified at 
- * registration time. You can add tasks by calling dessert_periodic_add() or
- * dessert_periodic_add_delayed() or delete registered callbacks with dessert_periodic_del().
- * The data pointer may be NULL and you can optionally specify when the callback should
- * be called for the first time.
- *
- * @code
- *  uint16_t data = 0;
- *  struct timeval my_interval;
- *  my_interval.tv_sec = 2;
- *  my_interval.tv_usec = 0;
- *  dessert_periodic_add(my_periodic_function, &data, NULL, &my_interval);
- *  ...
- *  dessert_periodic_add(my_periodic_function);
- * @endcode
- *
- *
- * @section cli_sec Command Line Interface
- *
- * DES-SERT supports simple configuration and debugging of your routing
- * daemons by providing a Cisco like command line interface (CLI) and a config 
- * file parser based upon it.
- * The CLI is implemented based on <a href="http://code.google.com/p/libcli/">libcli</a>.
- *
- * DES-SERT does some basic initialization of the CLI provided by libcli.
- * The main CLI anchor dessert_cli and some anchors to add commands below in
- * the hierarchy "dessert_cli_.*". Because DES-SERT only loosely wraps libcli,
- * you should make yourself familiar with libcli.
- *
- * The command line interface is available via telnet on a specified port and 
- * started with dessert_cli_run().
- *
- * @subsection cli_conf_sec Daemon Configuration
- *
- * The daemon configuration makes also use of the CLI. Daemons are usually started with a
- * single parameter: the path and file name of the configuration file.
- * You can get a pointer configuration file with dessert_cli_get_cfg(). The function will
- * first try open the file specified as parameter and if this fails tries to open the
- * file /etc/DAEMON_NAME.conf. Give the returned FILE pointer to cli_file() which is provided 
- * by libcli to parse the configuration.
- *
- * @code
- *  FILE *cfg = dessert_cli_get_cfg(argc, argv);
- *  assert(cfg);
- *  ...
- *  cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
- *  dessert_cli_run();
- * @endcode
- *
- * @section all_sec  Putting it all together
- *
- * Now you have learned about the most important aspects of DES-SERT.
- * To write your own routing protocol implementation, you need to know
- * how to put all this together.
- *
- * You should start with a main() program parsing the command line options
- * and then calling "dessert_init()". This is needed to set up DES-SERT
- * correctly. Afterwards you can register callbacks, read the config file
- * and do what you like. If everything is set up, you call "dessert_run()"
- * and let the event based framework do its job.
- *
- * If you would like to see a complete protocol implementation sample,
- * have a look at the "gossiping" directory.
- *
+ * The documentation is structured in the following modules:
+ * - \ref Architecture "System Architecture and Concepts"
+ * - \ref DaemonUsage "How to use DES-SERT based Daemons"
+ * - \ref ExampleDaemon "A Simple Example Daemon"
+ * - \ref AdvTopics "Advanced Topics"
  *
  * @section feedback_sec Contact & Feedback
  *
  * We love feedback - if you have patches, comments or questions,
  * please contact us! Recent contact information is available on
  *         http://www.des-testbed.net/des-sert/
- *
  ******************************************************************************/
 
 #ifndef DESSERT_H
@@ -454,7 +95,7 @@
 
 /***************************************************************************//**
  *
- * @defgroup global G L O B A L   # D E F I N E S   and   T Y P E D E F S   /   S T R U C T U R E S
+ * @defgroup global Global #defines, typedefs, and structures
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -681,7 +322,7 @@ typedef struct dessert_periodic {
 /***************************************************************************//**
  * @}
  *
- * @defgroup core C O R E
+ * @defgroup core Core
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -737,7 +378,7 @@ void dessert_exit(void);
 /***************************************************************************//**
  * @}
  *
- * @defgroup cli C L I   -   C O M M A N D  _  L I N E  _  I N T E R F A C E
+ * @defgroup cli Command Line Interface
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -769,7 +410,7 @@ int dessert_set_cli_port(uint16_t port);
 /***************************************************************************//**
  * @}
  *
- * @defgroup log L O G  _  F A C I L I T Y
+ * @defgroup log Logging
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -839,7 +480,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 /***************************************************************************//**
  * @}
  *
- * @defgroup mesh M E S H   -   I N T E R F A C E S
+ * @defgroup mesh mesh Interfaces
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -905,7 +546,7 @@ dessert_meshif_t * dessert_meshiflist_get(void);
 /***************************************************************************//**
  * @}
  *
- * @defgroup sys S Y S   -   I N T E R F A C E S
+ * @defgroup sys sys Interfaces
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -943,7 +584,7 @@ int dessert_syssend(const void *pkt, size_t len);
 /***************************************************************************//**
  * @}
  *
- * @defgroup msg M E S S A G E  _  H A N D L I N G
+ * @defgroup msg Message Handling
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -1057,7 +698,7 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
 /***************************************************************************//**
  * @}
  *
- * @defgroup periodic P E R I O D I C  _  T A S K S
+ * @defgroup periodic Periodic Tasks
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -1071,7 +712,7 @@ int dessert_periodic_del(dessert_periodic_t *p);
 /***************************************************************************//**
  * @}
  *
- * @defgroup agentx NET  -  S N M P   //   A G E N T _ X
+ * @defgroup agentx net-snmp & AgentX
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -1347,7 +988,7 @@ int dessert_agentx_appparams_del(dessert_agentx_appparams_cb_entry_t *e);
 /**************************************************************************//**
  * @}
  *
- * @defgroup macros U S E F U L L  _  MA C R O S
+ * @defgroup macros Macros
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -1435,7 +1076,7 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
 /**************************************************************************//**
  * @}
  *
- * @defgroup callbacks U S E F U L L  _  C A L L B A C K S
+ * @defgroup callbacks Callbacks
  *
  * @brief EXTERNAL / PUBLIC
  *

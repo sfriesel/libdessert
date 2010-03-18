@@ -1,0 +1,160 @@
+/**  \addtogroup ExampleDaemon
+ *
+ * This modules provides an example daemon based on DES-SERT and explains the 
+ * most important parts.
+ *
+ * @section sec_example_1 The Essentials
+ *
+ * For the most barebone implementation, let us consider it our "Hello World", 
+ * you just need to include the headers of dessert and libcli and have provide
+ * a common C main function.
+ *
+ * To make it a real DES-SERT daemon dessert_init() has to be called with a 
+ * four byte name of the protocol, an 8 bit version number, and some option flags,
+ * e.g., to daemonize the program. dessert_run() start the main thread of the 
+ * daemon.
+ *
+ * The CLI should also usually be initialized by init_cli() and started with 
+ * dessert_cli_run().
+ *
+ * @code
+ * #include <dessert.h>
+ * #include <libcli.h>
+ *
+ * int main (int argc, char** argv) {
+ *    dessert_init("expl", 0x05, DESSERT_OPT_DAEMONIZE); 
+ *    init_cli(); 
+ *    dessert_cli_run();
+ *    dessert_run();
+ *    return (0);
+ * }
+ * @endcode
+ *
+ * @section sec_example_ifaces Adding Interfaces
+ *
+ * Right now the daemon cannot receive or send any packets. Interfaces
+ * have to be added. For this task DES-SERT already provides particular
+ * CLI commands that just have to be registered.
+ *
+ * We register the dessert_cli_cmd_addsysif() and 
+ * dessert_cli_cmd_addmeshif() functions at the dessert_cli_cfg_iface anchor.
+ * All commands registered with this anchor have to be prefixed by
+ * the word "interface" in the the CLI.
+ * @code
+ *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys", dessert_cli_cmd_addsysif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys interface");
+ *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh", dessert_cli_cmd_addmeshif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize mesh interface");
+ * @endcode
+ * dessert_cli_cfg_iface is registered by dessert_init as a root anchor that
+ * is usable in the privileged mode. <a href="http://code.google.com/p/libcli/">libcli</a> is inspired by
+ * the <a href="http://www.cisco.com/en/US/docs/ios/12_0/configfun/configuration/guide/fcui.html">Cisco IOS command line interface</a>
+ * and provides the following modes:
+ * - User Mode 
+ * - Privileged Mode 
+ * - global configuration mode
+ *
+ * You should read the <a href="http://code.google.com/p/libcli/">libcli</a> documentation but for know it suffices to know
+ * that you can enter privileged mode with "enable" and global configuration
+ * mode with "configure terminal" when you are connected with telnet.
+ *
+ * Now you can use telnet to connect to the compile daemon and add sys and mesh interfaces as follows:
+ * @code
+ * interface sys tap0 10.0.0.1 255.255.255.0
+ * interface mesh eth0
+ * @endcode
+ * Most often you will not configure the interfaces by hand but let it be 
+ * configured automatically (see \ref DaemonUsage "How to use DES-SERT based Daemons").
+ *
+ * @section sec_example_packets Handling Packets
+ *
+ * Although the daemon can receive packets from the network (mesh) interfaces or the
+ * TAP (sys) interfase, they are not handled and thus dropped. We have to add at least
+ * a callback function that sends packets that are received via the TAP interface
+ * over all registered network interfaces and a function that sends packets
+ * received from the network interfaces to the user space via the TAP interface.
+ *
+ *
+ * @section sec_example_missing What You Did Not Learn
+ *
+ * Because this was a very basic introduction in how to implement daemons 
+ * with DES-SERT, some topics are missing:
+ * - removing registered interfaces
+ * - multiple callbacks in the sys and mesh pipeline
+ * - using the processsing buffer
+ * - reallocating sparse DES-SERT messages
+ * - using a password for the CLI
+ * - using a TUN interface
+ *
+ * This information will be added to the documentation in the next releases.
+ *
+ * @section sec_example_complete The Complete Example
+ *
+ * @code
+ * #include <stdio.h>
+ * #include <string.h>
+ * #include <dessert.h>
+ * #include <libcli.h>
+ *
+ * struct cli_command *cli_cfg_set;
+ *
+ * typedef struct __attribute__((__packed__)) _my_extension {
+ *    uint8_t value1;
+ *    uint16_t value2;
+ *    char char1;
+ * } my_extension;
+ *
+ * enum extensions {
+ *    EXAMPLE_EXT_1 = DESSERT_EXT_USER,
+ *    EXAMPLE_EXT_2
+ * };
+ *
+ * void init_cli() {
+ *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys", dessert_cli_cmd_addsysif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys interface");
+ *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh", dessert_cli_cmd_addmeshif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize mesh interface");
+ * }
+ *
+ *
+ * int toMesh(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *tunif, dessert_frameid_t id) {
+ *    my_extension *mext = NULL;
+ *    dessert_ext_t *ext = NULL;
+ *    dessert_msg_addext(msg, &ext, EXAMPLE_EXT_1, sizeof(my_extension));
+ *    mext = (my_extension*) &(ext->data);
+ *    mext->value1 = 123;
+ *    mext->value2 = 45678;
+ *    mext->char1 = 'X';
+ *    dessert_meshsend(msg, NULL);
+ *   return DESSERT_MSG_DROP;
+ * }
+ *
+ * int toSys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+ *    struct ether_header *eth;
+ *    size_t eth_len;
+ *
+ *    if ( proc->lflags & DESSERT_LFLAG_DST_SELF ||
+ *            proc->lflags & DESSERT_LFLAG_DST_BROADCAST ||
+ *            proc->lflags & DESSERT_LFLAG_DST_MULTICAST ) {
+ *        eth_len = dessert_msg_ethdecap(msg, &eth);
+ *        dessert_syssend(eth, eth_len);
+ *        free(eth);
+ *    }
+ *
+ *    return DESSERT_MSG_KEEP;
+ * }
+ *
+ * int main (int argc, char** argv) {
+ *    FILE *cfg = dessert_cli_get_cfg(argc, argv);
+ *   
+ *    dessert_init("expl", 0x05, DESSERT_OPT_DAEMONIZE); 
+ *    dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
+ *
+ *    dessert_sysrxcb_add(toMesh, 100);
+ *    dessert_meshrxcb_add(toSys, 100);
+ *
+ *    init_cli(); 
+ *    cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
+ *    dessert_cli_run();
+ *
+ *    dessert_run();
+ *    return (0);
+ * }
+ * @endcode
+ */

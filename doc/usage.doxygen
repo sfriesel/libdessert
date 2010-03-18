@@ -1,0 +1,5 @@
+/**  \addtogroup DaemonUsage
+ *
+ * This modules provides information on how to use DES-SERT based Daemons.
+ *
+ * @section sec_usage_confs Configuration Files

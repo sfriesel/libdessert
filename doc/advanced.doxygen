@@ -1,0 +1,15 @@
+/**  \addtogroup AdvTopics
+ *
+ * This modules provides information on advanced topics.
+ *
+ * @section sec_adv_cli Custom CLI Commands
+ *
+ * First of all we create a "set" CLI anchor. This means all commands
+ * that are registered with this anchor have to be prefixed by the word
+ * "set" when entered in the CLI. As adding interfaces is a critical task,
+ * it should only be allowed in the privileged mode.  
+ *
+ * @code
+ *    cli_cfg_set = cli_register_command(dessert_cli, NULL, "set", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set variable");
+ * @endcode
+ */
