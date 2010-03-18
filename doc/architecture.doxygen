@@ -1,4 +1,6 @@
-/**  \addtogroup Architecture
+/**
+ * \ingroup Manual
+ * \addtogroup Architecture
  *
  * This modules describes the general architecture of DES-SERT, the core concepts, and features that are provided.
  *

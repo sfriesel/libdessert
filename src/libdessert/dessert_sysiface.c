@@ -294,7 +294,7 @@ int dessert_sysrxcb_del(dessert_sysrxcb_t* c) {
 
 }
 
-/** sends a packet via tun/tap interface to the kernel
+/** Send a DES-SERT Message via TUN/TAP
  * @arg *msg message to send
  * @return DESSERT_OK   on success
  * @return -EIO         if message failed to be sent
@@ -320,7 +320,7 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
     return DESSERT_OK;  
 }
 
-/** sends a packet via tun/tap interface to the kernel
+/** Send any type of packet via TUN/TAP
  * @arg *eth message to send
  * @arg len length of message to send
  * @return DESSERT_OK   on success

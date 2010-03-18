@@ -1,5 +1,7 @@
 /**
  * \defgroup libdessert DES-SERT Library
+ * \defgroup Manual
+ *
  * \defgroup DaemonUsage How to use DES-SERT based Daemons
  * \defgroup ExampleDaemon A Simple Example Daemon
  * \defgroup Architecture Architecture and Concepts of DES-SERT

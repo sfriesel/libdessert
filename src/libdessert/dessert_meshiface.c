@@ -639,7 +639,7 @@ int dessert_meshif_del(const char* dev) {
 /** Initializes given mesh interface, starts up the packet processor thread.
 
  * @param[in] *dev interface name
- * @param[in] flags @todo Document the flags parameter.
+ * @param[in] flags { #DESSERT_IF_PROMISC, #DESSERT_IF_NOPROMISC, #DESSERT_IF_FILTER, #DESSERT_IF_NOFILTER }
  *
  * @retval DESSERT_OK   on success
  * @retval DESSERT_ERR  on error

@@ -1,4 +1,6 @@
-/**  \addtogroup DaemonUsage
+/**
+ * \ingroup Manual
+ * \addtogroup DaemonUsage
  *
  * This modules provides information on how to use DES-SERT based Daemons.
  *
@@ -43,7 +45,7 @@
  *   IFACE=eth0
  * @endcode
  *
- * @section sec_usage_init System V Init Script
+ * @section sec_usage_init Init Script
  *
  * DES-SERT daemons should provide an init script to start and stop the daemon.
  * The example script provided in the des-example package additionally
@@ -66,6 +68,59 @@
  *
  * @section sec_usage_telnet Accessing the CLI
  *
- * You can use the telnet program or similar applications or libraries to get
- * access to the CLI.
+ * You can use a telnet program or similar applications and libraries to get
+ * access to the CLI. The default TCP port is 4519 (4=D, 5=E, 19=S). The "help"
+ * command lists all commands that are available in the current mode and you can
+ * push TAB for auto-completion.
+ *
+ * @code
+ *  user@host:~$ telnet localhost 4519
+ *  Trying 127.0.0.1...
+ *  Connected to localhost.
+ *  Escape character is '^]'.
+ *  
+ *  host:XYZ> help
+ *  
+ *  Commands available:
+ *  help                 Show available commands
+ *  quit                 Disconnect
+ *  logout               Disconnect
+ *  exit                 Exit from current mode
+ *  history              Show a list of previously run commands
+ *  enable               Turn on privileged commands
+ *  show dessert-info    Display information about this program.
+ *  show logging         show logging ringbuffer
+ *  show meshifs         Print list of registered interfaces used by the daemon.
+ *  show sysif           Print the name of the TUN/TAP interface used as system interface.
+ *  show threshold       show treshold
+ *  
+ *  host:XYZ>
+ * @endcode
+ * XYZ is the name of the particular daemon.
+ *
+ * For in-detail information how the CLI is used, have a look at the <a href="http://code.google.com/p/libcli/wiki/">libcli Wiki</a>.
+ * 
+ * @subsection sec_usage_telnet_troubles Troubleshooting
+ *
+ * In some scenarios, telnet cannot connect to the configured TCP port of the CLI.
+ * @code
+ *  user@host:~$ telnet localhost 4519                                           
+ *  Trying 127.0.0.1...                                                                                                                   
+ *  telnet: Unable to connect to remote host: Connection refused   
+ * @endcode
+ *
+ * Have a look at the log file and chech if the daemon is running. If everything
+ * seems to be right, the problem might be due to some misconfiguration.
+ * In newer Linux distribution the bind syscall of the daemon with the 
+ * parameters AF_INET6 and SOCK_STREAM will result only in binding to a IPv6
+ * socket. You can either replace "localhost" by "::1" for the address parameter
+ * of telnet or change the kernel setting with sysctl.
+ * @code
+ *  user@host:~$ telnet ::1 4519
+ * @endcode
+ *
+ * @code
+ *  user@host:~$ sysctl -w net.ipv6.bindv6only=0
+ * @endcode
+ * The configuration can be set at boot time when configured in /etc/sysctl.conf.
  */

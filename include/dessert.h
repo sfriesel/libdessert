@@ -133,7 +133,12 @@
 /** runtime-unique frame id */
 typedef uint64_t dessert_frameid_t;
 
-/** A basic message send on des-sert layer2.5. */
+/** Structure of the DES-SERT Message
+ *
+ * All packets sent over a network using DES-SERT based routing daemons
+ * are encapsulated in a DES-SERT message which can be considered the
+ * layer 2.5 header.
+ */
 typedef struct __attribute__ ((__packed__)) dessert_msg {
 	/** the layer2 header on the wire */
 	struct     ether_header l2h;
@@ -161,7 +166,13 @@ typedef struct __attribute__ ((__packed__)) dessert_msg {
     uint16_t   plen;
 } dessert_msg_t;
 
-/** local processing struct for dessert_msg_t */
+/** Processing buffer for a dessert_msg_t
+ *
+ * Each sys or mesh callback has a pointer to a processing buffer structure
+ * that can be used for signaling information.
+ *
+ * See also the @ref sparse_subsec section in the manual.
+ */
 typedef struct dessert_msg_proc {
     /** 16 bits for local processing flags */
     uint16_t    lflags;
@@ -1047,7 +1058,22 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
         }                                      \
     } while(0)
 
+/** Branch prediction optimization macros
+ *
+ * You can give the compiler a hint if it is likely
+ * or unlikely that a particular condition will
+ * apply. In this way the branch prediction
+ * can be optimized.
+ */
 #define likely(x)       (__builtin_expect((x),1))
+
+/** Branch prediction optimization macros
+ *
+ * You can give the compiler a hint if it is likely
+ * or unlikely that a particular condition will
+ * apply. In this way the branch prediction
+ * can be optimized.
+ */
 #define unlikely(x)     (__builtin_expect((x),0))
 
 #define __dessert_assert(func, file, line, e) \
@@ -1084,6 +1110,7 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
  ******************************************************************************/
  
 int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_cli_cmd_addsysif_tun(struct cli_def *cli, char *command, char *argv[], int argc);
 int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
 
 int dessert_cli_cmd_ping(struct cli_def *cli, char *command, char *argv[], int argc);

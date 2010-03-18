@@ -1,4 +1,6 @@
-/**  \addtogroup ExampleDaemon
+/**
+ * \ingroup Manual
+ * \addtogroup ExampleDaemon
  *
  * This modules provides an example daemon based on DES-SERT and explains the 
  * most important parts.
@@ -175,13 +177,13 @@
  *
  * Because this was a very basic introduction in how to implement daemons 
  * with DES-SERT, some topics are available in other modules:
- * - removing registered interfaces
+ * - \ref sec_ifaces_rm
  * - multiple callbacks in the sys and mesh pipeline
  * - advanced usage of the processsing buffer
- * - \ref sparse_subsec "reallocating sparse DES-SERT messages"
- * - \ref sec_adv_cli "adding custom CLI commands"
- * - <a href="http://code.google.com/p/libcli/wiki/DevelopersReference">using CLI passwords</a>
- * - using a TUN interface
+ * - \ref sparse_subsec
+ * - \ref sec_adv_cli
+ * - <a href="http://code.google.com/p/libcli/wiki/DevelopersReference">Using CLI passwords</a>
+ * - \ref sec_adv_tun
  * - forwarding and routing
  * - retrieving DES-SERT extensions
  * - writing Wireshark dissectors

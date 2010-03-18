@@ -28,6 +28,7 @@
 
 // adding interfaces
 int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_cli_cmd_addsysif_tun(struct cli_def *cli, char *command, char *argv[], int argc)
 int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
 
 // ping

@@ -25,7 +25,15 @@
 
 #include "dessert.h"
 
-/** CLI command - config mode - interface sys $iface, $ipv4-addr, $netmask */
+/** MTU for interface configuration */
+#define DESSERT_DEFAULT_MTU 1300
+
+/** CLI command, add TAP interface in config mode
+ *
+ * This callback can be used to create a TAP device as sys interface.
+ *
+ * COMMAND: interface sys $iface, $ipv4-addr, $netmask
+ */
 int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
     char buf[255];
     int i;
@@ -37,10 +45,34 @@ int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], i
     }
     dessert_info("initializing sys interface");
     dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
-    sprintf(buf, "ifconfig %s %s netmask %s mtu 1300 up", argv[0], argv[1],
-            argv[2]);
+    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1],
+            argv[2], DESSERT_DEFAULT_MTU);
     i = system(buf);
-    dessert_info("running ifconfig on sys interface returned %i", i);
+    dessert_info("ifconfig on sys interface returned %i", i);
+    return (i == 0 ? CLI_OK : CLI_ERROR);
+}
+
+/** CLI command, add TUN interface in config mode
+ *
+ * This callback can be used to create a TUN device as sys interface.
+ *
+ * COMMAND: interface sys $iface, $ipv4-addr, $netmask
+ */
+int dessert_cli_cmd_addsysif_tun(struct cli_def *cli, char *command, char *argv[], int argc) {
+    char buf[255];
+    int i;
+
+    if (argc != 3) {
+        cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask]\n",
+                command);
+        return CLI_ERROR;
+    }
+    dessert_info("initializing sys interface");
+    dessert_sysif_init(argv[0], DESSERT_TUN | DESSERT_MAKE_DEFSRC);
+    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1],
+            argv[2], DESSERT_DEFAULT_MTU);
+    i = system(buf);
+    dessert_info("ifconfig on sys interface returned %i", i);
     return (i == 0 ? CLI_OK : CLI_ERROR);
 }
 
