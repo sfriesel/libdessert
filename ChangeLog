@@ -1,3 +1,6 @@
+20100319 - 0.92
+	- Updated, restructured, and extended documentation
+
 20100214 - 0.91
     - libtool version = 1.1.0
     - Added some code from several daemons in src/callbacks dir for general usage
