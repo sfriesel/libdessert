@@ -10,7 +10,7 @@ include doxygen-include.am
 
 DISSECTORS = dissectors/dessert.lua dissectors/dessert-ext-eth.lua dissectors/dessert-ext-ping.lua dissectors/dessert-ext-trace.lua
 MIBS = DESSERT-MIB.txt
-EXTRA_DIST = autogen.sh DES-SERT.doxyfile doxygen/html images/*.png images/*.eps $(MIBS) $(DISSECTORS)
+EXTRA_DIST = autogen.sh DES-SERT.doxyfile doxygen/html doc/*.doxygen doc/style/*.css doc/style/*.html doc/style/images/*.png doc/style/images/*.gif doc/style/images/*.eps $(MIBS) $(DISSECTORS)
 
 install-data-local: install-mibs install-dissectors
 

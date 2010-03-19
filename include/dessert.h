@@ -32,8 +32,8 @@
  *
  * @mainpage DES-SERT
  *
- *  \image html dessert.png "DES-SERT"
- *  \image latex dessert.eps "DES-SERT" width=.7\linewidth
+ *  \image html dessert.png
+ *  \image latex dessert.eps width=.7\linewidth
  *
  * @section intro_sec Introduction
  *
@@ -52,6 +52,12 @@
  * used in DES-Mesh (http://www.des-testbed.net/), the multi-transceiver
  * wireless mesh network testbed part of the DES-Testbed at Freie 
  * Universitaet Berlin, Germany.
+ *
+ * @section dessert_naming Naming Convention
+ *
+ * The official name of the project is <i>DES-SERT</i>. The library is called 
+ * <i>libdessert</i> and the provided function and members are prefixed with
+ * <i>dessert</i>.
  *
  * @section dessert_sec Content of the Documentation
  *
