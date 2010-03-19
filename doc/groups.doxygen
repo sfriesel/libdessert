@@ -1,6 +1,6 @@
 /**
  * \defgroup libdessert DES-SERT Library
- * \defgroup Manual
+ * \defgroup Manual Manual
  *
  * \defgroup DaemonUsage How to use DES-SERT based Daemons
  * \defgroup ExampleDaemon A Simple Example Daemon

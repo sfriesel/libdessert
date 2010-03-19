@@ -2,7 +2,7 @@
  * \ingroup Manual
  * \addtogroup ExampleDaemon
  *
- * This modules provides an example daemon based on DES-SERT and explains the 
+ * This module provides an example daemon based on DES-SERT and explains the 
  * most important parts.
  *
  * @section sec_example_1 The Essentials

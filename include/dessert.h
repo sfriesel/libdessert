@@ -1128,4 +1128,6 @@ int dessert_tx_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *pro
 int dessert_rx_drop_tap(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
 int dessert_rx_drop_tun(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id); 
 
+/** @} */
+
 #endif /* DESSERT_H*/

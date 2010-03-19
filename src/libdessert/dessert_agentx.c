@@ -214,7 +214,8 @@ void dessert_agentx_appparam_destroy(dessert_agentx_appparams_t *appparam) {
 
 /** Adds an application parameter callback.
  *
- * @param[in] *c the callback to add
+ * @param[in] *get getter function
+ * @param[in] *set setter function
  *
  * @retval pointer to the corresponding callback entry on success
  * @retval NULL otherwise
