@@ -23,6 +23,8 @@
         http://www.des-testbed.net/
 *******************************************************************************/
 
+#include <dessert.h>
+
 #ifndef DESSERT_CALLBACKS_H
 #define DESSERT_CALLBACKS_H
 
