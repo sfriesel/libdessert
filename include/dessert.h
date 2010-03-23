@@ -712,6 +712,8 @@ int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *pro
 int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
 int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *riface, dessert_frameid_t id);
 
+int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen);
+
 /***************************************************************************//**
  * @}
  * @ingroup libdessert

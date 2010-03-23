@@ -819,6 +819,62 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len,
 	return DESSERT_MSG_KEEP;
 }
 
+/** dump packet trace to string
+ * @arg *msg dessert_msg_t message used for tracing
+ * @arg type DESSERT_EXT_TRACE_REQ or DESSERT_EXT_TRACE_RPL
+ * @arg *buf char buffer to place string
+ *           use DESSERT_MSG_TRACE_HOST to only record default mac of hosts on the way
+ *           use DESSERT_MSG_TRACE_IFACE to also trace input interface and last hop
+ * @return length of the string - 0 if msg has no trace header, -1 if wrong type
+ **/
+int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen) {
+
+    dessert_ext_t *ext;
+    int x, i = 0;
+    if(type != DESSERT_EXT_TRACE_REQ
+      || type != DESSERT_EXT_TRACE_RPL)
+      return -1;
+
+#define _dessert_msg_trace_dump_append(...) snprintf(buf+strlen(buf), blen-strlen(buf), __VA_ARGS__)
+
+    x = dessert_msg_getext(msg, &ext, type, 0);
+    if (x < 1)
+        return 0;
+
+    _dessert_msg_trace_dump_append("\tpacket trace:\n");
+    _dessert_msg_trace_dump_append("\t\tfrom %02x:%02x:%02x:%02x:%02x:%02x\n",
+            ext->data[0], ext->data[1], ext->data[2],
+            ext->data[3], ext->data[4], ext->data[5]);
+
+    if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
+        _dessert_msg_trace_dump_append("\t\t  received on   %02x:%02x:%02x:%02x:%02x:%02x\n",
+                ext->data[6], ext->data[7], ext->data[8],
+                ext->data[9], ext->data[10], ext->data[11]);
+        _dessert_msg_trace_dump_append("\t\t  l2.5 src     %02x:%02x:%02x:%02x:%02x:%02x\n",
+                ext->data[12], ext->data[13], ext->data[14],
+                ext->data[15], ext->data[16], ext->data[17]);
+    }
+
+    for (i = 1; i < x; i++) {
+        dessert_msg_getext(msg, &ext, type, i);
+        _dessert_msg_trace_dump_append("\t\t#%3d %02x:%02x:%02x:%02x:%02x:%02x\n", i,
+                ext->data[0], ext->data[1], ext->data[2],
+                ext->data[3], ext->data[4], ext->data[5]);
+
+        if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
+            _dessert_msg_trace_dump_append("\t\t  received from  %02x:%02x:%02x:%02x:%02x:%02x\n",
+                    ext->data[12], ext->data[13], ext->data[14],
+                    ext->data[15], ext->data[16], ext->data[17]);
+            _dessert_msg_trace_dump_append("\t\t  receiving meshif  %02x:%02x:%02x:%02x:%02x:%02x\n",
+                    ext->data[6], ext->data[7], ext->data[8],
+                    ext->data[9], ext->data[10], ext->data[11]);
+        }
+    }
+
+    return strlen(buf);
+}
+
+
 /******************************************************************************
  *
  * INTERNAL / PRIVATE
