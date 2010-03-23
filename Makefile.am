@@ -6,7 +6,7 @@ SUBDIRS = include src
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libdessert.pc
 
-include doxygen-include.am
+include doc/doxygen-include.am
 
 DISSECTORS = dissectors/dessert.lua dissectors/dessert-ext-eth.lua dissectors/dessert-ext-ping.lua dissectors/dessert-ext-trace.lua
 MIBS = DESSERT-MIB.txt
