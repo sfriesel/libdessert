@@ -56,8 +56,8 @@
  * @section dessert_naming Naming Convention
  *
  * The official name of the project is <i>DES-SERT</i>. The library is called 
- * <i>libdessert</i> and the provided function and members are prefixed with
- * <i>dessert</i>.
+ * <i>libdessert</i> and the provided functions and members are prefixed with
+ * the string <i>dessert</i>.
  *
  * @section dessert_sec Content of the Documentation
  *

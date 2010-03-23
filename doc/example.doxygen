@@ -8,12 +8,12 @@
  * @section sec_example_1 The Essentials
  *
  * For the most barebone implementation, let us consider it our "Hello World", 
- * you just need to include the headers of dessert and libcli and have provide
+ * you just need to include the headers of DES-SERT and libcli and have provide
  * a common C main function.
  *
  * To make it a real DES-SERT daemon dessert_init() has to be called with a 
  * four byte name of the protocol, an 8 bit version number, and some option flags,
- * e.g., to daemonize the program. dessert_run() start the main thread of the 
+ * e.g., to daemonize the program. dessert_run() starts the main thread of the 
  * daemon.
  *
  * The CLI should also usually be initialized by init_cli() and started with 
@@ -34,9 +34,9 @@
  *
  * @section sec_example_ifaces Adding Interfaces
  *
- * Right now the daemon cannot receive or send any packets. Interfaces
+ * Right now the daemon cannot receive or send any packets: interfaces
  * have to be added. For this task DES-SERT already provides particular
- * CLI commands that just have to be registered.
+ * CLI commands in libdessert-extra that just have to be registered.
  *
  * We register the dessert_cli_cmd_addsysif() and 
  * dessert_cli_cmd_addmeshif() functions at the dessert_cli_cfg_iface anchor.
@@ -46,8 +46,8 @@
  *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys", dessert_cli_cmd_addsysif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys interface");
  *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh", dessert_cli_cmd_addmeshif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize mesh interface");
  * @endcode
- * dessert_cli_cfg_iface is registered by dessert_init as a root anchor that
- * is usable in the privileged mode. <a href="http://code.google.com/p/libcli/">libcli</a> is inspired by
+ * dessert_cli_cfg_iface is registered by dessert_init() as a root anchor that
+ * can be used in the privileged mode. <a href="http://code.google.com/p/libcli/">libcli</a> is inspired by
  * the <a href="http://www.cisco.com/en/US/docs/ios/12_0/configfun/configuration/guide/fcui.html">Cisco IOS command line interface</a>
  * and provides the following modes:
  * - User Mode 
@@ -55,32 +55,33 @@
  * - global configuration mode
  *
  * You should read the <a href="http://code.google.com/p/libcli/">libcli</a> documentation but for know it suffices to know
- * that you can enter privileged mode with "enable" and global configuration
+ * that you can enter the privileged mode with "enable" and the global configuration
  * mode with "configure terminal" when you are connected with telnet.
  *
- * Now you can use telnet to connect to the compile daemon and add sys and mesh interfaces as follows:
+ * Now you can use telnet to connect to the compiled daemon and add sys and mesh interfaces as follows:
  * @code
  * interface sys tap0 10.0.0.1 255.255.255.0
  * interface mesh eth0
  * @endcode
- * Most often you will not configure the interfaces by hand but let it be 
- * configured automatically (see \ref DaemonUsage "How to use DES-SERT based Daemons" and \ref sec_example_conf "Parsing Configuration Files").
+ * Most often you will not configure the interfaces by hand but make use of
+ * the automatic configuration (see \ref DaemonUsage "How to use DES-SERT based Daemons" and \ref sec_example_conf "Parsing Configuration Files").
  *
  * @section sec_example_packets Handling Packets
  *
  * Although the daemon can receive packets from the network (mesh) interfaces or the
- * TAP (sys) interfase, they are not handled and thus dropped. We have to add at least
- * a callback function that sends packets that are received via the TAP interface
- * over all registered network interfaces and a function that sends packets
+ * TAP (sys) interface, they are not handled and thus dropped. We have to add at least
+ * a sys callback that sends packets that are received via the TAP interface
+ * over all registered network interfaces and a mesh callback that sends packets
  * received from the network interfaces to the user space via the TAP interface.
- * sys and mesh callbacks have to have the prototypes ::dessert_sysrxcb_t and ::dessert_meshrxcb_t.
+ * sys and mesh callbacks the prototypes ::dessert_sysrxcb_t and ::dessert_meshrxcb_t.
  * In this example the sys callback is named toSys and the mesh callback toMesh.
  *
  * The mesh callback gets a pointer to the DES-SERT message that already 
  * contains the received Ethernet frame. The message is send with dessert_meshsend()
  * over all registered mesh interfaces because the interface parameter is NULL.
  * The callback returns #DESSERT_MSG_DROP and signals DES-SERT to delete the message
- * and free the memory.
+ * and free the memory; we assume that we do not want to do anything with the DES-SERT
+ * message after it has been sent.
  * @code
  *  int toMesh(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *tunif, dessert_frameid_t id) {
  *      dessert_meshsend(msg, NULL);
@@ -88,18 +89,18 @@
  *  }
  * @endcode
  *
- * The sys callback gets a pointer to the DES-SERT message that was received over
- * the network. The iface parameter is a pointer to the dessert_meshif_t that
- * actually received the DES-SERT message. In this function we assume that the 
+ * The sys callback gets a pointer to a DES-SERT message that was received over
+ * the network. The iface parameter is a pointer to the ::dessert_meshif_t that
+ * received the DES-SERT message. In this function we assume that the
  * dessert_msg_ifaceflags_cb() callback was registered with higher priority than toSys.
  * Thus the proc pointer will point to a valid processing buffer and the lflags
  * can be used to differentiate message types. When the message is destined
- * to the daemon that received the message and if it is not a broadcast or
- * multicast, than the Ethernet frame is decapsulated and send to the TAP
- * interface via dessert_syssend(). #DESSERT_MSG_KEEP is returned to let
+ * to the host and if it is not a broadcast or
+ * multicast, than the Ethernet frame is decapsulated and sent to over the TAP
+ * interface via dessert_syssend() to user space. #DESSERT_MSG_KEEP is returned to let
  * lower priority callbacks continue to handle the DES-SERT message. This it not
- * the case in this example but you could dump all messages to the
- * log in another sys callback function.
+ * the case in this example but you could for example dump all messages to the
+ * log in a lower priority sys callback.
  * @code
  *  int toSys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
  *      struct ether_header *eth;
@@ -116,12 +117,19 @@
  *  }
  * @endcode
  *
+ * The last step is to register the callbacks for the particular pipelines.
+ * @code
+ *  dessert_sysrxcb_add(toMesh, 50);
+ *  dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
+ *  dessert_meshrxcb_add(toSys, 50);
+ * @endcode
+ *
  * Now you can send a packet from host A to host B when they have a link to
  * each other.
  *
  * @section sec_example_ext Extensions
  *
- * Consider we want to piggyback some data when packets are received from
+ * Consider you want to piggyback some data when packets are received from
  * the sys interface and send over the network. First of all we should
  * create an enumeration as follows:
  * @code
@@ -130,9 +138,9 @@
  *      EXAMPLE_EXT_2
  *  };
  * @endcode
- * The first entry gets the first value that can be assigned as type value to
+ * The first entry gets the lowest value that can be assigned as type to
  * user provided extensions. Extension types are specific to a particular
- * protocol therefore you can use any value => #DESSERT_EXT_USER as you
+ * protocol, therefore you can use any value => #DESSERT_EXT_USER as you
  * like.
  *
  * Extensions should normally contain a C-struct. Always use the __packed__
@@ -148,6 +156,9 @@
  *
  * The extension can be added in any callback. In this example we add it
  * to messages in the toMesh callback.
+ * dessert_msg_addext() adds a message to a DES-SERT message with
+ * the specified type and size and returns a pointer to the allocated
+ * memory via the second parameter (&ext in this example).
  * @code
  * my_extension *mext = NULL;
  * dessert_ext_t *ext = NULL;
@@ -157,9 +168,6 @@
  * mext->value2 = 45678;
  * mext->char1 = 'X';
  * @endcode
- * dessert_msg_addext() adds a message to a DES-SERT message with
- * the specified type and size and returns a pointer to the allocated
- * memory via the second parameter (&ext in this example).
  *
  * @section sec_example_conf Parsing Configuration Files
  *
@@ -167,7 +175,7 @@
  * configuration file. dessert_cli_get_cfg() tries to open the
  * file provided as parameter to the daemon and if this fail tries
  * to open /etc/DAEMON_NAME.conf. cli_file() parses the file. You
- * should include an assert to check whether cfg is a NULL pointer.
+ * should include an #assert to check whether cfg is a NULL pointer.
  * @code
  *  FILE *cfg = dessert_cli_get_cfg(argc, argv);
  *  cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
@@ -175,7 +183,7 @@
  *
  * @section sec_example_missing What You Did Not Learn
  *
- * Because this was a very basic introduction in how to implement daemons 
+ * Because this was a very basic introduction in how to implement daemons
  * with DES-SERT, some topics are available in other modules:
  * - \ref sec_ifaces_rm
  * - multiple callbacks in the sys and mesh pipeline
@@ -189,8 +197,8 @@
  * - writing Wireshark dissectors
  * - providing OIDs via AgentX to an SNMP agent
  *
- * If there is not link to a topic this information will be added to the
- * documentation in the later releases.
+ * If there is not link to a topic, the corresponding information will be added to the
+ * documentation in later releases.
  *
  * @section sec_example_complete The Complete Example
  *
@@ -252,9 +260,9 @@
  *    dessert_init("expl", 0x05, DESSERT_OPT_DAEMONIZE); 
  *    dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
  *
- *    dessert_sysrxcb_add(toMesh, 100);
+ *    dessert_sysrxcb_add(toMesh, 50);
  *    dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
- *    dessert_meshrxcb_add(toSys, 100);
+ *    dessert_meshrxcb_add(toSys, 50);
  *
  *    init_cli(); 
  *    cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);

@@ -6,7 +6,7 @@
  *
  * @section sec_usage_confs Configuration Files
  *
- * DES-SERT should normally provide the following configuration files:
+ * All DES-SERT daemons should provide the following configuration files:
  * - /etc/DAEMON_NAME.conf
  * - /etc/default/DAEMON_NAME
  *
@@ -42,7 +42,7 @@
  *   TAP_IP=10.0.0.1
  *   TAP_NETMASK=255.255.255.0
  *   CLI_PORT=4519
- *   IFACE=eth0
+ *   IFACE=eth0,eth1,wlan0
  * @endcode
  *
  * @section sec_usage_init Init Script
@@ -52,12 +52,12 @@
  * provides merging of both configurations files. The result is placed in
  * /tmp/DAEMON_NAME.cli and contains the original content of the protocol 
  * configuration file and interface configuration in the CLI syntax that
- * has been compiled from the daemon configuration file.
+ * has been compiled from the /etc/default/DAEMON_NAME file.
  *
  * @section sec_usage_debconf Debian Package Auto-Configuration
  *
- * We also provide sample files to create a Debian package from
- * DES-SERT daemons that are available as source code release. A debconf
+ * We also provide sample files, in the seperately available des-example Debian package,
+ * how to create a Debian package from DES-SERT daemons. A debconf
  * script asks the user during the installation (or reconfiguration) of the
  * particular Debian package for all the information that is contained in
  * /etc/default/DAEMON_NAME.
@@ -109,10 +109,10 @@
  *  telnet: Unable to connect to remote host: Connection refused   
  * @endcode
  *
- * Have a look at the log file and chech if the daemon is running. If everything
+ * Have a look at the log file and check if the daemon is running. If everything
  * seems to be right, the problem might be due to some misconfiguration.
- * In newer Linux distribution the bind syscall of the daemon with the 
- * parameters AF_INET6 and SOCK_STREAM will result only in binding to a IPv6
+ * In newer Linux kernel versions the bind syscall of the daemon with the
+ * parameters AF_INET6 and SOCK_STREAM will result in binding only to an IPv6
  * socket. You can either replace "localhost" by "::1" for the address parameter
  * of telnet or change the kernel setting with sysctl.
  * @code
@@ -122,5 +122,5 @@
  * @code
  *  user@host:~$ sysctl -w net.ipv6.bindv6only=0
  * @endcode
- * The configuration can be set at boot time when configured in /etc/sysctl.conf.
+ * The sysctl setting is automatically set at boot time when configured in /etc/sysctl.conf.
  */

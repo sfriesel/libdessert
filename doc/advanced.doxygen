@@ -6,12 +6,12 @@
  *
  * @section sec_adv_cli Custom CLI Commands
  *
- * How custom CLI commands can be added to the CLI will be explain using the
+ * How to add custom CLI commands will be explain using the
  * following example scenario: Consider you have a routing daemon
- * that uses the parameter threshold with a value in [0,1]. The
+ * that uses the parameter <i>threshold</i> with a value in [0,1]. The
  * value shall be configurable via the CLI.
  *
- * First of all we create a "set" CLI anchor. This means all commands
+ * First of all, we create a "set" CLI anchor. This means all commands
  * that are registered with this anchor have to be prefixed by the word
  * "set" when entered in the CLI. As setting options is a critical task,
  * it should only be allowed in the privileged mode.  
@@ -21,7 +21,7 @@
  * @endcode
  *
  * The following function can be used to parse the value specified in the CLI
- * and set the threshold.
+ * and set the threshold if it is valid.
  * @code
  *  double threshold = 0; 
  *
@@ -47,7 +47,7 @@
  *  cli_register_command(dessert_cli, cli_cfg_set, "threshold", set_threshold, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set threshold");
  * @endcode
  *
- * When you have compiled and started the daemon connect with telnet. You can
+ * When you have compiled and started the daemon, connect with telnet. You can
  * now set the threshold value in the privileged mode as follow.
  * @code
  *  set threshold 0.4
@@ -55,19 +55,22 @@
  *
  * @section sec_adv_tun Using TUN Interfaces
  *
- * You can replace the TAP interface used in the examples of this manual by a
+ * You can replace the TAP interface used in the \ref ExampleDaemon "example" of this manual by a
  * TUN interface. You have to register the dessert_cli_cmd_addsysif_tun() instead of
- * dessert_cli_cmd_addsysif() for the CLI to register a TUN interface. Your code
- * should not contain any Ethernet specific code as raw IP datagrams are received 
+ * dessert_cli_cmd_addsysif() for the CLI to register a TUN interface. Both function are
+ * provided in libdessert-extra.
+ *
+ * Your code
+ * should not contain any Ethernet specific parts as raw IP datagrams are received
  * over TUN interfaces.
  *
  * @section sec_adv_compat TUN/TAP Compatibility
  *
- * To achieve compatibility between the two different sys interface types it is
+ * To achieve compatibility between the two different sys interface types, it is
  * best to use dessert_syssend_msg() instead of dessert_syssend() as this
  * function will determine what packet was encapsulated. If there is an 
  * DES-SERT Ethernet extension, the frame will be reconstructed and if
- * the extension is missing, it only copies the IP datagram. In both cases
+ * the extension is missing, it only handles the IP datagram. In both cases
  * the packet is send to the kernel.
  *
  * When implementing routing protocols you should only rely on the layer 3
@@ -76,12 +79,10 @@
  *
  * @section sec_ifaces_rm Removing Registered Interfaces
  *
- * You can remove interfaces as mesh or sys interface with the following funtions.
+ * You can remove interfaces registered as mesh or sys interface with the following functions.
  * @code
  *  int dessert_meshif_del(const char* dev);
  *
  *  int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
  * @endcode
- * Currently, there a no corresponding CLI callbacks and commands as the removal
- * of interfaces is a very rare case.
  */
