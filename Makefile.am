@@ -9,8 +9,9 @@ pkgconfig_DATA = libdessert.pc
 include doc/doxygen-include.am
 
 DISSECTORS = dissectors/dessert.lua dissectors/dessert-ext-eth.lua dissectors/dessert-ext-ping.lua dissectors/dessert-ext-trace.lua
-MIBS = DESSERT-MIB.txt
-EXTRA_DIST = autogen.sh DES-SERT.doxyfile doxygen/html doc/*.doxygen doc/style/*.css doc/style/*.html doc/style/images/*.png doc/style/images/*.gif doc/style/images/*.eps $(MIBS) $(DISSECTORS)
+MIBS = doc/DESSERT-MIB.txt
+DOCS = doc/libdessert.doxyfile doxygen/html doc/*.doxygen doc/style/*.css doc/style/*.html doc/style/images/*.png doc/style/images/*.gif doc/style/images/*.eps 
+EXTRA_DIST = autogen.sh $(DOCS) $(MIBS) $(DISSECTORS)
 
 install-data-local: install-mibs install-dissectors
 
