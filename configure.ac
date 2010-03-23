@@ -85,12 +85,11 @@ DX_RTF_FEATURE([OFF])
 DX_XML_FEATURE([OFF])
 DX_PDF_FEATURE([ON])
 DX_PS_FEATURE([OFF])
-DX_INIT_DOXYGEN([${PACKAGE_NAME}], [DES-SERT.doxyfile], [doxygen])
+DX_INIT_DOXYGEN([${PACKAGE_NAME}], [doc/libdessert.doxyfile], [doxygen])
 
 AC_CONFIG_FILES([Makefile
                 src/Makefile
                 src/snmp/Makefile
-                src/callbacks/Makefile
                 src/libdessert/Makefile
                 include/Makefile
                 libdessert.pc

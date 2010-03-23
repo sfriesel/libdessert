@@ -19,8 +19,7 @@ libdessert_la_SOURCES = dessert_agentx.c \
                         dessert_sysiface.c \
                         dessert_internal.h
 
-libdessert_la_LIBADD = ../callbacks/libdessertcallbacks.la \
-                       ../snmp/libdessertsnmp.la \
+libdessert_la_LIBADD = ../snmp/libdessertsnmp.la \
                        @SNMP_LIBS@ \
                        @PCAP_LIBS@ \
                        @CLI_LIBS@ \
