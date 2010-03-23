@@ -1,3 +1,3 @@
 
-SUBDIRS = snmp callbacks libdessert
+SUBDIRS = snmp libdessert
 
