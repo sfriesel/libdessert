@@ -186,16 +186,15 @@
  * Because this was a very basic introduction in how to implement daemons
  * with DES-SERT, some topics are available in other modules:
  * - \ref sec_ifaces_rm
- * - multiple callbacks in the sys and mesh pipeline
- * - advanced usage of the processsing buffer
+ * - Advanced Usage of the Processsing Buffer
  * - \ref sparse_subsec
  * - \ref sec_adv_cli
  * - <a href="http://code.google.com/p/libcli/wiki/DevelopersReference">Using CLI passwords</a>
  * - \ref sec_adv_tun
- * - forwarding and routing
- * - retrieving DES-SERT extensions
- * - writing Wireshark dissectors
- * - providing OIDs via AgentX to an SNMP agent
+ * - Routing and Forwarding
+ * - Retrieving DES-SERT extensions
+ * - Writing Wireshark Dissectors
+ * - Exporting OIDs via AgentX to an SNMP Agent
  *
  * If there is not link to a topic, the corresponding information will be added to the
  * documentation in later releases.
