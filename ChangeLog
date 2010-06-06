@@ -1,5 +1,6 @@
 20100606 - 0.94
     - On Linux the TAP hwaddr is now derived from eth0 (if it exists)
+    - Current libtool version = 1.1.1
 
 20100323 - 0.93
     - Updated documentation (spelling, grammar, etc)
