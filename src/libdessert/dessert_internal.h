@@ -40,6 +40,7 @@
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
 #include <net/route.h>
+#include <net/if_arp.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <libcli.h>
@@ -131,6 +132,8 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc
  * S Y S - I N T E R F A C E S
  *
  ******************************************************************************/
+
+int _dessert_getHWAddr(char* device, char* hwaddr);
 
 /** callback list entry for tun/tap callbacks */
 typedef struct dessert_sysrxcbe {

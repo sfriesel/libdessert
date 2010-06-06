@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([libdessert], [0.93], [des-sert@spline.inf.fu-berlin.de])
+AC_INIT([libdessert], [0.94], [des-sert@spline.inf.fu-berlin.de])
 AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR([src/libdessert/dessert_core.c])
 AC_CONFIG_HEADERS([config.h])
 
-LIBDESSERT_LIBRARY_VERSION=1:0:0
+LIBDESSERT_LIBRARY_VERSION=1:1:1
 AC_SUBST([LIBDESSERT_LIBRARY_VERSION])
 
 # Checks for programs.
@@ -108,7 +108,7 @@ AS_IF([test "$install_dissectors"],
         [echo "Dissectors dir: $with_dissectorsdir"])
     ]
 )
-    
+
 AC_ARG_ENABLE(mibs, [  --enable-mibs           install MIBs @<:@Default=no@:>@], [install_mibs=1], [install_mibs=0])
 AC_SUBST(install_mibs)
 

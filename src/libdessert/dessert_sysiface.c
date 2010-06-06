@@ -1,21 +1,21 @@
 /******************************************************************************
  Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).
  All rights reserved.
- 
+
  These sources were originally developed by Philipp Schmidt
- at Freie Universitaet Berlin (http://www.fu-berlin.de/), 
- Computer Systems and Telematics / Distributed, Embedded Systems (DES) group 
+ at Freie Universitaet Berlin (http://www.fu-berlin.de/),
+ Computer Systems and Telematics / Distributed, Embedded Systems (DES) group
  (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)
  ------------------------------------------------------------------------------
  This program is free software: you can redistribute it and/or modify it under
  the terms of the GNU General Public License as published by the Free Software
  Foundation, either version 3 of the License, or (at your option) any later
  version.
- 
+
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along with
  this program. If not, see http://www.gnu.org/licenses/ .
  ------------------------------------------------------------------------------
@@ -64,9 +64,10 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
  *
  ******************************************************************************/
 
+
 /** Initializes the tun/tap Interface dev for des-sert.
  * @arg *device interface name
- * @arg flags  @see DESSERT_TUN @see DESSERT_TAP @see DESSERT_MAKE_DEFSRC 
+ * @arg flags  @see DESSERT_TUN @see DESSERT_TAP @see DESSERT_MAKE_DEFSRC
  * @return 0       -- on success
  * @return EINVAL  -- if message is broken
  * @return EFAULT  -- if interface not specified and not guessed
@@ -129,6 +130,21 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 		goto dessert_sysif_init_err;
 		return (-errno);
 	}
+    /****************************************************/
+    /*   Derive TAP MAC address from eth0 MAC address   */
+    /* TODO: provide this features for other OSs        */
+    /****************************************************/
+    int eth0_index = if_nametoindex("eth0");
+    if(eth0_index) {
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      if(_dessert_getHWAddr("eth0", ifr.ifr_hwaddr.sa_data) == DESSERT_OK) {
+        ifr.ifr_hwaddr.sa_data[0] = 0xFE;
+        if(ioctl(_dessert_sysif->fd, SIOCSIFHWADDR, &ifr) < 0) {
+          dessert_warn("ioctl(SIOCSIFHWADDR) failed: %s", strerror(errno));
+        }
+      }
+    }
+    /****************************************************/
 	strcpy(_dessert_sysif->if_name, ifr.ifr_name);
 
 #else
@@ -317,7 +333,7 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
     dessert_syssend(pkt, len);
     free(pkt);
 
-    return DESSERT_OK;  
+    return DESSERT_OK;
 }
 
 /** Send any type of packet via TUN/TAP
@@ -353,7 +369,122 @@ int dessert_syssend(const void* pkt, size_t len) {
  *
  ******************************************************************************/
 
-/* nothing here - yet */
+int _dessert_getHWAddr(char* device, char* hwaddr) {
+#ifdef __DARWIN__
+{
+    /* the Apple way... */
+
+    int mib[6];
+    size_t len;
+    uint8_t *buf, *next;
+    struct if_msghdr *ifm;
+    struct sockaddr_dl *sdl;
+    int ret = DESSERT_ERR;
+
+    mib[0] = CTL_NET;
+    mib[1] = AF_ROUTE;
+    mib[2] = 0;
+    mib[3] = AF_LINK;
+    mib[4] = NET_RT_IFLIST;
+    mib[5] = 0;
+
+    if (sysctl(mib, 6, NULL, &len, NULL, 0) < 0) {
+        dessert_err("Acquiring hwaddr failed: sysctl 1 error");
+        return(DESSERT_ERR);
+    }
+
+    if ((buf = malloc(len)) == NULL) {
+        dessert_err("acquiring hwaddr failed: malloc error");
+        return(DESSERT_ERR);
+    }
+
+    if (sysctl(mib, 6, buf, &len, NULL, 0) < 0) {
+        dessert_err("acquiring hwaddr failed: sysctl 2 error");
+        return(DESSERT_ERR);
+    }
+
+    for (next = buf; next < buf+len; next += ifm->ifm_msglen) {
+        ifm = (struct if_msghdr *)next;
+        if (ifm->ifm_type == RTM_IFINFO) {
+            sdl = (struct sockaddr_dl *)(ifm + 1);
+            if (strncmp(&sdl->sdl_data[0], device, sdl->sdl_len) == 0) {
+                memcpy(hwaddr, LLADDR(sdl), ETHER_ADDR_LEN);
+                ret = DESSERT_OK;
+                break;
+            }
+        }
+    }
+
+    free(buf);
+    return ret;
+}
+#elif __FreeBSD__
+{
+    struct ifaddrs *ifaphead;
+    struct ifaddrs *ifap;
+    struct sockaddr_dl *sdl = NULL;
+
+    if (getifaddrs(&ifaphead) != 0)
+    {
+        dessert_err("getifaddrs() failed");
+        return(DESSERT_ERR);
+    }
+
+    for (ifap = ifaphead; ifap; ifap = ifap->ifa_next)
+    {
+        if ((ifap->ifa_addr->sa_family == AF_LINK))
+        {
+            if (strcmp(ifap->ifa_name, device) == 0)
+            {
+                sdl = (struct sockaddr_dl *)ifap->ifa_addr;
+                if (sdl)
+                {
+                    memcpy(hwaddr, LLADDR(sdl), ETHER_ADDR_LEN);
+                    return(DESSERT_OK);
+                }
+            }
+        }
+    }
+    return(DESSERT_ERR);
+}
+#elif __linux__
+{
+    /* the linux and solaris way */
+    int sockfd;
+    struct ifreq ifr;
+
+    /* we need some socket to do that */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    /* set interface options and get hardware address */
+    strncpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
+
+#ifdef SIOCGIFHWADDR
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0) {
+        memcpy(hwaddr, &ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+        /* } */
+#elif defined SIOCGENADDR
+        if ( ioctl(sd, SIOCGENADDR, &ifr_work) >= 0 ) {
+            memcpy(hwaddr, &ifr.ifr_enaddr, ETHER_ADDR_LEN );
+            /* } */
+#else
+            if (false) {
+#endif
+        close(sockfd);
+        return (DESSERT_OK);
+    } else {
+        dessert_err("acquiring hwaddr failed");
+        close(sockfd);
+        return (DESSERT_ERR);
+    }
+}
+}
+#else
+{
+    dessert_err("acquiring hwaddr failed - platform not supported");
+    return(DESSERT_ERR);
+}
+#endif
 
 /******************************************************************************
  *
@@ -420,7 +551,7 @@ static void *_dessert_sysif_init_thread(void* arg) {
 			len = read((sysif->fd), buf, buflen);
 		}
 		/* Right now the packet has been written to the buffer. The packet is aligned so that
-         * the first layer 3 byte is always at the same position independent whether a TUN or 
+         * the first layer 3 byte is always at the same position independent whether a TUN or
          * a TAP interface has been used:
          * buf: [Ethernet Header Space][Layer 3 Header]
          */
