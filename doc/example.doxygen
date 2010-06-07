@@ -60,7 +60,7 @@
  *
  * Now you can use telnet to connect to the compiled daemon and add sys and mesh interfaces as follows:
  * @code
- * interface sys tap0 10.0.0.1 255.255.255.0
+ * interface sys tap0 10.0.0.1 255.255.0.0
  * interface mesh eth0
  * @endcode
  * Most often you will not configure the interfaces by hand but make use of
