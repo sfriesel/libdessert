@@ -1,21 +1,21 @@
 /******************************************************************************
  Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).
  All rights reserved.
- 
+
  These sources were originally developed by Philipp Schmidt
- at Freie Universitaet Berlin (http://www.fu-berlin.de/), 
- Computer Systems and Telematics / Distributed, Embedded Systems (DES) group 
+ at Freie Universitaet Berlin (http://www.fu-berlin.de/),
+ Computer Systems and Telematics / Distributed, Embedded Systems (DES) group
  (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)
  ------------------------------------------------------------------------------
  This program is free software: you can redistribute it and/or modify it under
  the terms of the GNU General Public License as published by the Free Software
  Foundation, either version 3 of the License, or (at your option) any later
  version.
- 
+
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along with
  this program. If not, see http://www.gnu.org/licenses/ .
  ------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, desse
  ******************************************************************************/
 
 /** Get pointer to config file
- * 
+ *
  * Try to get a valid file name from the arguments and if this fails,
  * guess config file name based on the daemon's name. This function
  * either terminates the daemon or returns a valid FILE pointer.
@@ -117,7 +117,7 @@ FILE* dessert_cli_get_cfg(int argc, char** argv) {
 	return cfg;
 }
 
-/** Set CLI port 
+/** Set CLI port
 *
 * Set the TCP port of the command line interface. The Daemon will
 * accept one connection at a time.
@@ -139,7 +139,7 @@ int dessert_set_cli_port(uint16_t port) {
 		port = 0;
 		dessert_err("Port number has to be in [1024, 49151]");
 	}
-	dessert_info("CLI on port %d", _cli_port);
+	dessert_notice("CLI on port %d", _cli_port);
 	return (port == 0 ? DESSERT_ERR : DESSERT_OK);
 }
 
@@ -196,14 +196,26 @@ int _dessert_cli_init() {
 	cli_set_hostname(dessert_cli, _dessert_cli_hostname);
 
 	/* initialize show commands */
-	dessert_cli_show = cli_register_command(dessert_cli, NULL, "show", NULL,
-			PRIVILEGE_UNPRIVILEGED, MODE_EXEC, "display information");
+    dessert_cli_show = cli_register_command(dessert_cli,
+            NULL,
+            "show",
+            NULL,
+            PRIVILEGE_UNPRIVILEGED,
+            MODE_EXEC,
+            "display information");
 	cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",
 			_dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"Display information about this program.");
 	cli_register_command(dessert_cli, dessert_cli_show, "logging",
 			_dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"show logging ringbuffer");
+    cli_register_command(dessert_cli,
+            dessert_cli_show,
+            "loglevel",
+            _dessert_cli_cmd_show_loglevel,
+            PRIVILEGE_UNPRIVILEGED,
+            MODE_EXEC,
+            "show loglevel");
 	cli_register_command(dessert_cli, dessert_cli_show, "meshifs",
 			_dessert_cli_cmd_showmeshifs, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"Print list of registered interfaces used by the daemon.");
@@ -218,8 +230,19 @@ int _dessert_cli_init() {
 	dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
 			PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
 	dessert_cli_cfg_no_iface = cli_register_command(dessert_cli,
-			dessert_cli_cfg_no, "interface", NULL, PRIVILEGE_PRIVILEGED,
-			MODE_CONFIG, "remove interface or negate interface config");
+            dessert_cli_cfg_no,
+            "interface",
+            NULL,
+            PRIVILEGE_PRIVILEGED,
+            MODE_CONFIG,
+            "remove interface or negate interface config");
+    cli_register_command(dessert_cli,
+            NULL,
+            "loglevel",
+            _dessert_cli_cmd_set_loglevel,
+            PRIVILEGE_PRIVILEGED,
+            MODE_CONFIG,
+            "set the loglevel [(d)ebug, (i)nfo, (n)otice, (w)arning, (e)rror, (c)ritical, e(m)ergency]");
 	dessert_cli_cfg_logging = cli_register_command(dessert_cli, NULL,
 			"logging", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"change logging config");
@@ -239,9 +262,13 @@ int _dessert_cli_init() {
 			_dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"set logfile disable file logging");
 
-	cli_register_command(dessert_cli, NULL, "port", _dessert_cli_cmd_setport,
-              PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-              "configure TCP port the daemon is listening on");
+    cli_register_command(dessert_cli,
+            NULL,
+            "port",
+            _dessert_cli_cmd_setport,
+            PRIVILEGE_PRIVILEGED,
+            MODE_CONFIG,
+            "configure TCP port the daemon is listening on");
 
     cli_register_command(dessert_cli, NULL, "pid", _dessert_cli_cmd_pid,
                 PRIVILEGE_PRIVILEGED, MODE_CONFIG,

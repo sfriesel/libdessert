@@ -5,7 +5,7 @@
 
  @brief Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).     \n
  All rights reserved.                                                         \n
- 
+
  These sources were originally developed by Philipp Schmidt
  and modified by David Gutzmann and Bastian Blywis
  at Freie Universitaet Berlin (http://www.fu-berlin.de/),
@@ -50,12 +50,12 @@
 
  * While generally usable in many application scenarios, it is primarily
  * used in DES-Mesh (http://www.des-testbed.net/), the multi-transceiver
- * wireless mesh network testbed part of the DES-Testbed at Freie 
+ * wireless mesh network testbed part of the DES-Testbed at Freie
  * Universitaet Berlin, Germany.
  *
  * @section dessert_naming Naming Convention
  *
- * The official name of the project is <i>DES-SERT</i>. The library is called 
+ * The official name of the project is <i>DES-SERT</i>. The library is called
  * <i>libdessert</i> and the provided functions and members are prefixed with
  * the string <i>dessert</i>.
  *
@@ -63,9 +63,9 @@
  *
  * DES-SERT introduces several concepts to implement routing protocols.
  * When implementing a routing protocol with DES-SERT, you should be
- * familiar with these concepts to achieve an optimal structure and 
+ * familiar with these concepts to achieve an optimal structure and
  * to make your implementation easier to understand by other developers.
- * 
+ *
  * The documentation is structured in the following modules:
  * - \ref Architecture "System Architecture and Concepts"
  * - \ref DaemonUsage "How to use DES-SERT based Daemons"
@@ -335,6 +335,9 @@ typedef struct dessert_periodic {
     /** internal pointer for task list */
     struct dessert_periodic  *next;
 } dessert_periodic_t;
+
+/** callback function type to handle signals **/
+typedef int dessert_signalcb_t(int signal);
 
 /***************************************************************************//**
  * @}
@@ -731,6 +734,19 @@ int dessert_periodic_del(dessert_periodic_t *p);
 /***************************************************************************//**
  * @}
  * @ingroup libdessert
+ * @defgroup signals Signal Handling
+ *
+ * @brief EXTERNAL / PUBLIC
+ *
+ * @{
+ ******************************************************************************/
+
+int dessert_signalcb_add(int signal, dessert_signalcb_t* callback);
+int dessert_signalcb_del(int signal, dessert_signalcb_t* callback);
+
+/***************************************************************************//**
+ * @}
+ * @ingroup libdessert
  * @defgroup agentx net-snmp & AgentX
  *
  * @brief EXTERNAL / PUBLIC
@@ -1088,7 +1104,7 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
     ((void)_dessert_log(LOG_EMERG, func, file, line, "assertion `%s' failed!\n", e), abort)
 
 /** Assertion Macro
- * 
+ *
  * The assertion macro enables to crash the daemon when a particular
  * condition does not apply. In contrast to the standard C library assert,
  * a message will be written using the logging feature of DES-SERT

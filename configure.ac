@@ -47,6 +47,14 @@ AC_SEARCH_LIBS([cli_print],
 
 AC_SUBST([CLI_LIBS])
 
+# Checks for libevent
+#AC_SEARCH_LIBS([event_add],
+#               [event event_core event_extra],
+#               [AC_DEFINE([EVENT_LIBS],[-levent],[defines linkoption for libevent])],
+#               [AC_MSG_ERROR([libevent could not found, please install (development) package of libcli])])
+#AC_SUBST([EVENT_LIBS])
+#AC_CHECK_HEADERS([event.h])
+
 # Checks for libraries.
 
 AX_PTHREAD(,[

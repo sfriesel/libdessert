@@ -1,21 +1,21 @@
 /******************************************************************************
  Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).
  All rights reserved.
- 
+
  These sources were originally developed by Philipp Schmidt
- at Freie Universitaet Berlin (http://www.fu-berlin.de/), 
- Computer Systems and Telematics / Distributed, Embedded Systems (DES) group 
+ at Freie Universitaet Berlin (http://www.fu-berlin.de/),
+ Computer Systems and Telematics / Distributed, Embedded Systems (DES) group
  (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)
  ------------------------------------------------------------------------------
  This program is free software: you can redistribute it and/or modify it under
  the terms of the GNU General Public License as published by the Free Software
  Foundation, either version 3 of the License, or (at your option) any later
  version.
- 
+
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along with
  this program. If not, see http://www.gnu.org/licenses/ .
  ------------------------------------------------------------------------------
@@ -59,6 +59,30 @@ static int _dessert_pid(char* pidfile);
  *
  ******************************************************************************/
 
+// /*#ifdef DESSERT_EVENT
+// #include <event.h>
+// #include <signal.h>
+// pthread_t _dessert_event_thread;
+// struct event _dessert_sighup;
+//
+// void _dessert_signal_hup(int fd, short event, void *arg) {
+//     dessert_notice("received SIGHUP");
+// }
+//
+// void *dessert_event_thread(void* param) {
+//     event_init();
+//     event_set(&_dessert_sighup, SIGHUP, EV_SIGNAL|EV_PERSIST, _dessert_signal_hup, &_dessert_sighup);
+//     event_add(&_dessert_sighup, NULL);
+//     event_dispatch();
+// }
+// #endif
+//
+// void _dessert_event_init() {
+//     #ifdef DESSERT_EVENT
+//     pthread_create(&_dessert_event_thread, NULL, dessert_event_thread, NULL);
+//     #endif
+// }*/
+
 /** Initializes dessert framework and sets up logging
  * @arg *proto 4 char string for protocol name
  * @arg version version number of protocol
@@ -83,6 +107,9 @@ int dessert_init(const char* proto, int version, uint16_t opts) {
 	if ((opts & DESSERT_OPT_DAEMONIZE) && !(opts & DESSERT_OPT_NODAEMONIZE)) {
 		_dessert_daemonize();
 	}
+
+    /* initialize all event thread, sets sigmask */
+    _dessert_signals_init();
 
 	/* initialize cli */
 	_dessert_cli_init();
@@ -111,7 +138,7 @@ int dessert_pid(char* pidfile) {
         dessert_warn("pid file already written to: %s\n", dessert_pidfile_name);
         return DESSERT_ERR;
     }
-    
+
     fd = fopen(pidfile, "w");
     if (fd == 0) {
         dessert_warn("could not open pid file");

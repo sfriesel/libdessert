@@ -1,21 +1,21 @@
 /******************************************************************************
  Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).
  All rights reserved.
- 
+
  These sources were originally developed by Philipp Schmidt
- at Freie Universitaet Berlin (http://www.fu-berlin.de/), 
- Computer Systems and Telematics / Distributed, Embedded Systems (DES) group 
+ at Freie Universitaet Berlin (http://www.fu-berlin.de/),
+ Computer Systems and Telematics / Distributed, Embedded Systems (DES) group
  (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)
  ------------------------------------------------------------------------------
  This program is free software: you can redistribute it and/or modify it under
  the terms of the GNU General Public License as published by the Free Software
  Foundation, either version 3 of the License, or (at your option) any later
  version.
- 
+
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along with
  this program. If not, see http://www.gnu.org/licenses/ .
  ------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ char dessert_logprefix[12];
 #define _DESSERT_LOGFLAG_STDERR   0x4
 #define _DESSERT_LOGFLAG_RBUF     0x8
 int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
-int _dessert_loglevel = LOG_DEBUG;
+int _dessert_loglevel = LOG_INFO;
 
 /* the logging ringbuffer */
 char *_dessert_logrbuf = NULL; /* pointer to begin */
@@ -367,6 +367,88 @@ int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command,
 		return CLI_OK;
 	}
 
+}
+
+/** just a helper function */
+int _dessert_loglevel_to_string(uint8_t level, char* buffer, size_t len) {
+    switch(level) {
+        case LOG_DEBUG:
+            snprintf(buffer, len, "%s", "debug");
+            break;
+        case LOG_INFO:
+            snprintf(buffer, len, "%s", "info");
+            break;
+        case LOG_NOTICE:
+            snprintf(buffer, len, "%s", "notice");
+            break;
+        case LOG_WARNING:
+            snprintf(buffer, len, "%s", "warning");
+            break;
+        case LOG_ERR:
+            snprintf(buffer, len, "%s", "error");
+           break;
+        case LOG_CRIT:
+            snprintf(buffer, len, "%s", "critical");
+            break;
+        case LOG_EMERG:
+            snprintf(buffer, len, "%s", "emergency");
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
+
+int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv[],
+        int argc) {
+     if(argc != 1 ) {
+        cli_print(cli, "usage %s [(d)ebug, (i)nfo, (n)otice, (w)arning, (e)rror, (c)ritical, e(m)ergency]", command);
+        return CLI_ERROR;
+    }
+
+    switch(argv[0][0]) {
+        case 'd':
+        case 'D':
+            _dessert_loglevel = LOG_DEBUG;
+            break;
+        case 'i':
+        case 'I':
+            _dessert_loglevel = LOG_INFO;
+            break;
+        case 'n':
+        case 'N':
+            _dessert_loglevel = LOG_NOTICE;
+            break;
+        case 'w':
+        case 'W':
+            _dessert_loglevel = LOG_WARNING;
+            break;
+        case 'e':
+        case 'E':
+            _dessert_loglevel = LOG_ERR;
+            break;
+        case 'c':
+        case 'C':
+            _dessert_loglevel = LOG_CRIT;
+            break;
+        case 'm':
+        case 'M':
+            _dessert_loglevel = LOG_EMERG;
+            break;
+        default:
+            cli_print(cli, "invalid loglevel specified: %s", argv[0]);
+            dessert_warn("invalid loglevel specified: %s", argv[0]);
+    }
+    char buf[20];
+    _dessert_loglevel_to_string(_dessert_loglevel, buf, 20);
+    cli_print(cli, "loglevel is set to \"%s\"", buf);
+    dessert_notice("loglevel is set to \"%s\"", buf);
+}
+
+int _dessert_cli_cmd_show_loglevel(struct cli_def *cli, char *command, char *argv[], int argc) {
+    char buf[20];
+    _dessert_loglevel_to_string(_dessert_loglevel, buf, 20);
+    cli_print(cli, "loglevel is set to \"%s\"", buf);
 }
 
 /** command "show logging" */

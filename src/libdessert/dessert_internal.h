@@ -47,8 +47,8 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+#include <uthash.h>
 #include <utlist.h>
-
 
 #include "dessertObjects.h"
 #include "dessertMeshifTable.h"
@@ -88,6 +88,16 @@ int _dessert_cli_init(void);
  *
  * INTERNAL / PRIVATE
  *
+ * S I G N A L   H A N D L I N G
+ *
+ ******************************************************************************/
+
+int _dessert_signals_init(void);
+
+/******************************************************************************
+ *
+ * INTERNAL / PRIVATE
+ *
  * L O G   F A C I L I T Y
  *
  ******************************************************************************/
@@ -98,6 +108,8 @@ int _dessert_cli_init(void);
 /** logfile file pointer to use with DESSERT_OPT_LOGFILE */
 extern FILE *dessert_logfd;
 
+int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv[], int argc);
+int _dessert_cli_cmd_show_loglevel(struct cli_def *cli, char *command, char *argv[], int argc);
 int _dessert_cli_cmd_logging(struct cli_def *cli, char *command, char *argv[], int argc);
 int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], int argc);
 int _dessert_cli_no_logging_file(struct cli_def *cli, char *command, char *argv[], int argc);

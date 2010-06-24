@@ -13,6 +13,7 @@ libdessert_la_SOURCES = dessert_agentx.c \
                         dessert_core.c \
                         dessert_meshiface.c \
                         dessert_periodic.c \
+                        dessert_signals.c \
                         dessert_cli.c \
                         dessert_log.c \
                         dessert_msg.c \
@@ -24,5 +25,6 @@ libdessert_la_LIBADD = ../snmp/libdessertsnmp.la \
                        @PCAP_LIBS@ \
                        @CLI_LIBS@ \
                        @PTHREAD_LIBS@
+#                        \ @EVENT_LIBS@
 
 libdessert_la_LDFLAGS = -version-number @LIBDESSERT_LIBRARY_VERSION@
