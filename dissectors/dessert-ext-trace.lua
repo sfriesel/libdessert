@@ -47,8 +47,9 @@ function DESTRACEREQ.dissector (buffer, pinfo, tree)
       offset = offset + 6
       hop = hop + 1
     end
+    _G.g_offset = offset
     
-    return offset
+--    return offset
 end
 
 
@@ -75,8 +76,10 @@ function DESTRACERPL.dissector (buffer, pinfo, tree)
       offset = offset + 6
       hop = hop + 1
     end
+    _G.g_offset = offset
+    _G.g_ethertype = ether
     
-    return offset
+--    return offset
 end
 
 _G.dessert_register_ext_dissector(0x02,"DESSERT_EXT_TRACE_REQ", DESTRACEREQ)

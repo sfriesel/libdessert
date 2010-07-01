@@ -40,7 +40,8 @@ function EXTPING.dissector(buffer, pinfo, tree)
     local subtree = tree:add(EXTPING, buffer,"Extension Data")
     local ext_ping_msg = buffer(0, buffer:len())
     subtree:add(f.ext_ping_msg, ext_ping_msg)
-    return buffer:len()
+    _G.g_offset = buffer:len()
+--    return buffer:len()
 end
 
 
@@ -60,7 +61,8 @@ function EXTPONG.dissector(buffer, pinfo, tree)
     local subtree = tree:add(EXTPONG, buffer,"Extension Data")
     local ext_pong_msg = buffer(0, buffer:len())
     subtree:add(f.ext_pong_msg, ext_pong_msg)
-    return buffer:len()
+    _G.g_offset = buffer:len()
+--    return buffer:len()
 end
 
 _G.dessert_register_ext_dissector(0x04 ,"DESSERT_EXT_PING", EXTPING)

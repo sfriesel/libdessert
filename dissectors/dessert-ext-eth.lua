@@ -51,8 +51,10 @@ function EXTETH.dissector (buffer, pinfo, tree)
     subtree:add(f.ext_eth_dhost, ext_eth_dhost)
     subtree:add(f.ext_eth_shost, ext_eth_shost)
     subtree:add(f.ext_eth_ethertype, ext_eth_ethertype)
-    _G.ethertype = ext_eth_ethertype
-    return offset
+    print("\t\t\t\tEthertype is: "..tostring(ext_eth_ethertype))
+    _G.g_ethertype = ext_eth_ethertype
+	_G.g_offset = offset
+    return offset  -- return only used for reassembly of tcp segments
 end
 
 _G.dessert_register_ext_dissector(0x01 ,"DESSERT_EXT_ETH", EXTETH)

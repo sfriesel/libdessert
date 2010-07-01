@@ -149,11 +149,13 @@ function DESSERT.dissector(buffer, pinfo, tree)
       -- extlen includes the 2byte extension header !
       extdata_real_length = extlen:uint() - 2
       extdata = buffer(offset, extdata_real_length)
-           
       local dissector = dessert_dissector_table:get_dissector(exttype:uint())
+      print("\t\tExtension type is..."..tostring(exttype:uint()))
       if dissector ~= nil then
-          r  = dissector:call(extdata:tvb(), pinfo, extension)
-          if r ~= extdata_real_length then
+          dissector:call(extdata:tvb(), pinfo, extension)
+		  length_dissected = _G.g_offset
+		  print("\t\t\tBytes dissected by dissector: "..tostring(length_dissected))
+          if length_dissected ~= extdata_real_length then
             print("\t\t\tWarning: Sub-Dissector did not consume all bytes!")
           end
       else 
@@ -165,8 +167,13 @@ function DESSERT.dissector(buffer, pinfo, tree)
       
     -- print("\tno more extensions, offset="..tostring(offset))  
     -- dissect paylod based on ext_eth ethertype if any
-    if _G.ext_eth_ethertype ~= nil then
-        local dissector = ethertype_table:get_dissector(ext_eth_ethertype:uint())
+    ethertype = _G.g_ethertype
+--    if ethertype:uint() == 0 then
+--        ethertype = nil
+--    end
+    if ethertype:uint() ~= 0 then
+		print("Ethertype is"..tostring(ethertype))
+        local dissector = ethertype_table:get_dissector(ethertype:uint())
         if dissector ~= nil then        
             local payload = buffer(offset, plen:uint())
             dissector:call(payload:tvb(), pinfo, tree)
