@@ -44,6 +44,7 @@ end
 dofile("dessert-ext-eth.lua")
 dofile("dessert-ext-ping.lua")
 dofile("dessert-ext-trace.lua")
+dofile("des-ara.lua")
  
 -- Create a new dissector
 DESSERT = Proto ("dessert", "DES-SERT")
@@ -154,7 +155,9 @@ function DESSERT.dissector(buffer, pinfo, tree)
       if dissector ~= nil then
           dissector:call(extdata:tvb(), pinfo, extension)
 		  length_dissected = _G.g_offset
+		  ethertype = _G.g_ethertype
 		  print("\t\t\tBytes dissected by dissector: "..tostring(length_dissected))
+          print("\t\t\tEthertype: "..tostring(ethertype))
           if length_dissected ~= extdata_real_length then
             print("\t\t\tWarning: Sub-Dissector did not consume all bytes!")
           end
