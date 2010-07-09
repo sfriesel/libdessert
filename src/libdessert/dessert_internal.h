@@ -173,8 +173,8 @@ extern dessert_sysif_t *_dessert_sysif;
 /** size of a dessert_msg_proc struct */
 #define DESSERT_MSGPROCLEN sizeof(struct dessert_msg_proc)
 
-/** maximum frame size to assemble as dessert_msg */
-#define DESSERT_MAXFRAMEBUFLEN DESSERT_MAXFRAMELEN
+// /** maximum frame size to assemble as dessert_msg */
+// #define DESSERT_MAXFRAMEBUFLEN DESSERT_MAXFRAMELEN
 
 /******************************************************************************
  *

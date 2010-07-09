@@ -116,12 +116,6 @@
 /** ethertype for frames containing DES-SERT messages */
 #define DESSERT_ETHPROTO 0x88B5
 
-/** maximum frame size to assemble as dessert_msg
- *
- * \todo The maximum DES-SERT message size should be derived from the MTU of the sys-interface
- */
-#define DESSERT_MAXFRAMELEN ETH_FRAME_LEN
-
 /** maximum size of the data part in dessert_ext */
 #define DESSERT_MAXEXTDATALEN 254
 
@@ -376,12 +370,25 @@ typedef int dessert_signalcb_t(int signal);
 /** protocol string used in dessert_msg frames */
 extern char        dessert_proto[DESSERT_PROTO_STRLEN+1];
 
+/** maximum size for a dessert_msg
+ *
+ * Current maximum size for a dessert_msg. The size may change over time.
+ * Initially the value is set to ETH_FRAME_LEN. The size should be adapted, when the
+ * MTU of the used mesh and sys interfaces changes. It should be set to:
+ * \code
+ * dessert_maxlen = min( MTU(sys)+DESSERT_MSGLEN, min(MTU(mesh)) )
+ * \endcode
+ *
+ * \todo The maximum DES-SERT message size should be derived from the MTU of mesh/sys-interfaces
+ * \todo Maybe it would be better to use volatile
+ */
+extern size_t dessert_maxlen;
+
 /** version int used in dessert_msg frames */
 extern u_int8_t    dessert_ver;
 
 /** default src address used for local generated dessert_msg frames */
 extern u_int8_t    dessert_l25_defsrc[ETHER_ADDR_LEN];
-
 
 /** constant holding ethernet broadcast address after dessert_init */
 extern u_char      ether_broadcast[ETHER_ADDR_LEN];

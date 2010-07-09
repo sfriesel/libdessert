@@ -1,21 +1,21 @@
 /******************************************************************************
  Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).
  All rights reserved.
- 
+
  These sources were originally developed by Philipp Schmidt
- at Freie Universitaet Berlin (http://www.fu-berlin.de/), 
- Computer Systems and Telematics / Distributed, Embedded Systems (DES) group 
+ at Freie Universitaet Berlin (http://www.fu-berlin.de/),
+ Computer Systems and Telematics / Distributed, Embedded Systems (DES) group
  (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)
  ------------------------------------------------------------------------------
  This program is free software: you can redistribute it and/or modify it under
  the terms of the GNU General Public License as published by the Free Software
  Foundation, either version 3 of the License, or (at your option) any later
  version.
- 
+
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along with
  this program. If not, see http://www.gnu.org/licenses/ .
  ------------------------------------------------------------------------------
@@ -675,8 +675,8 @@ int dessert_meshif_add(const char* dev, uint8_t flags) {
 	}
 
 	/* initialize libpcap */
-	meshif->pcap = pcap_open_live(meshif->if_name, DESSERT_MAXFRAMELEN,
-			promisc, 10, meshif->pcap_err);
+	meshif->pcap = pcap_open_live(meshif->if_name, 2500,
+			promisc, 10, meshif->pcap_err); ///< \todo remove magic number
 	if (meshif->pcap == NULL) {
 		dessert_err("pcap_open_live failed for interface %s(%d):\n%s",
 				meshif->if_name, meshif->if_index, meshif->pcap_err);
@@ -804,7 +804,7 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len,
 
 		if (res == DESSERT_MSG_NEEDNOSPARSE && msg == msg_in) {
 			dessert_msg_clone(&msg, msg_in, 0);
-			len = DESSERT_MAXFRAMEBUFLEN;
+			len = dessert_maxlen;
 			goto _dessert_packet_process_cbagain;
 		} else if (res == DESSERT_MSG_NEEDNOSPARSE && msg != msg_in) {
 			dessert_warn("bogus DESSERT_MSG_NEEDNOSPARSE returned from callback!");

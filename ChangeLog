@@ -5,6 +5,7 @@
     - Changed the used ethertype from 0x8042 to 0x88B5 (IEEE Std 802 - Local Experimental Ethertype 1)
     - Increased DESSERT_MAXEXTDATALEN from 253 to 254
     - DESSERT_MAXFRAMELEN is now of size ETH_FRAME_LEN and not ETHER_MAX_LEN anymore (the latter includes the 4 byte CRC)
+    - The define DESSERT_MAXFRAMELEN has been replaced with the variable dessert_maxlen
 
 20100606 - 0.94
     - On Linux the TAP hwaddr is now derived from eth0 (if it exists)

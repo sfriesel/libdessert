@@ -1,21 +1,21 @@
 /******************************************************************************
  Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).
  All rights reserved.
- 
+
  These sources were originally developed by Philipp Schmidt
- at Freie Universitaet Berlin (http://www.fu-berlin.de/), 
- Computer Systems and Telematics / Distributed, Embedded Systems (DES) group 
+ at Freie Universitaet Berlin (http://www.fu-berlin.de/),
+ Computer Systems and Telematics / Distributed, Embedded Systems (DES) group
  (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)
  ------------------------------------------------------------------------------
  This program is free software: you can redistribute it and/or modify it under
  the terms of the GNU General Public License as published by the Free Software
  Foundation, either version 3 of the License, or (at your option) any later
  version.
- 
+
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License along with
  this program. If not, see http://www.gnu.org/licenses/ .
  ------------------------------------------------------------------------------
@@ -49,14 +49,15 @@
 int dessert_msg_new(dessert_msg_t **msgout) {
 	dessert_msg_t *msg;
 
-	msg = malloc(DESSERT_MAXFRAMEBUFLEN);
+    size_t len = dessert_maxlen;
+	msg = malloc(len);
 
 	if (msg == NULL) {
 		dessert_err("failed to allocate buffer for new message!");
 		return (-ENOMEM);
 	}
 
-	memset(msg, 0, DESSERT_MAXFRAMEBUFLEN);
+	memset(msg, 0, len);
 	msg->l2h.ether_type = htons(DESSERT_ETHPROTO);
 	memset(msg->l2h.ether_dhost, 255, ETHER_ADDR_LEN);
 	memcpy(msg->proto, dessert_proto, DESSERT_PROTO_STRLEN);
@@ -86,7 +87,12 @@ int dessert_msg_clone(dessert_msg_t **msgnew, const dessert_msg_t *msgold,
 	if (sparse) {
 		msg = malloc(msglen);
 	} else {
-		msg = malloc(DESSERT_MAXFRAMEBUFLEN);
+        size_t len = dessert_maxlen;
+        if(len < msglen) {
+            dessert_warn("msg has size %d but current dessert_maxlen is %d\n The msg will be fragmented.", msglen, dessert_maxlen);
+            len = msglen;
+        }
+		msg = malloc(len);
 	}
 
 	if (msg == NULL) {
@@ -179,8 +185,8 @@ void dessert_msg_destroy(dessert_msg_t* msg) {
 	free(msg);
 }
 
-/** creates a new dessert_msg from an ethernet frame.
- * @arg *eth ethernet frame to encapsulate
+/** creates a new dessert_msg from an Ethernet frame.
+ * @arg *eth Ethernet frame to encapsulate
  * @arg len length of the ethernet frame
  * @arg **msgout (out) pointer to return message address
  * @return DESSERT_OK on success, -errno otherwise
@@ -189,11 +195,12 @@ int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert
 	int res;
 	dessert_ext_t *ext;
 	void *payload;
+    size_t maxlen = dessert_maxlen;
 
 	/* check len */
-	if (eth_len > DESSERT_MAXFRAMELEN - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
+	if (eth_len > maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
 		dessert_debug("failed to encapsulate ethernet frame of %d bytes (max=%d)",
-				eth_len, DESSERT_MAXFRAMELEN - (DESSERT_MSGLEN + ETHER_HDR_LEN));
+				eth_len, maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
 		return (-EMSGSIZE);
 	}
 
@@ -227,11 +234,12 @@ int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert
 int dessert_msg_ipencap(const uint8_t* ip, size_t len, dessert_msg_t** msgout) {
     int res;
     void *payload;
+    size_t maxlen = dessert_maxlen;
 
     /* check len */
-    if (len > DESSERT_MAXFRAMELEN - DESSERT_MSGLEN) {
+    if (len > maxlen - DESSERT_MSGLEN) {
         dessert_debug("failed to encapsulate ip datagram of %d bytes (max=%d)",
-                len, DESSERT_MAXFRAMELEN - DESSERT_MSGLEN);
+                len, maxlen - DESSERT_MSGLEN);
         return (-EMSGSIZE);
     }
 
@@ -248,7 +256,7 @@ int dessert_msg_ipencap(const uint8_t* ip, size_t len, dessert_msg_t** msgout) {
     return (DESSERT_OK);
 }
 
-/** extracts an ethernet frame from a dessert_msg 
+/** extracts an ethernet frame from a dessert_msg
  * @arg *msg    pointer to dessert_msg message to decapsulate
  * @arg **ethout (out) pointer to return ethernet message
  * @return eth_len on success, -1 otherwise
@@ -471,7 +479,7 @@ void dessert_msg_proc_destroy(dessert_msg_proc_t* proc) {
  **/
 int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len) {
 	/* check payload */
-	if (len > DESSERT_MAXFRAMELEN - ntohs(msg->hlen)) {
+	if (len > dessert_maxlen - ntohs(msg->hlen)) {
 		return DESSERT_ERR; /* too big */
 	}
 
@@ -523,7 +531,7 @@ int dessert_msg_addext(dessert_msg_t *msg, dessert_ext_t **ext, uint8_t type,
 	len += DESSERT_EXTLEN;
 
 	/* check ext */
-	if (len > DESSERT_MAXFRAMELEN - ntohs(msg->hlen) - ntohs(msg->plen)) {
+	if (len > dessert_maxlen - ntohs(msg->hlen) - ntohs(msg->plen)) {
 		dessert_debug("message would be too large after adding extension!");
 		return -2; /* too big */
 	} else if (len < DESSERT_EXTLEN) {
@@ -583,16 +591,16 @@ int dessert_msg_delext(dessert_msg_t *msg, dessert_ext_t *ext) {
  * @param[in] new_len the new length of the extension record
  *
  * @retval DESSERT_OK on success
- * 
+ *
  * %DESCRIPTION:
  *
  **/
 int dessert_msg_resizeext(dessert_msg_t *msg, dessert_ext_t *ext, size_t new_len) {
 
 	int old_len = ext->len;
-	
+
 	/* check ext */
-	if (new_len > DESSERT_MAXFRAMELEN - ntohs(msg->hlen) - ntohs(msg->plen) - old_len) {
+	if (new_len > dessert_maxlen - ntohs(msg->hlen) - ntohs(msg->plen) - old_len) {
 		dessert_debug("message would be too large after adding extension!");
 		return -2; /* too big */
 	} else if (new_len < DESSERT_EXTLEN) {
@@ -605,18 +613,18 @@ int dessert_msg_resizeext(dessert_msg_t *msg, dessert_ext_t *ext, size_t new_len
 
 	memmove(((uint8_t *)ext) + new_len,((uint8_t *)ext) + ext->len, ntohs(msg->hlen)
 			+ ntohs(msg->plen) - (((uint8_t *) ext) - ((uint8_t *) msg)) - ext->len);
-	
+
 	msg->hlen = htons(ntohs(msg->hlen) - (ext->len - new_len));
 	ext->len = new_len;
-	
+
 	return DESSERT_OK;
 }
 
 /** get an specific or all extensions
- * 
- * @arg *msg the message 
+ *
+ * @arg *msg the message
  * @arg **ext (out) pointer to extracted extension
- *                  sets *ext=NULL if  extension not found 
+ *                  sets *ext=NULL if  extension not found
  *                  may be NULL in this case only count/existence matters
  * @arg type type of the ext to retrieve - use DESSERT_EXT_ANY to get any ext
  * @arg index the index of the extension of that type, starting with 0

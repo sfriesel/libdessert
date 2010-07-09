@@ -39,7 +39,7 @@
 #include <linux/if_tun.h>
 #endif
 
-uint8_t dessert_sysif_hwaddr[ETHER_ADDR_LEN]; // TODO unused! to be removed ??!?
+uint8_t dessert_sysif_hwaddr[ETHER_ADDR_LEN]; /** \todo unused! to be removed ??!? */
 
 /* global data storage // P U B L I C */
 /* nothing here - yet */
@@ -130,10 +130,10 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 		goto dessert_sysif_init_err;
 		return (-errno);
 	}
-    /****************************************************/
-    /*   Derive TAP MAC address from eth0 MAC address   */
-    /* TODO: provide this features for other OSs        */
-    /****************************************************/
+    /**
+    * Derive TAP MAC address from eth0 MAC address
+    * \todo: provide this features for other OSs
+    */
     int eth0_index = if_nametoindex("eth0");
     if(eth0_index) {
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
