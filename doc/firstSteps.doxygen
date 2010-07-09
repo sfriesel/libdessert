@@ -1,6 +1,6 @@
 /**
  * \ingroup Manual
- * \addtogroup DaemonUsage
+ * \addtogroup FirstSteps
  *
  * This module is a step to step guide on how to implement and compile a DES-SERT based Daemon and then how to expend it with routing logic.
  *
@@ -8,22 +8,22 @@
  *
  * The daemon with your routing protocol logic is located in user space of the des-testbed routers. To receive packets there are two network
  * interfaces. On one hand you have the TUN/TAP interface, which is simply a interface for sending or receiving packets to user space. Packets
- * received or sent via a TUN interface are IPv4/IPv6 datagrams; packets received or sent via TAP devices are Ethernet frames. On the other hand * 
- * there is another network interface which is connected to other mesh testbed router. Through this interface the exchange of packets between mesh 
- * routers will happen. DES-SERT uses libpcap to receive and send packets to the network interface. libpcap is an application programming interface 
+ * received or sent via a TUN interface are IPv4/IPv6 datagrams; packets received or sent via TAP devices are Ethernet frames. On the other hand *
+ * there is another network interface which is connected to other mesh testbed router. Through this interface the exchange of packets between mesh
+ * routers will happen. DES-SERT uses libpcap to receive and send packets to the network interface. libpcap is an application programming interface
  * (API) for capturing network traffic, which meets our requirements.
- * Every sent or received packet is represented as a DES-SERT message. In this message all needed information is stored. If you want to store data 
- * for your routing logic, you have to store it right in the message or in message extensions. So in fact you have DES-SERT messages and maybe some 
+ * Every sent or received packet is represented as a DES-SERT message. In this message all needed information is stored. If you want to store data
+ * for your routing logic, you have to store it right in the message or in message extensions. So in fact you have DES-SERT messages and maybe some
  * extensions for this message. DES-SERT extension is data piggybacked on a DES-SERT message.
- * Sometimes routing algorithms split a received packet into several parts to process it in different steps. Some of these steps could be packet 
- * validation, loop-detection or routing table lookup. To guarentee that the packet runs through all steps, DES-SERT enables you to use processing 
- * pipelines. So you only need to register your functions into a pipeline and the packet will be passed through all of them. In fact there are even 
- * two pipelines- one for packets received from the user space via a TUN or TAP interface (sys interface) and one for packets received via a 
+ * Sometimes routing algorithms split a received packet into several parts to process it in different steps. Some of these steps could be packet
+ * validation, loop-detection or routing table lookup. To guarentee that the packet runs through all steps, DES-SERT enables you to use processing
+ * pipelines. So you only need to register your functions into a pipeline and the packet will be passed through all of them. In fact there are even
+ * two pipelines- one for packets received from the user space via a TUN or TAP interface (sys interface) and one for packets received via a
  * network interface (mesh interfaces).
  *
  * @section subsec_usage_conf1 Creating a simple daemon skeleton
  *
- * In the upcoming example you learn how to implement the program logic. You will see a complete daemon skeleton before we will discuss all parts 
+ * In the upcoming example you learn how to implement the program logic. You will see a complete daemon skeleton before we will discuss all parts
  * of it. The daemon program has no complex routing logic, it doesnt send any packets to another daemon.
  *
  * Example file:
@@ -45,9 +45,9 @@
  *  };
  *
  *  void init_cli() {
- *      cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys", 
+ *      cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys",
  *           dessert_cli_cmd_addsysif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys")
- *      cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh", 
+ *      cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh",
  *           dessert_cli_cmd_addmeshif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize me")
  *  }
  *
@@ -100,48 +100,48 @@
  *
  * @subsection subsec_usage_conf2 Libraries
  *
- * To give you a complete understanding of this daemon we will explain all lines starting with the libraries. stdio.h and string.h are standard C 
- * libraries for input and output operations or for string manipulation. dessert.h and dessert-extra are more interesting libraries to provide 
- * functions for creating and sending new messages and for initialization of the daemon. Several other important libraries for sending over 
- * ethernet (net/ethernet.h), capturing packets from network interface (pcap.h), logging of daemon activities or the service of CLI (Command Line 
- * Interface) are given (libcli.h). In the dessert-extra.h are several callback functions like CLI commands for adding TUN/TAP interfaces (sys 
- * interfaces) or network interfaces (mesh interfaces). You can see some of the functions of these libraries in our code, we will discuss them 
+ * To give you a complete understanding of this daemon we will explain all lines starting with the libraries. stdio.h and string.h are standard C
+ * libraries for input and output operations or for string manipulation. dessert.h and dessert-extra are more interesting libraries to provide
+ * functions for creating and sending new messages and for initialization of the daemon. Several other important libraries for sending over
+ * ethernet (net/ethernet.h), capturing packets from network interface (pcap.h), logging of daemon activities or the service of CLI (Command Line
+ * Interface) are given (libcli.h). In the dessert-extra.h are several callback functions like CLI commands for adding TUN/TAP interfaces (sys
+ * interfaces) or network interfaces (mesh interfaces). You can see some of the functions of these libraries in our code, we will discuss them
  * later.
  *
  * @subsection sec_usage_init Extensions
  *
- * If you want to send some extensions you should create an enumeration called extensions. The first entry of our enumeration gets the lowest value 
- * that can be assigned as type to user provided extensions. Extension types are specific to a particular protocol, therefore you can use any value 
- * as you like. DESSERT_EXT_USER simply means, that this extension is for usage by the user. You can choose DESSERT_EXT_PING which means that you 
- * packet is a ping. In our code we define one extension struct called my_extension. As you can see we have three values in our struct that can be 
- * used by you. This extension will be piggybacked with our DES-SERT message, so you can put routing logic data into it for example. If you want to 
- * send such extension with your message, you always should use __packed__ attribute or you might otherwise send more bytes than necessary over the 
+ * If you want to send some extensions you should create an enumeration called extensions. The first entry of our enumeration gets the lowest value
+ * that can be assigned as type to user provided extensions. Extension types are specific to a particular protocol, therefore you can use any value
+ * as you like. DESSERT_EXT_USER simply means, that this extension is for usage by the user. You can choose DESSERT_EXT_PING which means that you
+ * packet is a ping. In our code we define one extension struct called my_extension. As you can see we have three values in our struct that can be
+ * used by you. This extension will be piggybacked with our DES-SERT message, so you can put routing logic data into it for example. If you want to
+ * send such extension with your message, you always should use __packed__ attribute or you might otherwise send more bytes than necessary over the
  * medium.
  *
  * @subsection sec_usage_debconf main- Function
  *
- * As a argument of the function we have the path for a configuration file. This configuration file is later used  to set up CLI logging. At the 
+ * As a argument of the function we have the path for a configuration file. This configuration file is later used  to set up CLI logging. At the
  * beginning we enable the parsing of the given configuration file:
  * @code
  *  FILE *cfg = dessert_cli_get_cfg(argc, argv);
  * @endcode
- * We initialize our daemon and start the logging. fb13 is the four byte daemon name and 0x05 the version version number of our simple protocol. 
- * DESSERT_OPT_DAEMONIZE is a flag for dessert_init, which means that our program will be daemonized when calling disables logging to 
+ * We initialize our daemon and start the logging. fb13 is the four byte daemon name and 0x05 the version version number of our simple protocol.
+ * DESSERT_OPT_DAEMONIZE is a flag for dessert_init, which means that our program will be daemonized when calling disables logging to
  * STDERR.?????????????????
  * @code
  *  dessert_init("fb13", 0x05, DESSERT_OPT_DAEMONIZE);
  *  dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
  * @endcode
- * Our daemon is not initialized but cannot do anything interesting. For edit sent or received packets the daemon has to know, where to find 
+ * Our daemon is not initialized but cannot do anything interesting. For edit sent or received packets the daemon has to know, where to find
  * callback functions, for sending to mesh or to sys environment. We register these callback functions.
  * @code
  *  dessert_sysrxcb_add(toMesh, 100);
  *  dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
  *  dessert_meshrxcb_add(toSys, 100);
  * @endcode
- * The functions toMesh and toSys are implemented in our code, too. We will discuss them later. Now you can send a packet from host A to host B 
- * when they have a link to each other. Before we run our first daemon we want initialize our CLI which simply has a Cisco IOS style. Finally we 
- * can use our function parameter, the path for the configuration file. We let the CLI know, where to find this configuration file and start the 
+ * The functions toMesh and toSys are implemented in our code, too. We will discuss them later. Now you can send a packet from host A to host B
+ * when they have a link to each other. Before we run our first daemon we want initialize our CLI which simply has a Cisco IOS style. Finally we
+ * can use our function parameter, the path for the configuration file. We let the CLI know, where to find this configuration file and start the
  * CLI.
  * @code
  *  init_cli();
@@ -155,32 +155,32 @@
  *
  * @subsection sec_usage_telnet toMesh- Function
  *
- * This is the callback function for all packets going to the mesh interface. We used them in our main function by registering them as callback 
- * functions. As function parameters we have the message received from mesh interface, the length of this message, a pointer to a valid processing 
- * buffer, lflags used to differentiate message types, a specifcation from which TUN/TAP interface the message came and a runtime-unique frame id 
- * for the  packet. Now lets discuss this parameters. If the toMesh- callback function has been called, then this means, that there is a message 
- * going right to our mesh network. The length of this message should be clear to our mesh router. So the message parameter and the length 
- * parameter are quite obvious. The parameter called proc is a pointer. It point to a buffer, where some flags and other information is stored. 
- * This buffer can be used for signaling information. Actually it has also evidence for the message size management and shows of which type the 
- * given message is. The other two parameters, tunif and id, should be clear with the definition from above. In our implementation of the toMesh 
- * function we create an extension and fill it with some fake data. Afterwards we send our message over all registered mesh interfaces because the  
+ * This is the callback function for all packets going to the mesh interface. We used them in our main function by registering them as callback
+ * functions. As function parameters we have the message received from mesh interface, the length of this message, a pointer to a valid processing
+ * buffer, lflags used to differentiate message types, a specifcation from which TUN/TAP interface the message came and a runtime-unique frame id
+ * for the  packet. Now lets discuss this parameters. If the toMesh- callback function has been called, then this means, that there is a message
+ * going right to our mesh network. The length of this message should be clear to our mesh router. So the message parameter and the length
+ * parameter are quite obvious. The parameter called proc is a pointer. It point to a buffer, where some flags and other information is stored.
+ * This buffer can be used for signaling information. Actually it has also evidence for the message size management and shows of which type the
+ * given message is. The other two parameters, tunif and id, should be clear with the definition from above. In our implementation of the toMesh
+ * function we create an extension and fill it with some fake data. Afterwards we send our message over all registered mesh interfaces because the
  * interface parameter is NULL:
  * @code
  *  dessert_meshsend(msg, NULL);
  * @endcode
  *
  * @subsection sec_usage_telnet_troubles toSys- Function
- * The toSys callback function has a similar prototype like the toMesh function. It only depends in the interface from where the message came. By 
- * comparing both interface parameters of toMesh and toSys you will recognize that their types are different. In the toSys callback the type is 
+ * The toSys callback function has a similar prototype like the toMesh function. It only depends in the interface from where the message came. By
+ * comparing both interface parameters of toMesh and toSys you will recognize that their types are different. In the toSys callback the type is
  * dessert_meshif_t which means that the message came from the mesh network and will be sent to the user space via sys interface. Not lets come to
- * the implementation of our toSys function. When we get a message, which should be sent to the systems user space, the message is capsulated into 
- * a DES-SERT message. In this message the ethernet frame is located and should be decapsulated for further work. This is the reason why we 
+ * the implementation of our toSys function. When we get a message, which should be sent to the systems user space, the message is capsulated into
+ * a DES-SERT message. In this message the ethernet frame is located and should be decapsulated for further work. This is the reason why we
  * declared two variables, one for the ethernet frame and the other for the length of this frame.
  * @code
  *  struct ether_header *eth;
  *  size_t eth_len;
  * @endcode
- * If the incoming message is addressed to our router or the message is a broad- or multicast, our toSys function decapsulates the ethernet frame 
+ * If the incoming message is addressed to our router or the message is a broad- or multicast, our toSys function decapsulates the ethernet frame
  * and sends it to the user space.
  * @code
  *  if (proc->lflags & DESSERT_LFLAG_DST_SELF ||
@@ -195,17 +195,17 @@
  *
  * @subsection sec_usage_telnet_troubles init_cli- Function
  *
- * Last but not least is this small function, which simply registers the adding of sys or mesh interfaces to the command line interface. 
+ * Last but not least is this small function, which simply registers the adding of sys or mesh interfaces to the command line interface.
  * Now you will be able to add some interfaces with a Cisco IOS similar command line over telnet. We will show this later.
  *
- * Congratulations, you can call yourself a daemon expert. You can save your daemon now for example as des-daemon.c. Now, after we have nearly 
+ * Congratulations, you can call yourself a daemon expert. You can save your daemon now for example as des-daemon.c. Now, after we have nearly
  * complete understanding of how our daemon program works, we can go further and create the configuration files.
  *
  * @section sec_usage_telnet_troubles Configuration Files
  *
- * Now you are ready to create the configuration files and place them in the right system directories. This configuration files are important, 
- * because their information let the daemon know, how he can do his job. When you use the Cisco IOS similar interface later you will change the 
- * configuration files without editing them directly. The protocol specific configuration should be placed into /etc/des-daemon.conf. You can use 
+ * Now you are ready to create the configuration files and place them in the right system directories. This configuration files are important,
+ * because their information let the daemon know, how he can do his job. When you use the Cisco IOS similar interface later you will change the
+ * configuration files without editing them directly. The protocol specific configuration should be placed into /etc/des-daemon.conf. You can use
  * another name instead of "des-daemon". Just create such a file in the /etc/ directory and put the following configuration into the file:
  * @code
  *  no logging stderr
@@ -214,9 +214,9 @@
  *  set threshold 0.3
  *  set metric etx
  * @endcode
- * This information is only random. Our daemon doesnt use those information and you can just put nothing into the config file and use it empty. In 
- * our random example you can see how routing metric or the value of the threshold can be set in the configuration file. Other information like the 
- * path for the log file of the routing protocol can be fixed. There are some protocol unspecific configuration details, which are placed into 
+ * This information is only random. Our daemon doesnt use those information and you can just put nothing into the config file and use it empty. In
+ * our random example you can see how routing metric or the value of the threshold can be set in the configuration file. Other information like the
+ * path for the log file of the routing protocol can be fixed. There are some protocol unspecific configuration details, which are placed into
  * /etc/default/des-daemon. Here again you can just type the name of your personal daemon in. Into this protocol unspecific file you can type:
  * @code
  *  PIDFILE="/var/run/des-daemon.pid"
@@ -227,42 +227,42 @@
  *  CLI_PORT=4519
  *  IFACE=eth0,eth1,wlan0
  * @endcode
- * Again this lines are random and can be complete different. Here you make clear where to find the Pid-File, which simply is a file containing the 
- * process identification number (pid) that is stored in a well-defined location of the filesystem thus allowing other programs to find out the pid 
- * of a running script. We also define where to find the routing protocol specific configuration data we made up in the previous step. The next 
- * lines are for definition of the TAP interface, therefore we define the TAP name and his netmask. You can change this IP if you want to. For 
- * example you can take 172.16.1.1, which is another reserved IP address for private usage. When you want to configure your daemon, you can do this 
- * with the build in Cisco IOS similar command line, which can be accessed via telnet on the CLI_PORT. So in our case you have to connect with 
+ * Again this lines are random and can be complete different. Here you make clear where to find the Pid-File, which simply is a file containing the
+ * process identification number (pid) that is stored in a well-defined location of the filesystem thus allowing other programs to find out the pid
+ * of a running script. We also define where to find the routing protocol specific configuration data we made up in the previous step. The next
+ * lines are for definition of the TAP interface, therefore we define the TAP name and his netmask. You can change this IP if you want to. For
+ * example you can take 172.16.1.1, which is another reserved IP address for private usage. When you want to configure your daemon, you can do this
+ * with the build in Cisco IOS similar command line, which can be accessed via telnet on the CLI_PORT. So in our case you have to connect with
  * telnet on port 4519 (4=D,5=E,19=S). In the next line is a list of the mesh interfaces, which are used by our daemon.
- * DES-SERT daemons should also provide an init script to start and stop the daemon. The init script is placed in /tmp/DAEMON_NAME.cli and contains 
- * the original content of the protocol configuration file and interface configuration in the CLI syntax that has been compiled from the 
- * /etc/default/DAEMON_NAME file. If you want to see such a init script just look for it in the des-example package that you can find on the 
+ * DES-SERT daemons should also provide an init script to start and stop the daemon. The init script is placed in /tmp/DAEMON_NAME.cli and contains
+ * the original content of the protocol configuration file and interface configuration in the CLI syntax that has been compiled from the
+ * /etc/default/DAEMON_NAME file. If you want to see such a init script just look for it in the des-example package that you can find on the
  * DES-SERT homepage.
  *
  * @section sec_usage_telnet_troubles Compiling the daemon
  *
- * If you created a daemon and put the configuration files into right place, you can compile your daemon. To compile it without errors you need 
+ * If you created a daemon and put the configuration files into right place, you can compile your daemon. To compile it without errors you need
  * some libraries like uthash, libpcap or libsnmp. So before you start you should type the following commands into your terminal:
  * @code
  *  apt-get update; sudo apt-get install libsnmp-dev -y; apt-get install libpcap-dev -y; apt-get install libcli-dev -y
  * @endcode
- * Now you need the libdessert libraries. These are two libraries, which can be found on the DES-SERT homepage. Download the libdessert and the 
+ * Now you need the libdessert libraries. These are two libraries, which can be found on the DES-SERT homepage. Download the libdessert and the
  * libdessert-extra library, extract them and compile them by going to their directories and typing following command into terminal:
  * @code
  *  ./configure; make; sudo make install
  * @endcode
- * This will configure, build and install the libraries on your linux. From now on we will use the des-example code from the DES-SERT homepage. If 
- * you download the des-example archive from our homepage, just extract the codes and configuration files, navigate on your terminal to the 
+ * This will configure, build and install the libraries on your linux. From now on we will use the des-example code from the DES-SERT homepage. If
+ * you download the des-example archive from our homepage, just extract the codes and configuration files, navigate on your terminal to the
  * extracted directory, and put those lines onto your terminal:
  * @code
  *  ./configure; make; sudo make install
  * @endcode
- * Now the daemon will be compiled and the configuration files will be set. Copy the configuration files to their right place and start the daemon. 
- * Thats it! The DES-SERT example daemon is simply like our daemon. The only difference is, that there is a Makefile for building and installing 
+ * Now the daemon will be compiled and the configuration files will be set. Copy the configuration files to their right place and start the daemon.
+ * Thats it! The DES-SERT example daemon is simply like our daemon. The only difference is, that there is a Makefile for building and installing
  * the daemon. Just start your daemon. Now we will learn how to connect to the daemon via telnet.
  *
  * @section sec_usage_telnet_troubles Connecting via Telnet
- * When you have started your daemon, there are some configuration options, which can be reached without manipulating the configuration files. For 
- * that matter we use telnet. 
- * 
+ * When you have started your daemon, there are some configuration options, which can be reached without manipulating the configuration files. For
+ * that matter we use telnet.
+ *
  */

@@ -6,7 +6,7 @@
 --These sources were originally developed by David Gutzmann,
 --rewritten and extended by Bastian Blywis
 --at Freie Universitaet Berlin (http://www.fu-berlin.de/),
---Computer Systems and Telematics / Distributed, embedded Systems (DES) group 
+--Computer Systems and Telematics / Distributed, embedded Systems (DES) group
 --(http://cst.mi.fu-berlin.de, http://www.des-testbed.net)
 -- ----------------------------------------------------------------------------
 --This program is free software: you can redistribute it and/or modify it under
@@ -25,7 +25,7 @@
 --       http://www.des-testbed.net
 -- ----------------------------------------------------------------------------
 
-local extension_types = { [0x01] = "DESSERT_EXT_ETH", 
+local extension_types = { [0x01] = "DESSERT_EXT_ETH",
                           [0x02] = "DESSERT_EXT_TRACE_REQ",
                           [0x03] = "DESSERT_EXT_TRACE_RPL",
                           [0x04] = "DESSERT_EXT_PING",
@@ -45,7 +45,7 @@ dofile("dessert-ext-eth.lua")
 dofile("dessert-ext-ping.lua")
 dofile("dessert-ext-trace.lua")
 dofile("des-ara.lua")
- 
+
 -- Create a new dissector
 DESSERT = Proto ("dessert", "DES-SERT")
 
@@ -76,7 +76,7 @@ f.exts    = ProtoField.string ("dessert.exts", "Extensions")
 
 EXTHDR = Proto("dessert_ext", "DESSERT_EXT");
 local e = EXTHDR.fields
-e.exttype = ProtoField.uint8  ("dessert.ext.type", "Extension type", base.HEX )    
+e.exttype = ProtoField.uint8  ("dessert.ext.type", "Extension type", base.HEX )
 e.extlen  = ProtoField.uint8  ("dessert.ext.len", "Extension length (incl. extension header)", base.DEC ,nil,nil, "length of the extension in bytes, including the 2 bytes of the extension header itself")
 
 -- The dissector function
@@ -88,7 +88,7 @@ function DESSERT.dissector(buffer, pinfo, tree)
     local offset = 0
 
     local proto = buffer (offset, 4)
-    subtree:add(f.proto, proto) 
+    subtree:add(f.proto, proto)
     offset = offset + 4
 
     local version= buffer (offset, 1)
@@ -119,21 +119,21 @@ function DESSERT.dissector(buffer, pinfo, tree)
 
     local hlen = buffer(offset,2)
     subtree:add(f.hlen, hlen)
-    offset = offset + 2   
-    
-    -- because wireshark already dissected the layer 2.5 header at this point 
+    offset = offset + 2
+
+    -- because wireshark already dissected the layer 2.5 header at this point
     -- the *real* header length is hlen-14
     local real_hlen = hlen:uint() - 14
 
     local plen = buffer(offset,2)
     subtree:add(f.plen, plen)
     offset = offset + 2
-    
+
     extensions = subtree:add(f.exts)
-    
-    local extension, exttype, extlen, extdata_real_length, extdata, exttreeitem, dissector  
+
+    local extension, exttype, extlen, extdata_real_length, extdata, exttreeitem, dissector
     local ext_count = 0
-    
+
     while offset < real_hlen do
       ext_count = ext_count +1
       extension = extensions:add(EXTHDR)
@@ -161,14 +161,14 @@ function DESSERT.dissector(buffer, pinfo, tree)
           if length_dissected ~= extdata_real_length then
             print("\t\t\tWarning: Sub-Dissector did not consume all bytes!")
           end
-      else 
+      else
           print("\t\t\tWarning: No extension_dissector for ext_type: "..tostring(extension_types[exttype:uint()]))
       end
       offset = offset + extdata_real_length
       -- print("\t\toffset="..tostring(offset)..", hlen="..tostring(real_hlen))
-    end 
-      
-    -- print("\tno more extensions, offset="..tostring(offset))  
+    end
+
+    -- print("\tno more extensions, offset="..tostring(offset))
     -- dissect paylod based on ext_eth ethertype if any
     ethertype = _G.g_ethertype
 --    if ethertype:uint() == 0 then
@@ -177,20 +177,20 @@ function DESSERT.dissector(buffer, pinfo, tree)
     if ethertype:uint() ~= 0 then
 		print("Ethertype is"..tostring(ethertype))
         local dissector = ethertype_table:get_dissector(ethertype:uint())
-        if dissector ~= nil then        
+        if dissector ~= nil then
             local payload = buffer(offset, plen:uint())
             dissector:call(payload:tvb(), pinfo, tree)
         else
           print("Warning: Payload found but no matching dissector")
         end
-    end   
+    end
     return offset
 end
 
 -- load the ethertype table
 ethertype_table = DissectorTable.get("ethertype")
 
--- register DES-SERT protocol to handle ethertype 0x8042
-ethertype_table:add(0x8042,DESSERT)
+-- register DES-SERT protocol to handle ethertype 0x88B5
+ethertype_table:add(0x88B5, DESSERT)
 
 print("DES-SERT dissector loaded")

@@ -6,7 +6,7 @@
 --These sources were originally developed by David Gutzmann,
 --rewritten and extended by Bastian Blywis
 --at Freie Universitaet Berlin (http://www.fu-berlin.de/),
---Computer Systems and Telematics / Distributed, embedded Systems (DES) group 
+--Computer Systems and Telematics / Distributed, embedded Systems (DES) group
 --(http://cst.mi.fu-berlin.de, http://www.des-testbed.net)
 -- ----------------------------------------------------------------------------
 --This program is free software: you can redistribute it and/or modify it under
@@ -37,9 +37,9 @@ f.ext_eth_ethertype = ProtoField.uint16("dessert.ext.eth.ethertype", "Type", bas
 
 -- The dissector function
 function EXTETH.dissector (buffer, pinfo, tree)
-    print("\t\t\t\tParsing ETH extension")
+--     print("\t\t\t\tParsing ETH extension")
     pinfo.cols.protocol = "DESSERT_EXT_ETH"
-    
+
     local subtree = tree:add(EXTETH, buffer,"Extension Data")
     local offset = 0
     local ext_eth_dhost = buffer(offset, 6)

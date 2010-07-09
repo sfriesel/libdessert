@@ -70,6 +70,7 @@
  * - \ref Architecture "System Architecture and Concepts"
  * - \ref DaemonUsage "How to use DES-SERT based Daemons"
  * - \ref ExampleDaemon "A Simple Example Daemon"
+ * - \ref FirstSteps "First Steps how to Implement a Routing Daemon"
  * - \ref AdvTopics "Advanced Topics"
  *
  * @section feedback_sec Contact & Feedback
@@ -112,19 +113,22 @@
  * #defines
  ******************************************************************************/
 
-/** ethernet protocol used on layer 2 */
-#define DESSERT_ETHPROTO 0x8042
+/** ethertype for frames containing DES-SERT messages */
+#define DESSERT_ETHPROTO 0x88B5
 
-/** maximum frame size to assemble as dessert_msg */
-#define DESSERT_MAXFRAMELEN ETHER_MAX_LEN
+/** maximum frame size to assemble as dessert_msg
+ *
+ * \todo The maximum DES-SERT message size should be derived from the MTU of the sys-interface
+ */
+#define DESSERT_MAXFRAMELEN ETH_FRAME_LEN
 
 /** maximum size of the data part in dessert_ext */
-#define DESSERT_MAXEXTDATALEN 253
+#define DESSERT_MAXEXTDATALEN 254
 
 /** length of protocol string used in dessert_msg */
 #define DESSERT_PROTO_STRLEN 4
 
-/** size of local message processing buffer */
+/** size of local message processing buffer; 1 kbyte should be enough for everybody (?) */
 #define DESSERT_LBUF_LEN 1024
 
 /** return code for many dessert_* functions */
@@ -196,7 +200,9 @@ typedef struct __attribute__ ((__packed__)) dessert_ext {
 
     /** length of the extension in bytes
       * including the 2 bytes of the extension
-      * header itself*/
+      * header itself
+      * \todo We should not include the extension header length in the length
+      */
     uint8_t    len;
 
     /** pointer to the data - real length is len-2 bytes */
@@ -467,10 +473,18 @@ int dessert_set_cli_port(uint16_t port);
 /** flag for dessert_logcfg - disable logging to ringbuffer */
 #define DESSERT_LOG_NORBUF    0x0080
 
-/** flag for dessert_logcfg - enable debug loglevel */
+/** flag for dessert_logcfg - enable debug loglevel
+ *
+ * @deprecated This flag should not used anymore. You can configure the loglevel to
+ * allow messages of level < LOG_INFO.
+ */
 #define DESSERT_LOG_DEBUG     0x0100
 
-/** flag for dessert_logcfg - disable debug loglevel */
+/** flag for dessert_logcfg - disable debug loglevel
+ *
+ * @deprecated This flag should not used anymore. You can configure the loglevel to
+ * ignore messages of level < LOG_INFO.
+ */
 #define DESSERT_LOG_NODEBUG   0x0200
 
 /******************************************************************************

@@ -4,6 +4,7 @@
  *
  * \defgroup DaemonUsage How to use DES-SERT based Daemons
  * \defgroup ExampleDaemon A Simple Example Daemon
+ * \defgroup FirstSteps First Steps to Develop a Routing Daemon
  * \defgroup Architecture Architecture and Concepts of DES-SERT
  * \defgroup AdvTopics Advanced Topics
  */
