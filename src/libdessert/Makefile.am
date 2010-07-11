@@ -25,6 +25,5 @@ libdessert_la_LIBADD = ../snmp/libdessertsnmp.la \
                        @PCAP_LIBS@ \
                        @CLI_LIBS@ \
                        @PTHREAD_LIBS@
-#                        \ @EVENT_LIBS@
 
 libdessert_la_LDFLAGS = -version-number @LIBDESSERT_LIBRARY_VERSION@

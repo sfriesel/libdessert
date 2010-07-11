@@ -9,7 +9,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/libdessert/dessert_core.c])
 AC_CONFIG_HEADERS([config.h])
 
-LIBDESSERT_LIBRARY_VERSION=1:1:1
+LIBDESSERT_LIBRARY_VERSION=1:2:1
 AC_SUBST([LIBDESSERT_LIBRARY_VERSION])
 
 # Checks for programs.
@@ -28,6 +28,9 @@ AC_CHECK_NET_SNMP
 
 AC_SUBST([SNMP_LIBS])
 AC_SUBST([SNMP_CFLAGS])
+
+# Checks for zlib support
+AC_CHECK_ZLIB
 
 # Checks for pcap-config
 AC_CHECK_PCAP

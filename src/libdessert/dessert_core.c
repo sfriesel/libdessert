@@ -121,6 +121,9 @@ int dessert_init(const char* proto, int version, uint16_t opts) {
 	/* initialize net-snmp subagent */
 	_dessert_agentx_init_subagent();
 
+    /* registers SIGTERM handler to flush and close log file */
+    _dessert_log_init();
+
 	return DESSERT_OK;
 }
 

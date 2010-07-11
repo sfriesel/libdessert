@@ -480,6 +480,12 @@ int dessert_set_cli_port(uint16_t port);
 /** flag for dessert_logcfg - disable logging to ringbuffer */
 #define DESSERT_LOG_NORBUF    0x0080
 
+/** flag for dessert_logcfg - enable log file compression */
+#define DESSERT_LOG_GZ        0x0100
+
+/** flag for dessert_logcfg - disable log file compression */
+#define DESSERT_LOG_NOGZ      0x0200
+
 /** flag for dessert_logcfg - enable debug loglevel
  *
  * @deprecated This flag should not used anymore. You can configure the loglevel to

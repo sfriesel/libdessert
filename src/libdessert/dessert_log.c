@@ -26,15 +26,25 @@
 #include "dessert_internal.h"
 #include "dessert.h"
 #include <sys/stat.h>
+#include <signal.h>
+
+#ifdef HAVE_LIBZ
+#include <zlib.h>
+#endif
 
 /* data storage */
 FILE *dessert_logfd = NULL;
+#ifdef HAVE_LIBZ
+gzFile *dessert_logfdgz = NULL;
+#endif
+
 char dessert_logprefix[12];
 
-#define _DESSERT_LOGFLAG_SYSLOG   0x1
-#define _DESSERT_LOGFLAG_LOGFILE  0x2
-#define _DESSERT_LOGFLAG_STDERR   0x4
-#define _DESSERT_LOGFLAG_RBUF     0x8
+#define _DESSERT_LOGFLAG_SYSLOG   0x01
+#define _DESSERT_LOGFLAG_LOGFILE  0x02
+#define _DESSERT_LOGFLAG_STDERR   0x04
+#define _DESSERT_LOGFLAG_RBUF     0x08
+#define _DESSERT_LOGFLAG_GZ       0x10
 int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
 int _dessert_loglevel = LOG_INFO;
 
@@ -46,7 +56,7 @@ int _dessert_logrbuf_used = 0; /* used slots */
 pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; /* for resizing */
 pthread_mutex_t _dessert_logrbuf_mutex = PTHREAD_MUTEX_INITIALIZER; /* for moving _dessert_logrbuf_cur */
 
-/* internal functions forward declarations TODO: cleanup */
+/* internal functions forward declarations \todo cleanup */
 
 /******************************************************************************
  *
@@ -82,6 +92,7 @@ int dessert_logcfg(uint16_t opts) {
 		}
 		_dessert_logflags &= ~_DESSERT_LOGFLAG_SYSLOG;
 	}
+
 	if ((opts & DESSERT_LOG_STDERR) && !(opts & DESSERT_LOG_NOSTDERR)
 			&& !(_dessert_status & _DESSERT_STATUS_DAEMON)) {
 		_dessert_logflags |= _DESSERT_LOGFLAG_STDERR;
@@ -89,18 +100,39 @@ int dessert_logcfg(uint16_t opts) {
 			|| (_dessert_status & _DESSERT_STATUS_DAEMON)) {
 		_dessert_logflags &= ~_DESSERT_LOGFLAG_STDERR;
 	}
+
+#ifdef HAVE_LIBZ
+    // enable or disable compression
+    if ((opts & DESSERT_LOG_GZ) && !(opts & DESSERT_LOG_NOGZ)) {
+      _dessert_logflags |= _DESSERT_LOGFLAG_GZ;
+    }
+    else if((!(opts & DESSERT_LOG_GZ) && (opts & DESSERT_LOG_NOGZ))) {
+      _dessert_logflags &= ~_DESSERT_LOGFLAG_GZ;
+    }
+#endif
+
 	if ((opts & DESSERT_LOG_FILE) && !(opts & DESSERT_LOG_NOFILE)
-			&& dessert_logfd != NULL) {
+			&& (dessert_logfd != NULL
+#ifdef HAVE_LIBZ
+			|| dessert_logfdgz != NULL
+#endif
+			)) {
 		_dessert_logflags |= _DESSERT_LOGFLAG_LOGFILE;
 	} else if ((!(opts & DESSERT_LOG_FILE) && (opts & DESSERT_LOG_NOFILE))
-			|| dessert_logfd == NULL) {
+			|| (dessert_logfd == NULL
+#ifdef HAVE_LIBZ
+			&& dessert_logfdgz == NULL
+#endif
+			)) {
 		_dessert_logflags &= ~_DESSERT_LOGFLAG_LOGFILE;
 	}
+
 	if ((opts & DESSERT_LOG_DEBUG) && !(opts & DESSERT_LOG_NODEBUG)) {
 		_dessert_loglevel = LOG_DEBUG;
 	} else if (!(opts & DESSERT_LOG_DEBUG) && (opts & DESSERT_LOG_NODEBUG)) {
 		_dessert_loglevel = LOG_INFO;
 	}
+
 	if ((opts & DESSERT_LOG_RBUF) && !(opts & DESSERT_LOG_NORBUF)) {
 		_dessert_logflags |= _DESSERT_LOGFLAG_RBUF;
 	} else if (!(opts & DESSERT_LOG_RBUF) && (opts & DESSERT_LOG_NORBUF)) {
@@ -218,9 +250,14 @@ void _dessert_log(int level, const char* func, const char* file, int line,
 		}
 
 		if (32 + buf_slen + lf_slen > 80) {
-			if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE && dessert_logfd
-					!= NULL)
+			if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
+              if(dessert_logfd != NULL)
 				fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+#ifdef HAVE_LIBZ
+              else if(dessert_logfdgz != NULL)
+                gzprintf(dessert_logfdgz, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+#endif
+            }
 			if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR)
 				fprintf(stderr, "%s%s%s\n%80s\n", lds, lt, buf, lf);
 			if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL)
@@ -231,9 +268,14 @@ void _dessert_log(int level, const char* func, const char* file, int line,
 				buf[buf_slen++] = ' ';
 			}
 			buf[buf_slen] = '\0';
-			if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE && dessert_logfd
-					!= NULL)
+			if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
+              if(dessert_logfd != NULL)
 				fprintf(dessert_logfd, "%s%s%s%s\n", lds, lt, buf, lf);
+#ifdef HAVE_LIBZ
+              else if(dessert_logfdgz != NULL)
+                gzprintf(dessert_logfdgz, "%s%s%s%s\n", lds, lt, buf, lf);
+#endif
+            }
 			if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR)
 				fprintf(stderr, "%s%s%s%s\n", lds, lt, buf, lf);
 			if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL)
@@ -241,9 +283,13 @@ void _dessert_log(int level, const char* func, const char* file, int line,
 						buf, lf);
 		}
 
-		if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE && dessert_logfd
-				!= NULL) {
+		if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
+          if(dessert_logfd != NULL)
 			fflush(dessert_logfd);
+#ifdef HAVE_LIBZ
+          else if(dessert_logfdgz != NULL)
+            gzflush(dessert_logfdgz, Z_FULL_FLUSH);
+#endif
 		}
 		if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
 			pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
@@ -255,16 +301,45 @@ void _dessert_log(int level, const char* func, const char* file, int line,
 /** command "logging file" */
 int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[],
 		int argc) {
-	FILE *newlogdf;
+	FILE *newlogdf = NULL;
+#ifdef HAVE_LIBZ
+    gzFile *newlogdfgz = NULL;
+    const char gz[] = ".gz";
+#endif
 
 	if (argc != 1) {
 		cli_print(cli, "usage %s filename\n", command);
 		return CLI_ERROR;
 	}
 
-	newlogdf = fopen(argv[0], "a");
+#ifdef HAVE_LIBZ
+    // see if the filename ends with ".gz"
+    int len = strlen(argv[0]);
+    int wrong_fext = strcmp(gz, argv[0]+len+1-sizeof(gz));
 
-	if (newlogdf == NULL) {
+    if(_dessert_logflags & _DESSERT_LOGFLAG_GZ || !wrong_fext) {
+      if(wrong_fext) {
+        char newname[len+sizeof(gz)+1];
+        snprintf(newname, len+sizeof(gz)+1, "%s%s", argv[0], gz);
+        newlogdfgz = gzopen(newname, "a");
+      }
+      else {
+        newlogdfgz = gzopen(argv[0], "a");
+      }
+      dessert_notice("using log file compression\n");
+    }
+    else
+#endif
+    {
+      newlogdf = fopen(argv[0], "a");
+      dessert_notice("using no log file compression\n");
+    }
+
+	if (newlogdf == NULL
+#ifdef HAVE_LIBZ
+      && newlogdfgz == NULL
+#endif
+      ) {
 		dessert_err("failed o open %s as logfile\n", argv[0]);
 		cli_print(cli, "failed o open %s as logfile\n", argv[0]);
 		return CLI_ERROR;
@@ -275,22 +350,53 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[],
 		dessert_logcfg(DESSERT_LOG_NOFILE);
 		fclose(dessert_logfd);
 	}
+#ifdef HAVE_LIBZ
+	if (dessert_logfdgz != NULL) {
+        dessert_logcfg(DESSERT_LOG_NOFILE);
+        gzclose(dessert_logfdgz);
+    }
+#endif
 
-	dessert_logfd = newlogdf;
-	dessert_logcfg(DESSERT_LOG_FILE);
+    if(newlogdf) {
+      dessert_logfd = newlogdf;
+      dessert_logcfg(DESSERT_LOG_FILE);
+    }
+#ifdef HAVE_LIBZ
+    if(newlogdfgz) {
+      dessert_logfdgz = newlogdfgz;
+      dessert_logcfg(DESSERT_LOG_FILE | DESSERT_LOG_GZ);
+    }
+#endif
 
 	return CLI_OK;
 }
 
-/** command "logging file" */
-int _dessert_cli_no_logging_file(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-	dessert_logcfg(DESSERT_LOG_NOFILE);
-	if (dessert_logfd != NULL) {
-		fclose(dessert_logfd);
-	}
-	dessert_logfd = NULL;
-	return CLI_OK;
+int _dessert_closeLogFile(int signal) {
+    dessert_notice("closing log file");
+    dessert_logcfg(DESSERT_LOG_NOFILE);
+    if (dessert_logfd != NULL) {
+        fclose(dessert_logfd);
+    }
+    dessert_logfd = NULL;
+
+#ifdef HAVE_LIBZ
+    if (dessert_logfdgz != NULL) {
+        gzclose(dessert_logfdgz);
+    }
+    dessert_logfdgz = NULL;
+#endif
+  return 0;
+}
+
+int _dessert_log_init() {
+  dessert_signalcb_add(SIGTERM, _dessert_closeLogFile);
+  return 0;
+}
+
+/** command "no logging file" */
+int _dessert_cli_no_logging_file(struct cli_def *cli, char *command, char *argv[], int argc) {
+    _dessert_closeLogFile(0);
+    return CLI_OK;
 }
 
 /** command "logging ringbuffer" */

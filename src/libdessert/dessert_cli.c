@@ -259,7 +259,7 @@ int _dessert_cli_init() {
 			_dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"set logfile and enable file logging");
 	cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "file",
-			_dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+			_dessert_cli_no_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"set logfile disable file logging");
 
     cli_register_command(dessert_cli,

@@ -172,9 +172,10 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
  * @arg len the length of the buffer
  * @arg *buf text output buffer
  * @arg blen text output buffer length
+ *
+ * \todo remove len parameter
  **/
-void dessert_msg_dump(const dessert_msg_t* msg, size_t len, char *buf,
-		size_t blen) {
+void dessert_msg_dump(const dessert_msg_t* msg, size_t len, char *buf, size_t blen) {
 	dessert_msg_proc_dump(msg, len, NULL, buf, blen);
 }
 
@@ -360,9 +361,10 @@ int dessert_msg_proc_clone(dessert_msg_proc_t **procnew,
  * @arg *proc the processing buffer
  * @arg *buf text output buffer
  * @arg blen text output buffer length
+ *
+ * \todo remove len parameter
  **/
-void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len,
-		const dessert_msg_proc_t *proc, char *buf, size_t blen) {
+void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_msg_proc_t *proc, char *buf, size_t blen) {
 	dessert_ext_t *ext;
 	int extidx = 0;
 	int i;
