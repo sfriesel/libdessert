@@ -92,6 +92,10 @@
 #define TUN_LINUX
 #endif
 
+// #ifdef HAVE_CONFIG_H
+// #include <config.h>
+// #endif
+
 #include <net/if.h>
 #include <net/ethernet.h>
 #include <pcap.h>
@@ -99,6 +103,7 @@
 #include <syslog.h>
 #include <stdlib.h>
 #include <libcli.h>
+#include <signal.h>
 
 /***************************************************************************//**
  * @ingroup libdessert
@@ -398,6 +403,9 @@ extern u_char      ether_null[ETHER_ADDR_LEN];
 
 /** the config funnel */
 extern pthread_rwlock_t dessert_cfglock;
+
+/** Signal for which you can register callbacks */
+static const int dessert_supported_signals[] = {SIGTERM, SIGHUP, SIGUSR1, SIGUSR2};
 
 /******************************************************************************
  * functions

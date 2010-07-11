@@ -29,6 +29,7 @@
 /* load needed libs - quite dirty */
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
 #include <stdarg.h>
@@ -44,11 +45,11 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <libcli.h>
+#include <uthash.h>
+#include <utlist.h>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
-#include <uthash.h>
-#include <utlist.h>
 
 #include "dessertObjects.h"
 #include "dessertMeshifTable.h"

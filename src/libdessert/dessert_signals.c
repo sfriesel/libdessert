@@ -25,12 +25,9 @@
 
 #include "dessert_internal.h"
 #include "dessert.h"
-#include <signal.h>
 
 pthread_t _dessert_signal_thread;
 pthread_mutex_t _dessert_signal_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-int _supported_signals[] = {SIGTERM, SIGHUP, SIGUSR1, SIGUSR2};
 
 typedef struct sig_handlercb {
     dessert_signalcb_t* callback;
@@ -47,8 +44,8 @@ sig_handler_t* _sig_handlers_map = NULL;
 
 uint8_t _signal_supported(int signal) {
     int i;
-    for(i=0; i<sizeof(_supported_signals)/sizeof(int); i++) {
-        if(_supported_signals[i] == signal)
+    for(i=0; i<sizeof(dessert_supported_signals)/sizeof(int); i++) {
+        if(dessert_supported_signals[i] == signal)
             return 1;
     }
     return 0;
@@ -111,7 +108,7 @@ int dessert_signalcb_add(int signal, dessert_signalcb_t* callback) {
  * Remove a callback function registered to handle a specifc signal.
  *
  * @param signal number of the signal as specified in signal.h. Currently
- * the signals specified in _supported_signals are supported.
+ * the signals specified in dessert_supported_signals are supported.
  * @param callback callback function to deregister
  * @return -1 on error, else 0
  */
@@ -157,8 +154,8 @@ void* dessert_signal_thread(void* param) {
     sigset_t signal_mask_catch;
     sigemptyset(&signal_mask_catch);
 
-    for(i=0; i<sizeof(_supported_signals)/sizeof(int); i++) {
-        sigaddset(&signal_mask_catch, _supported_signals[i]);
+    for(i=0; i<sizeof(dessert_supported_signals)/sizeof(int); i++) {
+        sigaddset(&signal_mask_catch, dessert_supported_signals[i]);
     }
 
     dessert_info("signal thread started");

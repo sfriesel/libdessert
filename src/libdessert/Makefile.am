@@ -4,8 +4,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
               -I../snmp \
               @PCAP_CFLAGS@ \
               @SNMP_CFLAGS@ \
-              @PTHREAD_CFLAGS@ \
-              -DVERSION=\"@VERSION@\"
+              @PTHREAD_CFLAGS@
 
 lib_LTLIBRARIES = libdessert.la
 
