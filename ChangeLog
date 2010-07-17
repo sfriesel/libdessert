@@ -1,3 +1,7 @@
+??? - 0.96
+    - Merged Android branch; SNMP support can now be disabled
+    - Current libtool version = 1.3.1
+
 20100624 - 0.95
     - loglevel is now configurable over the CLI
     - signals can be caught and handled by registered callbacks
