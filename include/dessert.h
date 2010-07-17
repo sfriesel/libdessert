@@ -105,6 +105,17 @@
 #include <libcli.h>
 #include <signal.h>
 
+#ifdef ANDROID
+#include <pthread.h>
+#include <pthreadex.h>
+#include <net/if.h>
+#include <net/if_ether.h>
+#include <netinet/in6.h>
+#else
+#include <net/if.h>
+#include <net/ethernet.h>
+#endif
+
 /***************************************************************************//**
  * @ingroup libdessert
  * @defgroup global Global defines, typedefs, and structures

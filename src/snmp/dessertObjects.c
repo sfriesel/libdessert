@@ -8,6 +8,8 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include "dessert_internal.h"
 
+#include "dessertObjects.h"
+
 /** Initializes the dessertObjects module */
 void
 init_dessertObjects(void)
@@ -57,12 +59,12 @@ handle_dessertMeshifNumber(netsnmp_mib_handler *handler,
 
 	/*
      * We are never called for a GETNEXT if it's registered as a
-     * "instance", as it's "magically" handled for us.  
+     * "instance", as it's "magically" handled for us.
      */
 
     /*
      * a instance handler also only hands us one request at a time, so
-     * we don't need to loop over a list of requests; we'll only get one. 
+     * we don't need to loop over a list of requests; we'll only get one.
      */
 
     switch (reqinfo->mode) {
@@ -76,7 +78,7 @@ handle_dessertMeshifNumber(netsnmp_mib_handler *handler,
 
     default:
         /*
-         * we should never get here, so this is a really bad error 
+         * we should never get here, so this is a really bad error
          */
         snmp_log(LOG_ERR,
                  "unknown mode (%d) in handle_dessertMeshifNumber\n",
@@ -95,12 +97,12 @@ handle_applicationVersion(netsnmp_mib_handler *handler,
 {
     /*
      * We are never called for a GETNEXT if it's registered as a
-     * "instance", as it's "magically" handled for us.  
+     * "instance", as it's "magically" handled for us.
      */
 
     /*
      * a instance handler also only hands us one request at a time, so
-     * we don't need to loop over a list of requests; we'll only get one. 
+     * we don't need to loop over a list of requests; we'll only get one.
      */
 
     switch (reqinfo->mode) {
@@ -114,7 +116,7 @@ handle_applicationVersion(netsnmp_mib_handler *handler,
 
     default:
         /*
-         * we should never get here, so this is a really bad error 
+         * we should never get here, so this is a really bad error
          */
         snmp_log(LOG_ERR,
                  "unknown mode (%d) in handle_applicationVersion\n",
@@ -133,12 +135,12 @@ handle_protocollShortName(netsnmp_mib_handler *handler,
 {
     /*
      * We are never called for a GETNEXT if it's registered as a
-     * "instance", as it's "magically" handled for us.  
+     * "instance", as it's "magically" handled for us.
      */
 
     /*
      * a instance handler also only hands us one request at a time, so
-     * we don't need to loop over a list of requests; we'll only get one. 
+     * we don't need to loop over a list of requests; we'll only get one.
      */
 
     switch (reqinfo->mode) {
@@ -152,7 +154,7 @@ handle_protocollShortName(netsnmp_mib_handler *handler,
 
     default:
         /*
-         * we should never get here, so this is a really bad error 
+         * we should never get here, so this is a really bad error
          */
         snmp_log(LOG_ERR,
                  "unknown mode (%d) in handle_protocollShortName\n",

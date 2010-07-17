@@ -9,6 +9,8 @@
 
 #include "dessert_internal.h"
 
+#include "dessertSysifTable.h"
+
 #ifdef __cplusplus
 extern          "C" {
 #endif
@@ -37,7 +39,7 @@ extern          "C" {
      */
 
 
-    int            
+    int
         dessertSysifTable_init_data(dessertSysifTable_registration *
                                     dessertSysifTable_reg);
 

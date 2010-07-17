@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([libdessert], [0.95], [des-sert@spline.inf.fu-berlin.de])
+AC_INIT([libdessert], [0.96], [des-sert@spline.inf.fu-berlin.de])
 AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR([src/libdessert/dessert_core.c])
 AC_CONFIG_HEADERS([config.h])
 
-LIBDESSERT_LIBRARY_VERSION=1:2:1
+LIBDESSERT_LIBRARY_VERSION=1:3:1
 AC_SUBST([LIBDESSERT_LIBRARY_VERSION])
 
 # Checks for programs.
@@ -24,10 +24,12 @@ AC_PROG_LN_S
 AM_PROG_LIBTOOL
 
 # Checks for net-snmp-config
-AC_CHECK_NET_SNMP
-
-AC_SUBST([SNMP_LIBS])
-AC_SUBST([SNMP_CFLAGS])
+AS_IF([test "x$with_net_snmp" != xno],
+    [AC_CHECK_NET_SNMP
+     AC_SUBST([SNMP_LIBS])
+     AC_SUBST([SNMP_CFLAGS])
+     AC_DEFINE([WITH_NET_SNMP], [1], [Enable or disable net-snmp support (default=yes)])]
+)
 
 # Checks for zlib support
 CHECK_ZLIB
@@ -95,6 +97,13 @@ AC_CONFIG_FILES([Makefile
                 libdessert.pc
                 ])
 
+AC_ARG_WITH(net-snmp,
+        [AS_HELP_STRING([--without-net-snmp], [Disable net-snmp support])],
+        [],
+        [with_net_snmp=yes])
+AC_SUBST(with_net_snmp)
+AM_CONDITIONAL([WITH_NET_SNMP], [test "x$with_net_snmp" != xno])
+
 AC_ARG_ENABLE(dissectors, [  --enable-dissectors     install Wireshark dissectors @<:@Default=no@:>@], [install_dissectors=1], [install_dissectors=0])
 AC_SUBST(install_dissectors)
 
@@ -102,7 +111,7 @@ AC_ARG_WITH(dissectorsdir,
         [  --with-dissectorsdir=DIR    Directory to install Wireshark dissectors. @<:@DATAROOTDIR/wireshark/@:>@],
         [ AC_SUBST(with_dissectorsdir) ])
 
-AS_IF([test "$install_dissectors"],
+AS_IF([test $install_dissectors -eq 1],
     [AS_IF([test -z "$with_dissectorsdir"],
         [with_dissectorsdir="$datarootdir/wireshark"; echo "Using default dissector dir: $with_dissectorsdir"],
         [echo "Dissectors dir: $with_dissectorsdir"])
@@ -110,17 +119,40 @@ AS_IF([test "$install_dissectors"],
 )
 
 AC_ARG_ENABLE(mibs, [  --enable-mibs           install MIBs @<:@Default=no@:>@], [install_mibs=1], [install_mibs=0])
+AS_IF([test $install_mibs -eq 1],
+    [AS_IF([test "x$with_net_snmp" = xno],
+        [install_mibs=0; echo "Ignoring --enable-mibs because net-snmp support is disabled"])
+    ]
+)
 AC_SUBST(install_mibs)
 
 AC_ARG_WITH(mibsdir,
         [  --with-mibsdir=DIR      Directory to MIBs. @<:@DATAROOTDIR/mibs@:>@],
         [ AC_SUBST(with_mibsdir) ])
 
-AS_IF([test "$install_mibs"],
+AS_IF([test $install_mibs -eq 1],
     [AS_IF([test -z "$with_mibsdir"],
         [with_mibsdir="$datarootdir/mibs"; echo "Using default MIBs dir: $with_mibsdir"],
         [echo "MIBs dir: $with_mibsdir"])
     ]
+)
+
+AC_ARG_ENABLE(android-build,
+    AS_HELP_STRING([--enable-android-build], [enables build to be compiled for android @<:@Default=no@:>@]),
+    [do_android_build=1],
+    [do_android_build=0])
+AC_SUBST(do_android_build)
+AM_CONDITIONAL([ANDROID], [test $do_android_build -eq 1])
+
+# Checks for special android library libpthreadex
+
+AS_IF([test $do_android_build -eq 1],
+   [AC_CHECK_HEADERS([pthreadex.h])
+    AC_SEARCH_LIBS([pthread_rwlock_unlock],
+        [pthreadex],
+        [],
+        [AC_MSG_ERROR([pthreadex could not found, you need to manually build this special library])])
+   ]
 )
 
 AC_OUTPUT

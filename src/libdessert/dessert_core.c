@@ -118,8 +118,10 @@ int dessert_init(const char* proto, int version, uint16_t opts) {
 	/* start periodic thread */
 	_dessert_periodic_init();
 
-	/* initialize net-snmp subagent */
-	_dessert_agentx_init_subagent();
+#ifdef WITH_NET_SNMP
+    /* initialize net-snmp subagent */
+    _dessert_agentx_init_subagent();
+#endif
 
     /* registers SIGTERM handler to flush and close log file */
     _dessert_log_init();
@@ -180,7 +182,9 @@ int dessert_run() {
  */
 void dessert_exit() {
 	/* kill snmp_worker thread */
-	dessert_agentx_stop_subagent();
+#ifdef WITH_NET_SNMP
+    dessert_agentx_stop_subagent();
+#endif
 	pthread_cond_signal(&_dessert_exit_do);
 }
 

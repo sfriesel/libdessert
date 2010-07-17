@@ -23,6 +23,10 @@
  http://www.des-testbed.net/
  *******************************************************************************/
 
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+#include <net-snmp/agent/net-snmp-agent-includes.h>
+
 #include "dessert_internal.h"
 #include "dessert.h"
 
@@ -107,12 +111,12 @@ void dessert_agentx_appstats_destroy(dessert_agentx_appstats_t *appstat) {
 	free(appstat);
 }
 
-/** Adds an application statistics callback. 
+/** Adds an application statistics callback.
  *
  * @param[in] *c the callback to add
  *
  * @retval pointer to the corresponding callback entry on success
- * @retval NULL otherwise 
+ * @retval NULL otherwise
  *
  * @par Description:\n
  *

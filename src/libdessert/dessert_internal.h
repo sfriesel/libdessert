@@ -39,7 +39,9 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#ifndef ANDROID
 #include <sys/sysctl.h>
+#endif
 #include <net/route.h>
 #include <net/if_arp.h>
 #include <arpa/inet.h>
@@ -47,15 +49,8 @@
 #include <libcli.h>
 #include <uthash.h>
 #include <utlist.h>
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
-#include <net-snmp/agent/net-snmp-agent-includes.h>
 
-#include "dessertObjects.h"
-#include "dessertMeshifTable.h"
-#include "dessertSysifTable.h"
-#include "dessertAppStatsTable.h"
-#include "dessertAppParamsTable.h"
+#include "dessert.h"
 
 /******************************************************************************
  *

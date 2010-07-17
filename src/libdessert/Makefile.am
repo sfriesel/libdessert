@@ -1,15 +1,11 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
-              -I../callbacks \
-              -I../snmp \
               @PCAP_CFLAGS@ \
-              @SNMP_CFLAGS@ \
               @PTHREAD_CFLAGS@
 
 lib_LTLIBRARIES = libdessert.la
 
-libdessert_la_SOURCES = dessert_agentx.c \
-                        dessert_core.c \
+libdessert_la_SOURCES = dessert_core.c \
                         dessert_meshiface.c \
                         dessert_periodic.c \
                         dessert_signals.c \
@@ -19,10 +15,23 @@ libdessert_la_SOURCES = dessert_agentx.c \
                         dessert_sysiface.c \
                         dessert_internal.h
 
-libdessert_la_LIBADD = ../snmp/libdessertsnmp.la \
-                       @SNMP_LIBS@ \
-                       @PCAP_LIBS@ \
+libdessert_la_LIBADD = @PCAP_LIBS@ \
                        @CLI_LIBS@ \
                        @PTHREAD_LIBS@
 
 libdessert_la_LDFLAGS = -version-number @LIBDESSERT_LIBRARY_VERSION@
+
+if WITH_NET_SNMP
+    AM_CPPFLAGS += -I../snmp \
+                   @SNMP_CFLAGS@
+
+    libdessert_la_SOURCES += dessert_agentx.c
+
+    libdessert_la_LIBADD += ../snmp/libdessertsnmp.la \
+                            @SNMP_LIBS@
+endif
+
+if ANDROID
+    AM_CPPFLAGS += -DANDROID
+	libdessert_la_LIBADD += pthreadex.la
+endif
