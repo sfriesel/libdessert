@@ -96,8 +96,6 @@
 // #include <config.h>
 // #endif
 
-#include <net/if.h>
-#include <net/ethernet.h>
 #include <pcap.h>
 #include <stdint.h>
 #include <syslog.h>
