@@ -1,5 +1,8 @@
-??? - 0.96
+20100801 - 0.96
     - Merged Android branch; SNMP support can now be disabled
+    - Fixed zlib bug
+    - Removed deprecated DESSERT_LOG_DEBUG and DESSERT_LOG_NODEBUG flags
+    - Unified log output format (always a newline before the function and line number is printed)
     - Current libtool version = 1.3.1
 
 20100624 - 0.95

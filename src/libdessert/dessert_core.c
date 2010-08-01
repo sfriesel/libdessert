@@ -163,7 +163,7 @@ int dessert_pid(char* pidfile) {
     }
 
     dessert_pidfile_name = pidfile;
-    dessert_debug("wrote pid to file: %s\n", dessert_pidfile_name);
+    dessert_debug("wrote pid to file: %s", dessert_pidfile_name);
     return DESSERT_OK;
 }
 

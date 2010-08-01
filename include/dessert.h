@@ -503,20 +503,6 @@ int dessert_set_cli_port(uint16_t port);
 /** flag for dessert_logcfg - disable log file compression */
 #define DESSERT_LOG_NOGZ      0x0200
 
-/** flag for dessert_logcfg - enable debug loglevel
- *
- * @deprecated This flag should not used anymore. You can configure the loglevel to
- * allow messages of level < LOG_INFO.
- */
-#define DESSERT_LOG_DEBUG     0x0100
-
-/** flag for dessert_logcfg - disable debug loglevel
- *
- * @deprecated This flag should not used anymore. You can configure the loglevel to
- * ignore messages of level < LOG_INFO.
- */
-#define DESSERT_LOG_NODEBUG   0x0200
-
 /******************************************************************************
  * functions
  ******************************************************************************/
