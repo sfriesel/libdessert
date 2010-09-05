@@ -1,3 +1,7 @@
+??? - 0.97
+    - Increased maximum number of characters in a log message from 1024 to 4096
+    - Current libtool version = 1.4.1
+
 20100801 - 0.96
     - Merged Android branch; SNMP support can now be disabled
     - Fixed zlib bug

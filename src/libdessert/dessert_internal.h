@@ -109,7 +109,7 @@ int _dessert_log_init(void);
  ******************************************************************************/
 
 /** maximum size of a log line */
-#define DESSERT_LOGLINE_MAX 1024
+#define DESSERT_LOGLINE_MAX 4096
 
 /** logfile file pointer to use with DESSERT_OPT_LOGFILE */
 extern FILE *dessert_logfd;
