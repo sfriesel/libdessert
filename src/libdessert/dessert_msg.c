@@ -712,9 +712,7 @@ int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len,
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP always
  **/
-int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len,
-		dessert_msg_proc_t *proc, const dessert_meshif_t *iface,
-		dessert_frameid_t id) {
+int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
 	dessert_ext_t *ext;
 
 	/* abort if message has no trace extension */

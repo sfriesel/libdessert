@@ -81,7 +81,6 @@ e.extlen  = ProtoField.uint8  ("dessert.ext.len", "Extension length (incl. exten
 
 -- The dissector function
 function DESSERT.dissector(buffer, pinfo, tree)
-    print("\tdissecting ethertype 0x8042")
     pinfo.cols.protocol = "DES-SERT"
 
     local subtree = tree:add(DESSERT, buffer(),"DES-SERT Protocol Data")
@@ -151,13 +150,10 @@ function DESSERT.dissector(buffer, pinfo, tree)
       extdata_real_length = extlen:uint() - 2
       extdata = buffer(offset, extdata_real_length)
       local dissector = dessert_dissector_table:get_dissector(exttype:uint())
-      print("\t\tExtension type is..."..tostring(exttype:uint()))
       if dissector ~= nil then
           dissector:call(extdata:tvb(), pinfo, extension)
 		  length_dissected = _G.g_offset
 		  ethertype = _G.g_ethertype
-		  print("\t\t\tBytes dissected by dissector: "..tostring(length_dissected))
-          print("\t\t\tEthertype: "..tostring(ethertype))
           if length_dissected ~= extdata_real_length then
             print("\t\t\tWarning: Sub-Dissector did not consume all bytes!")
           end
@@ -171,11 +167,7 @@ function DESSERT.dissector(buffer, pinfo, tree)
     -- print("\tno more extensions, offset="..tostring(offset))
     -- dissect paylod based on ext_eth ethertype if any
     ethertype = _G.g_ethertype
---    if ethertype:uint() == 0 then
---        ethertype = nil
---    end
     if ethertype:uint() ~= 0 then
-		print("Ethertype is"..tostring(ethertype))
         local dissector = ethertype_table:get_dissector(ethertype:uint())
         if dissector ~= nil then
             local payload = buffer(offset, plen:uint())
