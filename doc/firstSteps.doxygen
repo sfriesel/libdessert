@@ -2,267 +2,942 @@
  * \ingroup Manual
  * \addtogroup FirstSteps
  *
- * This module is a step to step guide on how to implement and compile a DES-SERT based Daemon and then how to expend it with routing logic.
+ * This module is a step by step guide on how to implement, compile and to expend a DES-SERT based daemon with routing logic. For that purpose we first will create a skeleton to get an overwiew about the possibilities in DES-SERT.
  *
- * @section sec_usage_confs Fundamental knownledge
+ * @section sec_fs_skeleton_main Creating a skeleton - Fundamental knowledge
  *
- * The daemon with your routing protocol logic is located in user space of the des-testbed routers. To receive packets there are two network
- * interfaces. On one hand you have the TUN/TAP interface, which is simply a interface for sending or receiving packets to user space. Packets
- * received or sent via a TUN interface are IPv4/IPv6 datagrams; packets received or sent via TAP devices are Ethernet frames. On the other hand *
- * there is another network interface which is connected to other mesh testbed router. Through this interface the exchange of packets between mesh
- * routers will happen. DES-SERT uses libpcap to receive and send packets to the network interface. libpcap is an application programming interface
- * (API) for capturing network traffic, which meets our requirements.
- * Every sent or received packet is represented as a DES-SERT message. In this message all needed information is stored. If you want to store data
- * for your routing logic, you have to store it right in the message or in message extensions. So in fact you have DES-SERT messages and maybe some
- * extensions for this message. DES-SERT extension is data piggybacked on a DES-SERT message.
- * Sometimes routing algorithms split a received packet into several parts to process it in different steps. Some of these steps could be packet
- * validation, loop-detection or routing table lookup. To guarentee that the packet runs through all steps, DES-SERT enables you to use processing
- * pipelines. So you only need to register your functions into a pipeline and the packet will be passed through all of them. In fact there are even
- * two pipelines- one for packets received from the user space via a TUN or TAP interface (sys interface) and one for packets received via a
- * network interface (mesh interfaces).
+ * The DES-testbed is a a non-commercial research testbed with the focus on wireless mesh networks and wireless sensor networks. It consists over 100 mesh router, which can be used to run experiments on it. Every mesh router has a embedded PC board with three IEEE 802.11 network cards and a wireless sensor node. Currently several routing daemons are already coded and ready for experiments on the mesh router. The router daemons are located in the user space of the router. The communication with other routers is guaranted through the IEEE 802.11 interfaces. There is also a so called TUN/TAP interface, which simply is for sending packets to user space or receiving from it. Packets received or sent via a TUN interface are IPv4/IPv6 datagrams; packets received or sent via TAP devices are Ethernet frames. DES-SERT, the routing framework of DES-testbed, uses libpcap to receive and send packets from/to the network interface. libpcap is an application programming interface (API) for capturing network traffic. If you later use the interfaces to send or receive packets, these are represented as DES-SERT messages. But these messages have a fixed length, you cannot add own data to them. If you want to store data for your routing logic, you have to store it right in the message extensions. So in fact you have DES-SERT messages and maybe some extensions for this message. DES-SERT extension is data piggybacked on a DES-SERT message. When a DES-SERT daemon receives a DES-SERT message, it has to process this message. Often routing algorithms split a received packet into several parts to process it in different steps. Some of these steps could be packet validation, loop-detection or routing table lookup. To guarentee that the packet runs through all steps, DES-SERT enables you to use processing pipelines. So you only need to register your functions onto a pipeline and the packet will be passed through all of them. In fact there are even two pipelines- one for packets received from the user space via a TUN or TAP interface (sys interface) and one for packets received via a network interface (mesh interfaces).
  *
- * @section subsec_usage_conf1 Creating a simple daemon skeleton
+ * @section sec_fs_skeleton_code Creating a skeleton - Explaining the code
  *
- * In the upcoming example you learn how to implement the program logic. You will see a complete daemon skeleton before we will discuss all parts
- * of it. The daemon program has no complex routing logic, it doesnt send any packets to another daemon.
+ * In the upcoming example you will learn how to implement a daemon skeleton. The daemon program has no complex routing logic, it doesnt send any packets to another daemon. Later we will expand this skeleton with more complex and interesting features. To give you a complete understanding of this daemon we will explain all parts starting with the libraries.
  *
- * Example file:
  * @code
- *  #include <stdio.h>
- *  #include <string.h>
- *  #include <dessert.h>
- *  #include <dessert-extra.h>
- *  #include <libcli.h>
- *
- *  typedef struct __attribute__((__packed__)) _my_extension {
- *      uint8_t value1;
- *      uint16_t value2;
- *      char char1;
- *  } my_extension;
- *
- *  enum extensions {
- *      EXAMPLE_EXT_1 = DESSERT_EXT_USER, EXAMPLE_EXT_2
- *  };
- *
- *  void init_cli() {
- *      cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys",
- *           dessert_cli_cmd_addsysif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys")
- *      cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh",
- *           dessert_cli_cmd_addmeshif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize me")
- *  }
- *
- *  int toMesh(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *tunif, dessert_frameid_t id) {
- *      my_extension *mext = NULL;
- *      dessert_ext_t *ext = NULL;
- *      dessert_msg_addext(msg, &ext, EXAMPLE_EXT_1, sizeof(my_extension));
- *      mext = (my_extension*) &(ext->data);
- *      mext->value1 = 123;
- *      mext->value2 = 45678;
- *      mext->char1 = 'X';
- *
- *      dessert_meshsend(msg, NULL);
- *      return DESSERT_MSG_DROP;
- *  }
- *
- *  int toSys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
- *      struct ether_header *eth;
- *      size_t eth_len;
- *
- *      if (proc->lflags & DESSERT_LFLAG_DST_SELF ||
- *              proc->lflags & DESSERT_LFLAG_DST_BROADCAST ||
- *              proc->lflags & DESSERT_LFLAG_DST_MULTICAST ) {
- *                      eth_len = dessert_msg_ethdecap(msg, &eth);
- *                      dessert_syssend(eth, eth_len);
- *                      free(eth);
- *      }
- *
- *      return DESSERT_MSG_KEEP;
- *  }
- *
- *  int main (int argc, char** argv) {
- *      FILE *cfg = dessert_cli_get_cfg(argc, argv);
- *
- *      dessert_init("fb13", 0x05, DESSERT_OPT_DAEMONIZE);
- *      dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
- *
- *      dessert_sysrxcb_add(toMesh, 100);
- *      dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
- *      dessert_meshrxcb_add(toSys, 100);
- *
- *      init_cli();
- *      cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
- *      dessert_cli_run();
- *
- *      dessert_run();
- *      return (0);
- *  }
+ * include <stdio.h>
+ * include <string.h>
+ * include <dessert.h>
+ * include <dessert-extra.h>
+ * include <libcli.h>
+ * 
+ * typedef struct __attribute__((__packed__)) _my_extension {
+ * 	uint8_t value1;
+ * 	uint16_t value2;
+ * 	char char1;
+ * } my_extension;
+ * 
+ * enum extensions {
+ * 	EXAMPLE_EXT_1 = DESSERT_EXT_USER, EXAMPLE_EXT_2
+ * };
+ * 
+ * void init_cli() {
+ * 	cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys",
+ * 	dessert_cli_cmd_addsysif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys")
+ * 	cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh",
+ * 	dessert_cli_cmd_addmeshif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize me")
+ * }
+ * 
+ * int toMesh(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *tunif, dessert_frameid_t id) {
+ * 	my_extension *mext = NULL;
+ * 	dessert_ext_t *ext = NULL;
+ * 	dessert_msg_addext(msg, &ext, EXAMPLE_EXT_1, sizeof(my_extension));
+ * 	mext = (my_extension*) &(ext->data);
+ * 	mext->value1 = 123;
+ * 	mext->value2 = 45678;
+ * 	mext->char1 = 'X';
+ * 	
+ * 	dessert_meshsend(msg, NULL);
+ * 	return DESSERT_MSG_DROP;
+ * }
+ * 
+ * int toSys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+ * 	struct ether_header *eth;
+ * 	size_t eth_len;
+ * 	
+ * 	if (proc->lflags & DESSERT_LFLAG_DST_SELF ||
+ * 		proc->lflags & DESSERT_LFLAG_DST_BROADCAST ||
+ * 		proc->lflags & DESSERT_LFLAG_DST_MULTICAST ) {
+ * 			eth_len = dessert_msg_ethdecap(msg, &eth);
+ * 			dessert_syssend(eth, eth_len);
+ * 			free(eth);
+ * 	}
+ * 	
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * 
+ * int main (int argc, char** argv) {
+ * 	FILE *cfg = dessert_cli_get_cfg(argc, argv);
+ * 	
+ * 	dessert_init("expl", 0x05, DESSERT_OPT_DAEMONIZE);
+ * 	dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
+ * 	
+ * 	dessert_sysrxcb_add(toMesh, 100);
+ * 	dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
+ * 	dessert_meshrxcb_add(toSys, 100);
+ * 	
+ * 	init_cli();
+ * 	cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
+ * 	dessert_cli_run();
+ * 	
+ * 	dessert_run();
+ * 	return (0);
+ * }
  * @endcode
  *
- * @subsection subsec_usage_conf2 Libraries
+ * @section sec_fs_skeleton_libraries Creating a skeleton - Libraries
  *
- * To give you a complete understanding of this daemon we will explain all lines starting with the libraries. stdio.h and string.h are standard C
- * libraries for input and output operations or for string manipulation. dessert.h and dessert-extra are more interesting libraries to provide
- * functions for creating and sending new messages and for initialization of the daemon. Several other important libraries for sending over
- * ethernet (net/ethernet.h), capturing packets from network interface (pcap.h), logging of daemon activities or the service of CLI (Command Line
- * Interface) are given (libcli.h). In the dessert-extra.h are several callback functions like CLI commands for adding TUN/TAP interfaces (sys
- * interfaces) or network interfaces (mesh interfaces). You can see some of the functions of these libraries in our code, we will discuss them
- * later.
+ * stdio.h and string.h are standard C libraries for input and output operations or for string manipulation. dessert.h and dessert-extra are libraries to provide functions for creating and sending new messages and for initialization of the daemon. Several other important libraries for sending over ethernet (net/ethernet.h), capturing packets from network interface (pcap.h), logging of daemon activities or the service of CLI (command line interface) are given in the dessert header files. With the dessert-extra.h you have some prototypes to append CLI commands for adding TUN/TAP interfaces (sys interfaces) or network interfaces (mesh interfaces). You can see some of the functions of these libraries in our code, we will discuss them later.
  *
- * @subsection sec_usage_init Extensions
+ * @section sec_fs_skeleton_extensions Creating a skeleton - Extensions
+ * 
+ * To send some extensions, we have created an enumeration called extensions. The first entry of our enumeration gets the lowest value that can be assigned as type to user provided extensions. Extension types are specific to a particular protocol, therefore you can use any value as you like. $DESSERT_EXT_USER$ simply means, that this extension is for usage by the user. You can choose $DESSERT_EXT_PIN$G which means that you packet is a ping. In our code we define one extension struct called $my_extension$. As you can see we have three values in our struct that can be used by you. This extension will be piggybacked with our DES-SERT message, so you can put routing logic data into it for example. If you want to send such extension with your message, you always should use $__packed__$ attribute or you might otherwise send more bytes than necessary over the medium.
+ * 
+ * @section sec_fs_skeleton_mainfunc Creating a skeleton - main function
  *
- * If you want to send some extensions you should create an enumeration called extensions. The first entry of our enumeration gets the lowest value
- * that can be assigned as type to user provided extensions. Extension types are specific to a particular protocol, therefore you can use any value
- * as you like. DESSERT_EXT_USER simply means, that this extension is for usage by the user. You can choose DESSERT_EXT_PING which means that you
- * packet is a ping. In our code we define one extension struct called my_extension. As you can see we have three values in our struct that can be
- * used by you. This extension will be piggybacked with our DES-SERT message, so you can put routing logic data into it for example. If you want to
- * send such extension with your message, you always should use __packed__ attribute or you might otherwise send more bytes than necessary over the
- * medium.
+ * As an argument of the main function we have the path to a configuration file. This configuration file is later used to set up CLI logging. At the beginning we enable the parsing of the given configuration file:
  *
- * @subsection sec_usage_debconf main- Function
- *
- * As a argument of the function we have the path for a configuration file. This configuration file is later used  to set up CLI logging. At the
- * beginning we enable the parsing of the given configuration file:
  * @code
- *  FILE *cfg = dessert_cli_get_cfg(argc, argv);
- * @endcode
- * We initialize our daemon and start the logging. fb13 is the four byte daemon name and 0x05 the version version number of our simple protocol.
- * DESSERT_OPT_DAEMONIZE is a flag for dessert_init, which means that our program will be daemonized when calling disables logging to
- * STDERR.?????????????????
- * @code
- *  dessert_init("fb13", 0x05, DESSERT_OPT_DAEMONIZE);
- *  dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
- * @endcode
- * Our daemon is not initialized but cannot do anything interesting. For edit sent or received packets the daemon has to know, where to find
- * callback functions, for sending to mesh or to sys environment. We register these callback functions.
- * @code
- *  dessert_sysrxcb_add(toMesh, 100);
- *  dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
- *  dessert_meshrxcb_add(toSys, 100);
- * @endcode
- * The functions toMesh and toSys are implemented in our code, too. We will discuss them later. Now you can send a packet from host A to host B
- * when they have a link to each other. Before we run our first daemon we want initialize our CLI which simply has a Cisco IOS style. Finally we
- * can use our function parameter, the path for the configuration file. We let the CLI know, where to find this configuration file and start the
- * CLI.
- * @code
- *  init_cli();
- *  cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
- *  dessert_cli_run();
- * @endcode
- * We did the most necessary things for our daemon and run our daemon who will be active in the background.
- * @code
- *  dessert_run();
+ * FILE *cfg = dessert_cli_get_cfg(argc, argv);
  * @endcode
  *
- * @subsection sec_usage_telnet toMesh- Function
+ * We initialize our daemon and start the logging. expl is the four byte daemon name and 0x05 the version version number of our simple protocol. $DESSERT_OPT_DAEMONIZE$ is a flag for $dessert_init$, which means that our program will be daemonized. This simply means that our program will do his job in the background without giving some status report on the console. You can use $DESSERT_OPT_NODAEMONIZE$ to see such information. This is helpful when you debug your daemon.
  *
- * This is the callback function for all packets going to the mesh interface. We used them in our main function by registering them as callback
- * functions. As function parameters we have the message received from mesh interface, the length of this message, a pointer to a valid processing
- * buffer, lflags used to differentiate message types, a specifcation from which TUN/TAP interface the message came and a runtime-unique frame id
- * for the  packet. Now lets discuss this parameters. If the toMesh- callback function has been called, then this means, that there is a message
- * going right to our mesh network. The length of this message should be clear to our mesh router. So the message parameter and the length
- * parameter are quite obvious. The parameter called proc is a pointer. It point to a buffer, where some flags and other information is stored.
- * This buffer can be used for signaling information. Actually it has also evidence for the message size management and shows of which type the
- * given message is. The other two parameters, tunif and id, should be clear with the definition from above. In our implementation of the toMesh
- * function we create an extension and fill it with some fake data. Afterwards we send our message over all registered mesh interfaces because the
- * interface parameter is NULL:
  * @code
- *  dessert_meshsend(msg, NULL);
+ * dessert_init("expl", 0x05, DESSERT_OPT_DAEMONIZE);
+ * dessert_logcfg(DESSERT_LOG_DEBUG|DESSERT_LOG_STDERR);
  * @endcode
  *
- * @subsection sec_usage_telnet_troubles toSys- Function
- * The toSys callback function has a similar prototype like the toMesh function. It only depends in the interface from where the message came. By
- * comparing both interface parameters of toMesh and toSys you will recognize that their types are different. In the toSys callback the type is
- * dessert_meshif_t which means that the message came from the mesh network and will be sent to the user space via sys interface. Not lets come to
- * the implementation of our toSys function. When we get a message, which should be sent to the systems user space, the message is capsulated into
- * a DES-SERT message. In this message the ethernet frame is located and should be decapsulated for further work. This is the reason why we
- * declared two variables, one for the ethernet frame and the other for the length of this frame.
+ * Our daemon is now initialized but cannot do anything interesting. To send and receive packets the daemon has to know, where to find callback functions, for sending to mesh or to sys environment. We register these callback functions.
+ *
  * @code
- *  struct ether_header *eth;
- *  size_t eth_len;
+ * dessert_sysrxcb_add(toMesh, 100);
+ * dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 15);
+ * dessert_meshrxcb_add(toSys, 100);
  * @endcode
- * If the incoming message is addressed to our router or the message is a broad- or multicast, our toSys function decapsulates the ethernet frame
- * and sends it to the user space.
+ *
+ * We will discuss the functions toMesh and toSys later. Now you can send a packet from host A to host B when they have a link to each other. Before we run our first daemon we want to initialize our CLI which simply has a Cisco IOS style. Finally we can use our function parameter, the path for the configuration file. We let the CLI know, where to find this configuration file and start the CLI.
+ * 
  * @code
- *  if (proc->lflags & DESSERT_LFLAG_DST_SELF ||
- *        proc->lflags & DESSERT_LFLAG_DST_BROADCAST ||
- *        proc->lflags & DESSERT_LFLAG_DST_MULTICAST ) {
- *            eth_len = dessert_msg_ethdecap(msg, &eth);
- *            dessert_syssend(eth, eth_len);
- *            free(eth);
- *  }
+ * init_cli();
+ * cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
+ * dessert_cli_run();
  * @endcode
+ *
+ * We did the most necessary things and can start the daemon.
+ * 
+ * @code
+ * dessert_run();
+ * @endcode
+ *
+ * @section sec_fs_skeleton_tomeshfunc Creating a skeleton - toMesh function
+ *
+ * This is the callback function for all packets going to the mesh interface. We registered this callback in the main function. As function parameters we have the message received from mesh interface, the length of this message, a pointer to a valid processing buffer, lflags used to differentiate message types, a specifcation from which TUN/TAP interface the message came and a runtime-unique frame id for the  packet. Now lets discuss this parameters. When the toMesh- callback has been called, a message is going right to our mesh network. The message has no fixed length, which means, that our mesh router should know the length for sending. So the message parameter and the length parameter are quite obvious. The proc parameter is a pointer. It points to a buffer, where some flags and other information is stored. This buffer can be used for signaling information. Actually it has also evidence for the message size management and shows of which type the given message is. The other two parameters, tunif and id, should be clear with the definition from above. In our implementation of the toMesh function we create an extension and fill it with some fake data. You can send the given message over all interfaces, but we want to send it over all. So the second parameter of the meshsend function is NULL:
+ * 
+ * @code
+ * dessert_meshsend(msg, NULL);
+ * @endcode
+ *
+ * @section sec_fs_skeleton_tosysfunc Creating a skeleton - toSys function
+ *
+ * The toSys callback function has a similar prototype like the toMesh function. It only depends in the interface from where the message came. By comparing both interface parameters of toMesh and toSys you will recognize that their types are different. In the toSys callback the type is dessert_meshif_t which means that the message came from the mesh network and will be sent to the user space via sys interface. Lets come to the implementation of our toSys function. When we get a message, which should be sent to the systems user space, the message is capsulated into a DES-SERT message. In this message the ethernet frame is located and should be decapsulated for further work. This is the reason why we declared two variables, one for the ethernet frame and the other for the length of this frame.
+ * 
+ * @code
+ * struct ether_header *eth;
+ * size_t eth_len;
+ * @endcode
+ *
+ * If the incoming message is addressed to our router or the message is a broad- or multicast, our toSys function decapsulates the ethernet frame and sends it to the user space.
+ *
+ * @code
+ * if (proc->lflags & DESSERT_LFLAG_DST_SELF ||
+ * 	proc->lflags & DESSERT_LFLAG_DST_BROADCAST ||
+ * 	proc->lflags & DESSERT_LFLAG_DST_MULTICAST ) {
+ * 		eth_len = dessert_msg_ethdecap(msg, &eth);
+ * 		dessert_syssend(eth, eth_len);
+ * 		free(eth);
+ * }
+ * @endcode
+ *
  * When you do this, never forget to free the allocated memory or you will rapidly get memory leaks.
  *
- * @subsection sec_usage_telnet_troubles init_cli- Function
+ * @section sec_fs_skeleton_initclifunc Creating a skeleton - init_cli function
  *
- * Last but not least is this small function, which simply registers the adding of sys or mesh interfaces to the command line interface.
- * Now you will be able to add some interfaces with a Cisco IOS similar command line over telnet. We will show this later.
+ * Last but not least we come to this small function, which simply registers the adding of sys or mesh interfaces to the command line interface. Now you will be able to add some interfaces with a Cisco IOS similar command line over telnet. We will show this later. Congratulations, you can call yourself a daemon expert. You can save your daemon now for example as des-daemon.c. Now, after we have nearly complete understanding of how our daemon program works, we can go further and create the configuration files.
  *
- * Congratulations, you can call yourself a daemon expert. You can save your daemon now for example as des-daemon.c. Now, after we have nearly
- * complete understanding of how our daemon program works, we can go further and create the configuration files.
+ * @section sec_fs_skeleton_configfiles Creating a skeleton - Configuration files
  *
- * @section sec_usage_telnet_troubles Configuration Files
+ * You are ready to create the configuration files and place them in the right system directories. This configuration files are important, because their information let the daemon know, how he can do his job. When you use the Cisco IOS similar interface later you will change the configuration files without editing them directly. The protocol specific configuration should be placed into /etc/des-daemon.conf. You can use another name instead of "des-daemon". Just create such a file in the /etc/ directory and put the following configuration into the file:
  *
- * Now you are ready to create the configuration files and place them in the right system directories. This configuration files are important,
- * because their information let the daemon know, how he can do his job. When you use the Cisco IOS similar interface later you will change the
- * configuration files without editing them directly. The protocol specific configuration should be placed into /etc/des-daemon.conf. You can use
- * another name instead of "des-daemon". Just create such a file in the /etc/ directory and put the following configuration into the file:
  * @code
- *  no logging stderr
- *  logging ringbuffer 20
- *  logging file /var/log/des-daemon.log
- *  set threshold 0.3
- *  set metric etx
+ * no logging stderr
+ * logging ringbuffer 20
+ * logging file /var/log/des-daemon.log
+ * set threshold 0.3
+ * set metric etx
  * @endcode
- * This information is only random. Our daemon doesnt use those information and you can just put nothing into the config file and use it empty. In
- * our random example you can see how routing metric or the value of the threshold can be set in the configuration file. Other information like the
- * path for the log file of the routing protocol can be fixed. There are some protocol unspecific configuration details, which are placed into
- * /etc/default/des-daemon. Here again you can just type the name of your personal daemon in. Into this protocol unspecific file you can type:
- * @code
- *  PIDFILE="/var/run/des-daemon.pid"
- *  DAEMON_OPTS="/etc/des-daemon.conf"
- *  TAP_NAME=tap0
- *  TAP_IP=10.0.0.1
- *  TAP_NETMASK=255.255.255.0
- *  CLI_PORT=4519
- *  IFACE=eth0,eth1,wlan0
- * @endcode
- * Again this lines are random and can be complete different. Here you make clear where to find the Pid-File, which simply is a file containing the
- * process identification number (pid) that is stored in a well-defined location of the filesystem thus allowing other programs to find out the pid
- * of a running script. We also define where to find the routing protocol specific configuration data we made up in the previous step. The next
- * lines are for definition of the TAP interface, therefore we define the TAP name and his netmask. You can change this IP if you want to. For
- * example you can take 172.16.1.1, which is another reserved IP address for private usage. When you want to configure your daemon, you can do this
- * with the build in Cisco IOS similar command line, which can be accessed via telnet on the CLI_PORT. So in our case you have to connect with
- * telnet on port 4519 (4=D,5=E,19=S). In the next line is a list of the mesh interfaces, which are used by our daemon.
- * DES-SERT daemons should also provide an init script to start and stop the daemon. The init script is placed in /tmp/DAEMON_NAME.cli and contains
- * the original content of the protocol configuration file and interface configuration in the CLI syntax that has been compiled from the
- * /etc/default/DAEMON_NAME file. If you want to see such a init script just look for it in the des-example package that you can find on the
- * DES-SERT homepage.
  *
- * @section sec_usage_telnet_troubles Compiling the daemon
+ * This information is only random. Our daemon doesnt use those information and you can just put nothing into the config file and use it empty. In our random example you can see how routing metric or the value of the threshold can be set in the configuration file. Other information like the path for the log file of the routing protocol can be fixed. Actually you dont have to use this config file if you dont want to specify routing logic specific details. There are some protocol unspecific configuration details, which are placed into /etc/default/des-daemon. Here again you can just type the name of your personal daemon in. Into this protocol unspecific file you can type:
  *
- * If you created a daemon and put the configuration files into right place, you can compile your daemon. To compile it without errors you need
- * some libraries like uthash, libpcap or libsnmp. So before you start you should type the following commands into your terminal:
  * @code
- *  apt-get update; sudo apt-get install libsnmp-dev -y; apt-get install libpcap-dev -y; apt-get install libcli-dev -y
+ * PIDFILE="/var/run/des-daemon.pid"
+ * DAEMON_OPTS="/etc/des-daemon.conf"
+ * TAP_NAME=tap0
+ * TAP_IP=10.0.0.1
+ * TAP_NETMASK=255.255.255.0
+ * CLI_PORT=4519
+ * IFACE=eth0,eth1,wlan0
  * @endcode
- * Now you need the libdessert libraries. These are two libraries, which can be found on the DES-SERT homepage. Download the libdessert and the
- * libdessert-extra library, extract them and compile them by going to their directories and typing following command into terminal:
- * @code
- *  ./configure; make; sudo make install
- * @endcode
- * This will configure, build and install the libraries on your linux. From now on we will use the des-example code from the DES-SERT homepage. If
- * you download the des-example archive from our homepage, just extract the codes and configuration files, navigate on your terminal to the
- * extracted directory, and put those lines onto your terminal:
- * @code
- *  ./configure; make; sudo make install
- * @endcode
- * Now the daemon will be compiled and the configuration files will be set. Copy the configuration files to their right place and start the daemon.
- * Thats it! The DES-SERT example daemon is simply like our daemon. The only difference is, that there is a Makefile for building and installing
- * the daemon. Just start your daemon. Now we will learn how to connect to the daemon via telnet.
  *
- * @section sec_usage_telnet_troubles Connecting via Telnet
- * When you have started your daemon, there are some configuration options, which can be reached without manipulating the configuration files. For
- * that matter we use telnet.
+ * Again this lines are random and can be complete different. In fact you dont even have to place this file in the directory. Its okay, when you just start your daemon with the config file as a parameter. But it is important that you specify the interfaces like we do in the code above. Here you make clear where to find the Pid-File, which simply is a file containing the process identification number (pid) that is stored in a well-defined location of the filesystem thus allowing other programs to find out the pid of a running script. We also define where to find the routing protocol specific configuration data we made up in the previous step. The next lines are for definition of the TAP interface, therefore we define the TAP name and his netmask. You can change this IP if you want to. For example you can take 172.16.1.1, which is another reserved IP address for private usage. When you want to configure your daemon, you can do this with the build in Cisco IOS similar command line, which can be accessed via telnet on the $CLI_PORT$. So in our case you have to connect with telnet on port 4519 (4=D,5=E,19=S). In the next line is a list of the mesh interfaces, which are used by our daemon. And thats it. As you will see in the upcoming examples we have a minimalistic configuration file. DES-SERT daemons should also provide an init script to start and stop the daemon. The init script is placed in $/tmp/DAEMON_NAME.cli$ and contains the original content of the protocol configuration file and interface configuration in the CLI syntax that has been compiled from the $/etc/default/DAEMON_NAME$ file. If you want to see such a init script just look for it in the des-example package that you can find on the DES-SERT homepage.
  *
+ * @section sec_fs_skeleton_compilingdaemon Creating a skeleton - Compiling the daemon
+ *
+ * If you create a daemon and put the configuration files into right place, you can compile your daemon. To compile it without errors you need some libraries like uthash, libpcap or libsnmp. So before you start you should type the following commands into your terminal:
+ *
+ * @code
+ * apt-get update; sudo apt-get install libsnmp-dev -y; apt-get install libpcap-dev -y; apt-get install libcli-dev -y; apt-get install uthash-dev -y
+ * @endcode
+ *
+ * Now you need the libdessert libraries. Currently there are only two libraries, which can be found on the DES-SERT homepage. Download the libdessert and the libdessert-extra library, extract them and compile them by going to their directories and typing following command into terminal:
+ *
+ * @code
+ * ./configure; make; sudo make install; ldconfig
+ * @endcode
+ *
+ * This will configure, build and install the libraries on your linux. If you want to use the skeleton from the DES-SERT website, you can compile it buy putting those lines again onto your terminal:
+ *
+ * @code
+ * ./configure; make; sudo make install
+ * @endcode
+ *
+ * Now the daemon will be compiled and the configuration files will be set. Copy the configuration files to their right place and start the daemon. Thats it! The DES-SERT example daemon is simply like our daemon. The only difference is, that there is a Makefile for building and installing the daemon.
+ *
+ * @section sec_fs_skeleton_telnet Creating a skeleton - Connecting via telnet
+ *
+ * Now we will learn how to connect to the daemon via telnet. When you have started your daemon, there are some configuration options, which can be reached without manipulating the configuration files. For that matter we use telnet. The default TCP port is 4519 (4=D, 5=E, 19=S). The "help" command lists all commands that are available in the current mode and you can push TAB for auto-completion. Here is a telnet session for reaching the main menue of the CLI our daemon:
+ *
+ * @code
+ * user@host:~\$ telnet localhost 4519
+ * Trying 127.0.0.1...
+ * Connected to localhost.
+ * Escape character is '^]'.
+ * 
+ * host:DOMAIN> help
+ * 
+ * Commands available:
+ * help                 Show available commands
+ * quit                 Disconnect
+ * logout               Disconnect
+ * exit                 Exit from current mode
+ * history              Show a list of previously run commands
+ * enable               Turn on privileged commands
+ * show dessert-info    Display information about this program.
+ * show logging         show logging ringbuffer
+ * show meshifs         Print list of registered interfaces used by the daemon.
+ * show sysif           Print the name of the TUN/TAP interface used as system interface.
+ * show threshold       show treshold
+ * 
+ * host:XYZ>
+ * @endcode
+ *
+ * As you can see you have options which are typical for Cisco IOS similar command line interfaces. Most of the options are self-explanatory. Important is the entry called "enable", which simply provides priviliged options. Here you can set interfaces and manipulate their properties. Just have a look and experiment with the entries. You cannot destroy something. If you made something wrong, just restart your daemon.
+ *
+ * @section sec_fs_rlogic_lsr Adding routing Logic to our skeleton - The link state routing protocol
+ *
+ * For our tutorial we will use the link-state routing protocol. The link-state routing protocol is performed by every router in the network. The basic concept of this routing protocol is that every node constructs a map of the connectivity to the network. For this the routing daemon has to collect neighboring information and create a graph from the collected data. In this graph the complete neighboring state of the network should be given. Then each node independently calculates the best path from it to every other node. These information should be written into a routing table. Examples of the link-state routing protocols include OSPF and IS-IS. In contrast to distance-vector routing algorithms the routing table is not shared through the network. In link-state routing protocols only connectivity information (neighboring information) is passed through. So in fact you can summarize the task of every router as "tell the world, who your neighbors are". In the end of the phase of collecting data of the network, every router has the complete network graph. In other words: Every router knows all the connections between other routers. The link-state routing protocol can be divided into four phases:
+ * - collect information about neighbors
+ * - flood the own neighboring information through network
+ * - fill the routing table with incoming neighboring information
+ *
+ * @section sec_fs_rlogic_coldataneigh Adding routing Logic to our skeleton - Collect data about own neighbors
+ *
+ * First, each node needs to determine to which neighbors it is directly connected. This is necessary since there are no information about the network given when we are in the initial state. To learn more about the own neighbors a router sends some so called "hello" packets showing that the sending router is alive and can be connected. The packets should just be sent to the directly connected neighbors, which means that they should be recognized and then dropped when they income at the neighbor. This "hello" packet can be very simple. Maybe a flag can be used to carify that there is a "hello" packet. Of course the packet needs a clear ID. No other router in the network should have the same ID. In our network we can simply use a MAC address. We will see later, in which way this could be implemented. When a router receives a "hello" packet he knows, that the sender of this packet has to be his neighbor. Then he drops the packet, not to confuse other router with that piece of information. "hello" packets are sent periodically so that new incoming nodes can be considered. There also should be a timer for all neighbours. This is to react, when a neighbour is not active anymore.
+ *
+ * @section sec_fs_rlogic_floodnetw Adding routing Logic to our skeleton - Flood own neighboring data through network
+ *
+ * In this phase a router knows to which other routers it is directly connected. This information is important for all other routers in the network to build the network graph. So we have to flood our neighboring information through the whole network. Every router gets full information about connectivities in the network.
+ *
+ * @section sec_fs_rlogic_coldataneigh Adding routing Logic to our skeleton - Fill routing table with incoming neighboring data
+ *
+ * First, each node needs to determine to which neighbors it is directly connected. This is necessary since there are no information about the network given when we are in the initial state. To learn more about the own neighbors a router sends some so called "hello" packets showing that the sending router is alive and can be connected. The packets should just be sent to the directly connected neighbors, which means that they should be recognized and then dropped when they income at the neighbor. This "hello" packet can be very simple. Maybe a flag can be used to carify that there is a "hello" packet. Of course the packet needs a clear ID. No other router in the network should have the same ID. In our network we can simply use a MAC address. We will see later, in which way this could be implemented. When a router receives a "hello" packet he knows, that the sender of this packet has to be his neighbor. Then he drops the packet, not to confuse other router with that piece of information. "hello" packets are sent periodically so that new incoming nodes can be considered. There also should be a timer for all neighbours. This is to react, when a neighbour is not active anymore.
+ *
+ * @section sec_fs_rlogic_expcode Adding routing Logic to our skeleton - Explaining the code
+ *
+ * Our new project is more extensive. So before we start coding, we have to think about dividing our routing daemon into parts. There are many different solutions for our routing program. We will see now how you could work with such a problem. In fact we have the following project files:
+ * - des-lsr.c
+ * - des-lsr.h
+ * - des-lsr_items.h
+ * - des-lsr_packethandler.c
+ * - des-lsr_routinglogic.c
+ * 
+ * As you can see there are two header files. In the des-lsr.h header file flags and prototypes are located, which are necessary for all other project files. So this is the „main header“. In the other header file called des-lsr_items.h global data structures are located. These data structures save information about the neighbours of the current node, about the whole graph in a adjacency matrix and have the routing table. So in fact these three data structures are located in the „items header“. The most important file of our project is des-lsr_routinglogic.c. Here you can find periodic function and some of the important callback functions. So for example functions for sending or receiving hello packets or tc (topology change) packets are located here. Incoming or outgoing packets should be analyzed and processed. Therefore we have two other important callbacks in the des-lsr_packethandler.c file.
+ *
+ * @section sec_fs_rlogic_deslsrc Adding routing Logic to our skeleton - des-lsr.c
+ *
+ * First have a look on the des-lsr.c file, which is the entry point into our program.
+ *
+ * @code
+ * // --- LIBRARIES --- //
+ * #include "des-lsr.h"
+ * #include "des-lsr_items.h"
+ * 
+ * // --- DAEMON INITIALIZATION --- //
+ * int main (int argc, char** argv) {
+ * 	FILE *cfg;
+ * 
+ * 	if ((argc == 3) && (strcmp(argv[2], "-nondaemonize") == 0)) {
+ * 		dessert_init("lsr", 0x01, DESSERT_OPT_NODAEMONIZE);
+ * 		char* cfg_file_name = argv[1];
+ * 		cfg = fopen(cfg_file_name, "r");
+ * 		if (!cfg) {
+ * 			printf("Config file '%s' not found. Exit ...\n", cfg_file_name);
+ * 			return EXIT_FAILURE;
+ * 		}
+ * 	} else {
+ * 		dessert_init("lsr", 0x01, DESSERT_OPT_DAEMONIZE);
+ * 		cfg = dessert_cli_get_cfg(argc, argv);
+ * 	}
+ * 	dessert_info("logging set");
+ * 
+ * 	init_logic();
+ * 	dessert_info("routing initialized");
+ * 
+ * 	dessert_sysrxcb_add(sys_to_mesh, 10);
+ * 	dessert_meshrxcb_add(dessert_msg_ifaceflags_cb, 20);
+ * 	dessert_meshrxcb_add(drop_errors, 40);
+ * 	dessert_meshrxcb_add(process_hello, 50);
+ * 	dessert_meshrxcb_add(process_tc, 60);
+ * 	dessert_meshrxcb_add(forward_packet, 70);
+ * 	dessert_meshrxcb_add(mesh_to_sys, 80);
+ * 	dessert_info("callbacks registered");
+ * 
+ * 	cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys", dessert_cli_cmd_addsysif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys interface");
+ * 	cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh", dessert_cli_cmd_addmeshif, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize mesh interface");
+ * 	cli_file(dessert_cli, cfg, PRIVILEGE_PRIVILEGED, MODE_CONFIG);
+ * 	dessert_info("cli initialized");
+ * 
+ * 	dessert_cli_run();
+ * 	dessert_run();
+ * 	return (0);
+ * }
+ * @endcode
+ *
+ * This function is indeed similar to the main function in the skeleton we have seen so far. But there are some differences. We have the configuration file as a parameter and initialize the daemon. At the beginning we have to set up logging and initialize our daemon. This time, we want to make the daemon more dynamic, allowing the user to give an additional parameter for the daemonization of or program. So in fact the user can put into the console whether he likes the daemon in daemonized mode or in nondaemonized mode. So in fact the whole if-else-block is for initialization of our daemon. As you can see we use the function dessert_info to give us some debug information on the console. With this function we always what is going on in the inside of our daemon. When you use this daemon in a grid, non daemonized mode should not be used, unless you want to work with all console windows parallel. For most purposes you can just daemonize your programm. As you can see, we afterwards call an important function:
+ *
+ * @code
+ * init_logic();
+ * dessert_info("routing initialized");
+ * @endcode
+ * 
+ * Now the routing protocol will start his work. For our routing protocol we need some initializations. We will discuss later, how this works in detail. The rest of the code is similar to the skeleton. We have some callback functions, which should be registered and we start our CLI. In the skeleton we had an own function for registering the add interface operation to the CLI, this time we dont need a function, we just type the content into the main function. You already know from the explanation of the link state routing algorithm, that every router has to accept incoming hello, tc (topology change) and normal data packets. For each of these purposes we register callback functions. There is only one callback function for the messages going out to mesh network.
+ *
+ * @section sec_fs_rlogic_deslsrh Adding routing Logic to our skeleton - des-lsr.h
+ *
+ * In this header file we have some fundamental constants and prototypes.
+ * 
+ * @code
+ * #include <dessert.h>
+ * #include <dessert-extra.h>
+ * #include <libcli.h>
+ * 
+ * //////////////// CONSTANTS
+ * #define LSR_EXT_HELLO DESSERT_EXT_USER
+ * #define LSR_EXT_TC DESSERT_EXT_USER + 1
+ * #define LSR_TTL_DEFAULT 255
+ * 
+ * //////////////// FUNCTIONS FROM des-lsr_routingLogic.c
+ * void init_logic();
+ * int send_hello(void *data, struct timeval *scheduled, struct timeval *interval);
+ * int send_tc(void *data, struct timeval *scheduled, struct timeval *interval);
+ * int refresh_list();
+ * 
+ * void init_rt();
+ * int refresh_rt();
+ * 
+ * //////////////// FUNCTIONS FROM des-lsr_packetHandler.c
+ * int sys_to_mesh(dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id);
+ * int mesh_to_sys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+ * 
+ * int drop_errors(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+ * int process_hello(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+ * int process_tc(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+ * int forward_packet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+ * @endcode
+ *
+ * This header file is included by all other project file. Therefore we just include here the dessert libraries and some basic libraries like stdio, so that their functions can be used in our whole project. As you can see we have the callbacks from des-lsr_packethandler.c and des-lsr_routinglogic.c. We will see later how this functions work in detail.
+ * 
+ * @section sec_fs_rlogic_deslsritemsh Adding routing Logic to our skeleton - des-lsr_items.h
+ * 
+ * In this header file you can find the global data structures.
+ * 
+ * @code
+ * #include <dessert.h>
+ * #include <dessert-extra.h>
+ * #include <uthash.h>
+ * #define LSR_DEFAULT_COUNTER 32
+ * 
+ * typedef struct  hello_ext {
+ * 	u_int16_t seq_num;
+ * } __attribute__((__packed__)) hello_ext_t;
+ * 
+ * // a hashmap for all current neighbours
+ * typedef struct dir_neighbours{
+ * 	u_int8_t addr[ETH_ALEN];
+ * 	u_int8_t counter;
+ * 	UT_hash_handle hh;
+ * } dir_neighbours_t;
+ * extern dir_neighbours_t *dir_neighbours_head;
+ * 
+ * // a hashmap for all neighbours of a node
+ * typedef struct node_neighbours{
+ * 	u_int8_t addr[ETH_ALEN];
+ * 	UT_hash_handle hh;
+ * } node_neighbours;
+ * 
+ * // a hashmap for all nodes
+ * typedef struct all_nodes {
+ * 	u_int8_t addr[ETH_ALEN];
+ * 	u_int8_t next_hop[ETH_ALEN];
+ * 	u_int8_t counter;
+ * 	node_neighbours* neighbours;
+ * 	UT_hash_handle hh;
+ * } all_nodes_t;
+ * extern all_nodes_t *all_nodes_head;
+ * @endcode
+ *
+ * You can see, that we made an hello extension for the hello messages. In this extension a sequence number is located. Actually we dont need this number for our routing logic. We just made an extra extension to give you the oppertunity to put more information to it and process the information in your protocol. So in fact its just an example of how to work with such an extension. As data structures you can find a hash map for the neighbours of the current node, a hash map for the neighbours of any node and a hashmap for any node in the network. For the hash maps we have to include the uthash library. The last hash map is simply a list of all nodes in the network and has a direct link to the hashmap of the neighbours of this node. In a way this could be seen as a form of an adjacency matrix. Or in fact you can simply translate this data structure into an adjacency matrix.
+ * 
+ * @section sec_fs_rlogic_deslsrphc Adding routing Logic to our skeleton - des-lsr_packethandler.c
+ * 
+ * There are two important files left. In this two files we have all of the routing logic and other important functions located. First of all we will look at the packet handler file. In this file we just have two callbacks. The sys_to_mesh function processes packets going to the mesh network to other mesh router. In the mesh_to_sys function the packets were sent from other mesh router. So in fact these functions are important for sending and receiving packets to/from the network. The sys_to_mesh function has to find out, which of the neighbours is the next hop for an outgoing package. Therefore it should lookup necessary information from the routing table. The mesh_to_sys callback just has to check whether the incoming packet is for the current node, else it should drop the packet.
+ * 
+ * @code
+ * #include "des-lsr.h"
+ * #include "des-lsr_items.h"
+ * 
+ * int sys_to_mesh(dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id){
+ * 	struct ether_header* l25h = dessert_msg_getl25ether(msg);			// ptr to l2.5 header
+ * 	all_nodes_t* node;
+ * 	HASH_FIND(hh, all_nodes_head, l25h->ether_dhost, ETH_ALEN, node);	// finding destination of msg in hashmap
+ * 
+ * 	// if destination and next hop for destination is known
+ * 	if (node && memcmp(node->next_hop, ether_broadcast, ETH_ALEN) != 0) {
+ * 		memcpy(msg->l2h.ether_dhost, node->next_hop, ETH_ALEN);
+ * 		dessert_meshsend_fast(msg, NULL);
+ * 	}
+ * 
+ *     return DESSERT_MSG_DROP;
+ * }
+ * 
+ * int mesh_to_sys(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id){
+ * 	if((proc->lflags & DESSERT_LFLAG_DST_SELF && !(proc->lflags & DESSERT_LFLAG_DST_SELF_OVERHEARD))
+ * 			||	proc->lflags & DESSERT_LFLAG_DST_BROADCAST
+ * 			|| proc->lflags & DESSERT_LFLAG_DST_MULTICAST )
+ * 		dessert_syssend_msg(msg);
+ * 	return DESSERT_MSG_DROP;
+ * }
+ * @endcode
+ * 
+ * We should discuss the sys_to_mesh function now. As you can see we have to extract the layer 2.5 information from the outgoing packet. The reason is simple: in the l25->ether_dhost the destination for the packet is given. From the routing table, which is a hash table (as we seen in the items header), we lookup the destination information. If this information about the destination node is available and the next hop entry for that node is not set to broadcast (which means that it is not in the initial state and we already filled in the real MAC address of the destination), we just copy the next_hop information for this destination node into the destination field of the msg and send the packet to the meshed network. Therefore we use the dessert_meshsend_fast function, which simply send the message without creating a copy. In most cases it is recommanded to use this function to get a daemon with better performance. In the skeleton we use the dessert_meshsend(msg, NULL); function instead. Now that you know both functions, you should use the dessert_meshsend_fast in most cases. So all in all the sys_to_mesh function gets the next hop information and puts it into the outgoing message. Now we will discuss the mesh_to_sys function. This function simply checks whether an incoming packet is dedicated to this mesh router. Therefore it checks whether the incoming message is sent from the router itself or is a broadcast or multicast message. If so, we call dessert_syssend_msg(msg); to send the incoming message through the sys interface.
+ * 
+ * @section sec_fs_rlogic_deslsrrlc Adding routing Logic to our skeleton - des-lsr_routingLogic.c
+ * 
+ * We come the the most important file and the most important functions of our project. The other project files are only for setup or just have some data structures or flags. Now we come to the part which actively takes over the routing and fills those data structures with information. Lets directly look into the code:
+ * 
+ * @code
+ * #include "des-lsr.h"
+ * #include "des-lsr_items.h"
+ * 
+ * dir_neighbours_t* dir_neighbours_head = NULL;
+ * all_nodes_t* all_nodes_head = NULL;
+ * 
+ * // adds hello sending, tc sending and refreshing topology information to the periodics
+ * void init_logic() {
+ * 	struct timeval interval;
+ * 	interval.tv_sec = 1;
+ * 	interval.tv_usec = 500000;
+ * 	dessert_periodic_add(send_hello, NULL, NULL, &interval);
+ * 
+ * 	interval.tv_sec = 2;
+ * 	interval.tv_usec = 0;
+ * 	dessert_periodic_add(send_tc, NULL, NULL, &interval);
+ * 
+ * 	interval.tv_sec = 3;
+ * 	interval.tv_usec = 0;
+ * 	dessert_periodic_add(refresh_list, NULL, NULL, &interval);
+ * 
+ * 	interval.tv_sec = 4;
+ * 	interval.tv_usec = 0;
+ * 	dessert_periodic_add(refresh_rt, NULL, NULL, &interval);
+ * }
+ * 
+ * // --- PERIODIC PIPELINE --- //
+ * u_int16_t hello_seq_num = 0;
+ * 
+ * int send_hello(void *data, struct timeval *scheduled, struct timeval *interval){
+ * 	dessert_msg_t *hello;
+ * 	dessert_msg_new(&hello);
+ * 	hello->ttl = 1;							// hello only for direct neighbours
+ * 
+ * 	dessert_ext_t *ext = NULL;
+ * 	dessert_msg_addext(hello, &ext, LSR_EXT_HELLO, sizeof(hello_ext_t));
+ * 	hello_ext_t* hello_ext_data =  (hello_ext_t*)ext->data;
+ * 	hello_ext_data->seq_num = hello_seq_num++;
+ * 
+ * 	dessert_meshsend_fast(hello, NULL);		// send without creating copy
+ * 	dessert_msg_destroy(hello);				// we have created msg, we have to destroy it
+ * 	dessert_info("HELLO packet sent");
+ * 	return 0;
+ * }
+ * 
+ * int send_tc(void *data, struct timeval *scheduled, struct timeval *interval) {
+ * 	dir_neighbours_t *neighbour = dir_neighbours_head;
+ * 	if(!neighbour) return 0;		// return if no neighbours detected
+ * 
+ * 	dessert_msg_t *tc;
+ * 	dessert_msg_new(&tc);
+ * 	tc->ttl = LSR_TTL_DEFAULT;		// tc packet should go to all nodes
+ * 
+ * 	dessert_ext_t *ext;
+ * 	dessert_msg_addext(tc, &ext, LSR_EXT_TC, sizeof(HASH_COUNT(neighbour)*ETH_ALEN));
+ * 	void *current_addr_ptr = ext->data;
+ * 
+ * 	// copying hardware addresses into extension
+ * 	while(neighbour) {
+ * 		memcpy(current_addr_ptr, neighbour->addr, ETH_ALEN);
+ * 		neighbour = neighbour->hh.next;
+ * 	}
+ * 
+ * 	// add l2.5 header
+ * 	dessert_msg_addext(tc, &ext, DESSERT_EXT_ETH, ETHER_HDR_LEN);
+ * 	struct ether_header* l25h = (struct ether_header*) ext->data;
+ * 	memcpy(l25h->ether_shost, dessert_l25_defsrc, ETH_ALEN);
+ * 	memcpy(l25h->ether_dhost, ether_broadcast, ETH_ALEN);	// tc := broadcast packet
+ * 
+ * 	dessert_meshsend_fast(tc, NULL);
+ * 	dessert_msg_destroy(tc);
+ * 	dessert_info("TC packet sent");
+ * 	return 0;
+ * }
+ * 
+ * int refresh_list(void *data, struct timeval *scheduled, struct timeval *interval){
+ * 	dir_neighbours_t *dir_neigh = dir_neighbours_head;
+ * 
+ * 	while (dir_neigh) {
+ * 		if (dir_neigh->counter-- == 0) {
+ * 			dir_neighbours_t* el_to_delete = dir_neigh;
+ * 			dir_neigh = dir_neigh->hh.next;
+ * 			HASH_DEL(dir_neighbours_head, el_to_delete);
+ * 			dessert_info("deleting neighbour (counter timeout)");
+ * 		} else {
+ * 			dessert_info("neighbour found: %02x:%02x:%02x:%02x:%02x:%02x | %u",
+ * 				dir_neigh->addr[0], dir_neigh->addr[1], dir_neigh->addr[2],
+ * 				dir_neigh->addr[3], dir_neigh->addr[4], dir_neigh->addr[5],
+ * 				dir_neigh->counter);
+ * 			dir_neigh = dir_neigh->hh.next;
+ * 		}
+ * 	}
+ * 
+ * 	return 0;
+ * }
+ * 
+ * int refresh_rt(void *data, struct timeval *scheduled, struct timeval *interval){
+ * 	all_nodes_t *ptr = all_nodes_head;
+ * 	all_nodes_t *node;
+ * 	node_neighbours *neighbour_ptr;
+ * 
+ * 	while (ptr) {
+ * 		// if node is direct neighbour, they are next hops for themselves
+ * 		dir_neighbours_t *dir_neighbour;
+ * 		HASH_FIND(hh, dir_neighbours_head, ptr->addr, ETH_ALEN, dir_neighbour);
+ * 		if (dir_neighbour) memcpy(ptr->next_hop, ptr->addr, ETH_ALEN);
+ * 
+ * 		// add next hop information for neighbours of current node
+ * 		neighbour_ptr = ptr->neighbours;
+ * 		while(neighbour_ptr){
+ * 			HASH_FIND(hh, all_nodes_head, neighbour_ptr->addr, ETH_ALEN, node);
+ * 			if (node) memcpy(node->next_hop, ptr->addr, ETH_ALEN);
+ * 			else {
+ * 				node = malloc(sizeof(all_nodes_t));
+ * 				memcpy(node->addr, neighbour_ptr->addr, ETH_ALEN);
+ * 				memcpy(node->next_hop, ptr->addr, ETH_ALEN);
+ * 				node->counter = LSR_DEFAULT_COUNTER;
+ * 				node->neighbours = NULL;
+ * 				HASH_ADD_KEYPTR(hh, all_nodes_head, node->addr, ETH_ALEN, node);
+ * 			}
+ * 
+ * 			dessert_info("adding node to routing table: %02x:%02x:%02x:%02x:%02x:%02x",
+ * 				neighbour_ptr->addr[0], neighbour_ptr->addr[1], neighbour_ptr->addr[2],
+ * 				neighbour_ptr->addr[3], neighbour_ptr->addr[4], neighbour_ptr->addr[5]);
+ * 
+ * 			neighbour_ptr = neighbour_ptr->hh.next;
+ * 		}
+ * 
+ * 		ptr = ptr->hh.next;
+ * 	}
+ * 
+ * 	return 0;
+ * }
+ * 
+ * // --- CALLBACK PIPELINE --- //
+ * int drop_errors(dessert_msg_t* msg, size_t len,	dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id){
+ * 	if (proc->lflags & DESSERT_LFLAG_PREVHOP_SELF) return DESSERT_MSG_DROP;
+ * 	if (proc->lflags & DESSERT_LFLAG_SRC_SELF) return DESSERT_MSG_DROP;
+ * 	dessert_info("dropping packets sent to myself");
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * 
+ * int process_hello(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id){
+ * 	dessert_ext_t *ext;
+ * 
+ * 	if(dessert_msg_getext(msg, &ext, LSR_EXT_HELLO, 0)){
+ * 		dir_neighbours_t *neighbour;
+ * 		HASH_FIND(hh, dir_neighbours_head, msg->l2h.ether_shost, ETH_ALEN, neighbour);
+ * 
+ * 		if (neighbour) neighbour->counter = LSR_DEFAULT_COUNTER;
+ * 		else {
+ * 			neighbour = malloc(sizeof(dir_neighbours_t));
+ * 			if (neighbour) {
+ * 				memcpy(neighbour->addr, msg->l2h.ether_shost, ETH_ALEN);
+ * 				neighbour->counter = LSR_DEFAULT_COUNTER;
+ * 
+ * 				// do no forward msg->l2h.ether_shost
+ * 				// better: forward keypointer to struct element
+ * 				// because msg can be deleted
+ *  				HASH_ADD_KEYPTR(hh, dir_neighbours_head, neighbour->addr, ETH_ALEN, neighbour);
+ * 			}
+ * 		}
+ * 
+ * 		dessert_info("receiving HELLO packet from %02x:%02x:%02x:%02x:%02x:%02x",
+ * 			msg->l2h.ether_shost[0], msg->l2h.ether_shost[1], msg->l2h.ether_shost[2],
+ * 			msg->l2h.ether_shost[3], msg->l2h.ether_shost[4], msg->l2h.ether_shost[5]);
+ * 
+ * 		neighbour = dir_neighbours_head;
+ * 		while(neighbour){
+ * 			dessert_info("Neighbour %02x:%02x:%02x:%02x:%02x:%02x",
+ * 				neighbour->addr[0], neighbour->addr[1], neighbour->addr[2],
+ * 				neighbour->addr[3], neighbour->addr[4], neighbour->addr[5]);
+ * 			neighbour = neighbour->hh.next;
+ * 		}
+ * 		return DESSERT_MSG_DROP;
+ * 	}
+ * 
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * 
+ * int process_tc(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+ * 	dessert_ext_t *ext;
+ * 
+ * 	if(dessert_msg_getext(msg, &ext, LSR_EXT_TC, 0)){
+ * 		struct ether_header *l25h = dessert_msg_getl25ether(msg);
+ * 		size_t neighbours_count = ext->len / ETH_ALEN;
+ * 		void *neighbour_ptr = ext->data;
+ * 		all_nodes_t *node;
+ * 		HASH_FIND(hh, all_nodes_head, l25h->ether_shost, ETH_ALEN, node);
+ * 
+ * 		if (node) {
+ * 			// if found in struct for all nodes, delete his neighbours
+ * 			node_neighbours* neighbour_el = node->neighbours;
+ * 			while (neighbour_el) {
+ * 				HASH_DEL(node->neighbours, neighbour_el);
+ * 				neighbour_el = node->neighbours;
+ * 			}
+ * 		} else {
+ * 			// if not found in struct for all nodes, add him
+ * 			node = malloc(sizeof(all_nodes_t));
+ * 
+ * 			if (node) {
+ * 				memcpy(node->addr, l25h->ether_shost, ETH_ALEN);
+ * 				memcpy(node->next_hop, ether_broadcast, ETH_ALEN);
+ * 				node->counter = LSR_DEFAULT_COUNTER;
+ * 				node->neighbours = NULL;
+ * 				HASH_ADD_KEYPTR(hh, all_nodes_head, node->addr, ETH_ALEN, node);
+ * 			} else return DESSERT_MSG_DROP;
+ * 		}
+ * 
+ * 		// add all neighbours of the node
+ * 		while (neighbours_count-- > 0) {
+ * 			node_neighbours *node_neighbour = malloc(sizeof(node_neighbours));
+ * 			if (node_neighbour == NULL) return DESSERT_MSG_DROP;
+ * 			memcpy(node_neighbour->addr, neighbour_ptr, ETH_ALEN);
+ * 			HASH_ADD_KEYPTR(hh, node->neighbours, node_neighbour->addr, ETH_ALEN, node_neighbour);
+ * 			neighbour_ptr += ETH_ALEN;
+ * 		}
+ * 
+ * 		dessert_info("receiving TC packet from %02x:%02x:%02x:%02x:%02x:%02x",
+ * 			msg->l2h.ether_shost[0], msg->l2h.ether_shost[1], msg->l2h.ether_shost[2],
+ * 			msg->l2h.ether_shost[3], msg->l2h.ether_shost[4], msg->l2h.ether_shost[5]);
+ * 		return DESSERT_MSG_DROP;
+ * 	}
+ * 
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * 
+ * int forward_packet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+ * 	// if current node is the destination of the message but message isnt for the current node
+ * 	if (memcmp(dessert_l25_defsrc, msg->l2h.ether_dhost, ETH_ALEN) == 0 && !(proc->lflags & DESSERT_LFLAG_DST_SELF)) {
+ * 		all_nodes_t* node;
+ * 		HASH_FIND(hh, all_nodes_head, msg->l2h.ether_dhost, ETH_ALEN, node);
+ * 
+ * 		if (node && memcmp(node->next_hop, ether_broadcast, ETH_ALEN) != 0) {
+ * 			memcpy(msg->l2h.ether_dhost, node->next_hop, ETH_ALEN);
+ * 			dessert_meshsend_fast(msg, NULL);
+ * 		}
+ * 
+ * 		return DESSERT_MSG_DROP;
+ * 	}
+ * 
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * @endcode
+ * 
+ * This may look a lot of complex code. but it is very simple indeed. We start with the init_logic() function. This function is called in the main function of our project. The important periodics as sending hello packets or sending tc packets are registered. Remember: in the link state routing every router periodically sends hello and topology change information to other routers. We habe build such functions in this file, but we have to add them to the periodics. Therefore we use the dessert_periodic_add(); function. To let the daemon know, in which interval the given periodic should be called, we have to give him a pointer to an interval struct. We do this for all the important periodics:
+ * 
+ * @code
+ * u_int16_t hello_seq_num = 0;
+ * 
+ * int send_hello(void *data, struct timeval *scheduled, struct timeval *interval){
+ * 	dessert_msg_t *hello;
+ * 	dessert_msg_new(&hello);
+ * 	hello->ttl = 1;							// hello only for direct neighbours
+ * 
+ * 	dessert_ext_t *ext = NULL;
+ * 	dessert_msg_addext(hello, &ext, LSR_EXT_HELLO, sizeof(hello_ext_t));
+ * 	hello_ext_t* hello_ext_data =  (hello_ext_t*)ext->data;
+ * 	hello_ext_data->seq_num = hello_seq_num++;
+ * 
+ * 	dessert_meshsend_fast(hello, NULL);		// send without creating copy
+ * 	dessert_msg_destroy(hello);				// we have created msg, we have to destroy it
+ * 	dessert_info("HELLO packet sent");
+ * 	return 0;
+ * }
+ * @endcode
+ * 
+ * Dont worry, you will learn how this functions work. We begin with the send_hello(...); function, which simply is for sending hello packets to all neighbours. The coding in this function is not difficult. First we create a DES-SERT message and set the ttl to 1, which means, that the message is only dedicated to the neighbours. As you know from the items file, we have created a hello extension which contains a sequence number. The sequence number is incremented in every hello extension. We add this extension to our created DES-SERT message and set the extension flag to LSR_EXT_HELLO. Afterwards we send the message without creating a copy over all mesh interfaces and destroy it. This is important not to get memory leaks. We have created the message, we have to destroy it. Now we have a look at the periodic for sending topology change information through the whole network:
+ *
+ * @code
+ * int send_tc(void *data, struct timeval *scheduled, struct timeval *interval) {
+ * 	dir_neighbours_t *neighbour = dir_neighbours_head;
+ * 	if(!neighbour) return 0;		// return if no neighbours detected
+ * 
+ * 	dessert_msg_t *tc;
+ * 	dessert_msg_new(&tc);
+ * 	tc->ttl = LSR_TTL_DEFAULT;		// tc packet should go to all nodes
+ * 
+ * 	dessert_ext_t *ext;
+ * 	dessert_msg_addext(tc, &ext, LSR_EXT_TC, sizeof(HASH_COUNT(neighbour)*ETH_ALEN));
+ * 	void *current_addr_ptr = ext->data;
+ * 
+ * 	// copying hardware addresses into extension
+ * 	while(neighbour) {
+ * 		memcpy(current_addr_ptr, neighbour->addr, ETH_ALEN);
+ * 		neighbour = neighbour->hh.next;
+ * 	}
+ * 
+ * 	// add l2.5 header
+ * 	dessert_msg_addext(tc, &ext, DESSERT_EXT_ETH, ETHER_HDR_LEN);
+ * 	struct ether_header* l25h = (struct ether_header*) ext->data;
+ * 	memcpy(l25h->ether_shost, dessert_l25_defsrc, ETH_ALEN);
+ * 	memcpy(l25h->ether_dhost, ether_broadcast, ETH_ALEN);	// tc := broadcast packet
+ * 
+ * 	dessert_meshsend_fast(tc, NULL);
+ * 	dessert_msg_destroy(tc);
+ * 	dessert_info("TC packet sent");
+ * 	return 0;
+ * }
+ * @endcode
+ *
+ * First we create a copy pointer to the neighbours hash table of the current node. If this hash table is empty, so if there are no neighbours, we simply return and dont send any topology change information. Now we create a new DES-SERT message and put the ttl to a default value. We know, that the tc packet should reach all other nodes in the network. Now we come to the interesting part of this function. We create an extension, which is not filled with structs like in the skeleton or in the hello extension. We directly put the hash table into the extension, which contains all neighbouring information. This is the purpose of the while loop. In the following lines we add a layer 2.5 header to our message. You will ask yourself, why there isnt such l2.5 header in the hello packets. The hello packets only are for the neighbours. Other network nodes will not receive those hello packets, if they arent neighbours of the current node. So in the hello packet the layer 2 header simply is equal to the layer 2.5 header. The reason is as follows. In the layer 2 header only the direct next hop is the destination, which means that the real destination isnt located in this header. Real destination means the destination which could be located in the very other part of the network. To reach this node, there will be many steps. Or in other words: Sometimes you cannot directly send you packet to the destination, you first have to send it to another node, which forwards you packet. In the layer 2 header this next hop address is saved in the destination. In the layer 2.5 header you will find the network address of your real destination. For a tc packet we create a layer 2.5 header and put the broadcast address into the destination field. In the end of the shown function send_tc you will Maybe you will ask yourself why the send_tc function is not void, since we actually do nothing with the returned value. In fact it is necessary in periodic functions to return an integer.
+ * 
+ * @code
+ * int refresh_list(void *data, struct timeval *scheduled, struct timeval *interval){
+ * 	dir_neighbours_t *dir_neigh = dir_neighbours_head;
+ * 
+ * 	while (dir_neigh) {
+ * 		if (dir_neigh->counter-- == 0) {
+ * 			dir_neighbours_t* el_to_delete = dir_neigh;
+ * 			dir_neigh = dir_neigh->hh.next;
+ * 			HASH_DEL(dir_neighbours_head, el_to_delete);
+ * 			dessert_info("deleting neighbour (counter timeout)");
+ * 		} else {
+ * 			dessert_info("neighbour found: %02x:%02x:%02x:%02x:%02x:%02x | %u",
+ * 				dir_neigh->addr[0], dir_neigh->addr[1], dir_neigh->addr[2],
+ * 				dir_neigh->addr[3], dir_neigh->addr[4], dir_neigh->addr[5],
+ * 				dir_neigh->counter);
+ * 			dir_neigh = dir_neigh->hh.next;
+ * 		}
+ * 	}
+ * 
+ * 	return 0;
+ * }
+ * @endcode
+ *
+ * Neighbours of the current node may disappear. The refresh_list function simply checks, whether there were incoming hello packets any time recently. If so, the neighbour should stay in the neighbouring hash table. If not, just drop the neighbour, maybe the neighbour isnt any more. As you can see, we just iterate through the neighbouring list and check, whether a counter has expired. Then the neighbour is deleted in the hash table. If the counter is higher and so the entry hasnt expired, we just print the hardware address of this neighbour.
+ *
+ * @code
+ * int refresh_rt(void *data, struct timeval *scheduled, struct timeval *interval){
+ * 	all_nodes_t *ptr = all_nodes_head;
+ * 	all_nodes_t *node;
+ * 	node_neighbours *neighbour_ptr;
+ * 
+ * 	while (ptr) {
+ * 		// if node is direct neighbour, they are next hops for themselves
+ * 		dir_neighbours_t *dir_neighbour;
+ * 		HASH_FIND(hh, dir_neighbours_head, ptr->addr, ETH_ALEN, dir_neighbour);
+ * 		if (dir_neighbour) memcpy(ptr->next_hop, ptr->addr, ETH_ALEN);
+ * 
+ * 		// add next hop information for neighbours of current node
+ * 		neighbour_ptr = ptr->neighbours;
+ * 		while(neighbour_ptr){
+ * 			HASH_FIND(hh, all_nodes_head, neighbour_ptr->addr, ETH_ALEN, node);
+ * 			if (node) memcpy(node->next_hop, ptr->addr, ETH_ALEN);
+ * 			else {
+ * 				node = malloc(sizeof(all_nodes_t));
+ * 				memcpy(node->addr, neighbour_ptr->addr, ETH_ALEN);
+ * 				memcpy(node->next_hop, ptr->addr, ETH_ALEN);
+ * 				node->counter = LSR_DEFAULT_COUNTER;
+ * 				node->neighbours = NULL;
+ * 				HASH_ADD_KEYPTR(hh, all_nodes_head, node->addr, ETH_ALEN, node);
+ * 			}
+ * 
+ * 			dessert_info("adding node to routing table: %02x:%02x:%02x:%02x:%02x:%02x",
+ * 				neighbour_ptr->addr[0], neighbour_ptr->addr[1], neighbour_ptr->addr[2],
+ * 				neighbour_ptr->addr[3], neighbour_ptr->addr[4], neighbour_ptr->addr[5]);
+ * 
+ * 			neighbour_ptr = neighbour_ptr->hh.next;
+ * 		}
+ * 
+ * 		ptr = ptr->hh.next;
+ * 	}
+ * 
+ * 	return 0;
+ * }
+ * @endcode
+ *
+ * This function refreshes the next hop information for every node. As you know from the items header, we have a hash map containing all nodes of the network and a hash map containing all neighbours for all nodes. This two hash maps together have complete information about the network graph. We can easily filter the next hop information for any outgoing packet out of this data structures. In fact this function looks a bit complicated. We iterate through the hash map, which contains a list of all nodes in the network. When we find the node from the all-node-list in the neighbouring list, the next hop is the node itself. So in other words: If a node is the neighbour of the current node, all messages to this node should be sent to him directly and not to another node. We have a second pointer to the neighbouring hash map of the current chosen node in the all-node-list. If the neighbour of this node is represented in the all-node-list, so when we actually got topology change messages from the this neighbour, this neighbour is the next hop of the currently chosen node in the all-node-list. If the neighbour could not be found in the all-node-list, we have to add this neighbour and still make it the next hop. And this is it. We print some status information and return.
+ *
+ * @code
+ * int drop_errors(dessert_msg_t* msg, size_t len,	dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id){
+ * 	if (proc->lflags & DESSERT_LFLAG_PREVHOP_SELF) return DESSERT_MSG_DROP;
+ * 	if (proc->lflags & DESSERT_LFLAG_SRC_SELF) return DESSERT_MSG_DROP;
+ * 	dessert_info("dropping packets sent to myself");
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * @endcode
+ *
+ * We go on with the callback pipeline. In such wireless networks like DES-testbed it is possible that an outgoing message could be received from the sender itself. So in fact the sender can receive his own packet. Obviously this message is not useful for the sender, so it can be dropped. In the drop_errors function you can see, that we drop such packets. Such packets can be dropped in the other functions, too. But when we check incoming packets at the beginning of the packet processing, we can ignore such cases in other callbacks. As you can see in the main function of our project this dropping function is one of the first callbacks in the callback pipeline.
+ *
+ * @code
+ * int process_hello(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id){
+ * 	dessert_ext_t *ext;
+ * 
+ * 	if(dessert_msg_getext(msg, &ext, LSR_EXT_HELLO, 0)){
+ * 		dir_neighbours_t *neighbour;
+ * 		HASH_FIND(hh, dir_neighbours_head, msg->l2h.ether_shost, ETH_ALEN, neighbour);
+ * 
+ * 		if (neighbour) neighbour->counter = LSR_DEFAULT_COUNTER;
+ * 		else {
+ * 			neighbour = malloc(sizeof(dir_neighbours_t));
+ * 			if (neighbour) {
+ * 				memcpy(neighbour->addr, msg->l2h.ether_shost, ETH_ALEN);
+ * 				neighbour->counter = LSR_DEFAULT_COUNTER;
+ * 
+ * 				// do no forward msg->l2h.ether_shost
+ * 				// better: forward keypointer to struct element
+ * 				// because msg can be deleted
+ *  				HASH_ADD_KEYPTR(hh, dir_neighbours_head, neighbour->addr, ETH_ALEN, neighbour);
+ * 			}
+ * 		}
+ * 
+ * 		dessert_info("receiving HELLO packet from %02x:%02x:%02x:%02x:%02x:%02x",
+ * 			msg->l2h.ether_shost[0], msg->l2h.ether_shost[1], msg->l2h.ether_shost[2],
+ * 			msg->l2h.ether_shost[3], msg->l2h.ether_shost[4], msg->l2h.ether_shost[5]);
+ * 
+ * 		neighbour = dir_neighbours_head;
+ * 		while(neighbour){
+ * 			dessert_info("Neighbour %02x:%02x:%02x:%02x:%02x:%02x",
+ * 				neighbour->addr[0], neighbour->addr[1], neighbour->addr[2],
+ * 				neighbour->addr[3], neighbour->addr[4], neighbour->addr[5]);
+ * 			neighbour = neighbour->hh.next;
+ * 		}
+ * 		return DESSERT_MSG_DROP;
+ * 	}
+ * 
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * @endcode
+ *
+ * We have discussed the send_hello function, which periodically sends hello messages to all neighbours. This messages should be processed of any router in the network. The idea is simple: If an incoming packet is a hello packet, it should be checked whether the sender already is in the neighbouring list. If so, refresh the counter. If the sender isnt already in this list, we just have to add him. If you look at the code above, you will see how we implemented this functionality. There is only one thing you should be aware of. Adding a new neighbour to a hash map can be done using for example HASH_ADD(...). Therefore you have to forward the msg->l2h.ether_shost as a parameter, which simply is a pointer. When the message is deleted, this pointer will be useless, which means that the hash map entry will be useless as well. To grant that an entry stays in the hash map and is still valid after the message is deleted you should use HASH_ADD_KEYPTR instead and forward a keypointer to the struct element instead. This is written in the uthash user guide: "HASH_ADD_KEYPTR is used when the structure contains a pointer to the key, rather than the key itself".
+ *
+ * @code
+ * int process_tc(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+ * 	dessert_ext_t *ext;
+ * 
+ * 	if(dessert_msg_getext(msg, &ext, LSR_EXT_TC, 0)){
+ * 		struct ether_header *l25h = dessert_msg_getl25ether(msg);
+ * 		size_t neighbours_count = ext->len / ETH_ALEN;
+ * 		void *neighbour_ptr = ext->data;
+ * 		all_nodes_t *node;
+ * 		HASH_FIND(hh, all_nodes_head, l25h->ether_shost, ETH_ALEN, node);
+ * 
+ * 		if (node) {
+ * 			// if found in struct for all nodes, delete his neighbours
+ * 			node_neighbours* neighbour_el = node->neighbours;
+ * 			while (neighbour_el) {
+ * 				HASH_DEL(node->neighbours, neighbour_el);
+ * 				neighbour_el = node->neighbours;
+ * 			}
+ * 		} else {
+ * 			// if not found in struct for all nodes, add him
+ * 			node = malloc(sizeof(all_nodes_t));
+ * 
+ * 			if (node) {
+ * 				memcpy(node->addr, l25h->ether_shost, ETH_ALEN);
+ * 				memcpy(node->next_hop, ether_broadcast, ETH_ALEN);
+ * 				node->counter = LSR_DEFAULT_COUNTER;
+ * 				node->neighbours = NULL;
+ * 				HASH_ADD_KEYPTR(hh, all_nodes_head, node->addr, ETH_ALEN, node);
+ * 			} else return DESSERT_MSG_DROP;
+ * 		}
+ * 
+ * 		// add all neighbours of the node
+ * 		while (neighbours_count-- > 0) {
+ * 			node_neighbours *node_neighbour = malloc(sizeof(node_neighbours));
+ * 			if (node_neighbour == NULL) return DESSERT_MSG_DROP;
+ * 			memcpy(node_neighbour->addr, neighbour_ptr, ETH_ALEN);
+ * 			HASH_ADD_KEYPTR(hh, node->neighbours, node_neighbour->addr, ETH_ALEN, node_neighbour);
+ * 			neighbour_ptr += ETH_ALEN;
+ * 		}
+ * 
+ * 		dessert_info("receiving TC packet from %02x:%02x:%02x:%02x:%02x:%02x",
+ * 			msg->l2h.ether_shost[0], msg->l2h.ether_shost[1], msg->l2h.ether_shost[2],
+ * 			msg->l2h.ether_shost[3], msg->l2h.ether_shost[4], msg->l2h.ether_shost[5]);
+ * 		return DESSERT_MSG_DROP;
+ * 	}
+ * 
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * @endcode
+ *
+ * The main idea in topology change messages is to get information about the neighbouring of any node in the network. Such information should be added to the all-node-list or just refreshed in it. In the code above we first check whether the sender of the tc message already is in the local all-node-list. If so, his neighbouring information should first be deleted. If the node isnt in the data structure, we simply create an entry for it. Then we simply add all neighbours of the tc message to the data structure and print some status information. In fact this is a quite simple method and it isnt really good. So it could be, that the neighbouring information in the data structure is "newer" than the information in the tc message. We dont have sequence numbers in the tc message to check the currentness of the neighbouring.
+ *
+ * @code
+ * int forward_packet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+ * 	// if current node is the destination of the message but message isnt for the current node
+ * 	if (memcmp(dessert_l25_defsrc, msg->l2h.ether_dhost, ETH_ALEN) == 0 && !(proc->lflags & DESSERT_LFLAG_DST_SELF)) {
+ * 		all_nodes_t* node;
+ * 		HASH_FIND(hh, all_nodes_head, msg->l2h.ether_dhost, ETH_ALEN, node);
+ * 
+ * 		if (node && memcmp(node->next_hop, ether_broadcast, ETH_ALEN) != 0) {
+ * 			memcpy(msg->l2h.ether_dhost, node->next_hop, ETH_ALEN);
+ * 			dessert_meshsend_fast(msg, NULL);
+ * 		}
+ * 
+ * 		return DESSERT_MSG_DROP;
+ * 	}
+ * 
+ * 	return DESSERT_MSG_KEEP;
+ * }
+ * @endcode
+ *
+ * The idea of this function is to forward a packet to the right destination. First we check, whether the layer 2 header address is similar to our default source address. So in other words we check, whether an incoming message is dedicated to us. Then we simply make a lookup from the routing table (hash map) and look, whether there is an entry for the outgoing message. If there is an entry and the next hop address isnt the broadcast address (which is set by default when no next hop is known) we simply forward the packet to the right next hop. Else the message could be dropped.
  */
