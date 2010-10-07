@@ -1,10 +1,10 @@
 /**
- * \defgroup libdessert DES-SERT Library
+ * \defgroup libdessert DES-SERT library
  * \defgroup Manual Manual
  *
- * \defgroup DaemonUsage How to use DES-SERT based Daemons
- * \defgroup ExampleDaemon A Simple Example Daemon
- * \defgroup FirstSteps First Steps to Develop a Routing Daemon
- * \defgroup Architecture Architecture and Concepts of DES-SERT
- * \defgroup AdvTopics Advanced Topics
+ * \defgroup DaemonUsage How to use DES-SERT based daemons
+ * \defgroup ExampleDaemon A simple example daemon
+ * \defgroup FirstSteps First steps on how to develop a routing daemon
+ * \defgroup Architecture Architecture and concepts of DES-SERT
+ * \defgroup AdvTopics Advanced topics
  */
