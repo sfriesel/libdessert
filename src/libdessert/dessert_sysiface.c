@@ -116,7 +116,11 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 #elif __linux__
 
 	/* open device */
+#ifdef ANDROID	
+	buf = "/dev/tun";
+#else
 	buf = "/dev/net/tun";
+#endif	
 	_dessert_sysif->fd = open(buf, O_RDWR);
 	memset(&ifr, 0, sizeof(ifr));
 	if (flags & DESSERT_TUN) {
