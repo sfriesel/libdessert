@@ -277,7 +277,7 @@
  * If you have already created your daemon you should compile your daemon. Therefore you should read the \ref DaemonUsage article to get familiar with creating configuration files. Besides you can get a fully implemented daemon skeleton <a href="http://www.des-testbed.net/DES-SERT/downloads" target="_blanks">on the DES-SERT homepage</a>, where you will find make files, too. In the first run it is recommanded to compile the daemon by yourself to get familiar with it. To compile it without errors you need some libraries like uthash, libpcap or libsnmp. So before you start compiling it, you should type the following commands into your terminal:
  *
  * @code
- * sudo apt-get update; sudo apt-get install libsnmp-dev -y; sudo apt-get install libpcap-dev -y; sudo apt-get install libcli-dev -y; sudo apt-get install uthash-dev -y
+ * sudo apt-get update; sudo apt-get install libsnmp-dev libpcap-dev libcli-dev uthash-dev -y
  * @endcode
  *
  * Now you need the libdessert libraries. Currently there are only two libraries, which can be found <a href="http://www.des-testbed.net/DES-SERT/downloads" target="_blanks">on the DES-SERT homepage</a>. Download the libdessert and the libdessert-extra library, extract and compile them by going to their directories and typing following command into terminal:
