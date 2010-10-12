@@ -2,7 +2,7 @@
  * \ingroup Manual
  * \addtogroup FirstSteps
  *
- * This module is a step by step guide on how to implement, compile and to expend a DES-SERT based daemon with routing logic. For that purpose you first should read the article \ref ExampleDaemon, where you will learn how to implement a simple daemon, that has no routing logic and no complex code. You should read the article \ref DaemonUsage, to get fimiliar with configuration files.
+ * This module is a step by step guide on how to implement, compile and to expend a DES-SERT based daemon with routing logic. To learn more about the fundamental testbed architecture you should read the article \ref Architecture. Before we can start with our first own routing daemon you also should read \ref ExampleDaemon, where you will learn how to implement a simple daemon, that has no routing logic and no complex code. To get familiar with configuration files there is an article about \ref DaemonUsage. When you already read those texts you can go further with this more advanced tutorial.
  *
  * @section sec_fs_rlogic_lsr Adding routing Logic to our skeleton - The link state routing protocol
  *
