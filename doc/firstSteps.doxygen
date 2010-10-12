@@ -4,7 +4,7 @@
  *
  * This module is a step by step guide on how to implement, compile and to expend a DES-SERT based daemon with routing logic. To learn more about the fundamental testbed architecture you should read the article \ref Architecture. Before we can start with our first own routing daemon you also should read \ref ExampleDaemon, where you will learn how to implement a simple daemon, that has no routing logic and no complex code. To get familiar with configuration files there is an article about \ref DaemonUsage. When you already read those texts you can go further with this more advanced tutorial.
  *
- * @section sec_fs_rlogic_lsr Adding routing Logic to our skeleton - The link state routing protocol
+ * @section sec_fs_rlogic_lsr The link state routing protocol
  *
  * For our tutorial we will use the link-state routing protocol. The link-state routing protocol is performed by every router in the network. The basic concept of this routing protocol is that every node constructs a map of the connectivity to the network. For this the routing daemon has to collect neighboring information and create a graph from the collected data. In this graph the complete neighboring state of the network should be given. Then each node independently calculates the best path from it to every other node. These information should be written into a routing table. Examples of the link-state routing protocols include OSPF and IS-IS. In contrast to distance-vector routing algorithms the routing table is not shared through the network. In link-state routing protocols only connectivity information (neighboring information) is passed through. So in fact you can summarize the task of every router as "tell the world, who your neighbors are". In the end of the phase of collecting data of the network, every router has the complete network graph. In other words: Every router knows all the connections between other routers. The link-state routing protocol can be divided into three phases:
  *
@@ -12,19 +12,19 @@
  * - flood the own neighboring information through network
  * - fill the routing table with incoming neighboring information
  *
- * @section sec_fs_rlogic_coldataneigh Adding routing Logic to our skeleton - Collect data about own neighbors
+ * @section sec_fs_rlogic_coldataneigh Collect data about own neighbors
  *
  * First, each node needs to determine to which neighbors it is directly connected. This is necessary since there are no information about the network given when we are in the initial state. To learn more about the own neighbors a router sends some so called "hello" packets showing that the sending router is alive and can be connected. The packets should just be sent to the directly connected neighbors, which means that they should be recognized and then dropped when they income at the neighbor. This "hello" packet can be very simple. Maybe a flag can be used to carify that there is a "hello" packet. Of course the packet needs a clear ID. No other router in the network should have the same ID. In our network we can simply use a MAC address. We will see later, in which way this could be implemented. When a router receives a "hello" packet he knows, that the sender of this packet has to be his neighbor. Then he drops the packet, not to confuse other router with that piece of information. "hello" packets are sent periodically so that new incoming nodes can be considered. There also should be a timer for all neighbours. This is to react, when a neighbour is not active anymore.
  *
- * @section sec_fs_rlogic_floodnetw Adding routing Logic to our skeleton - Flood own neighboring data through network
+ * @section sec_fs_rlogic_floodnetw Flood own neighboring data through network
  *
  * In this phase a router knows to which other routers it is directly connected. This information is important for all other routers in the network to build the network graph. So we have to flood our neighboring information through the whole network. Every router gets full information about connectivities in the network.
  *
- * @section sec_fs_rlogic_coldataneigh Adding routing Logic to our skeleton - Fill routing table with incoming neighboring data
+ * @section sec_fs_rlogic_coldataneigh Fill routing table with incoming neighboring data
  *
  * First, each node needs to determine to which neighbors it is directly connected. This is necessary since there are no information about the network given when we are in the initial state. To learn more about the own neighbors a router sends some so called "hello" packets showing that the sending router is alive and can be connected. The packets should just be sent to the directly connected neighbors, which means that they should be recognized and then dropped when they income at the neighbor. This "hello" packet can be very simple. Maybe a flag can be used to carify that there is a "hello" packet. Of course the packet needs a clear ID. No other router in the network should have the same ID. In our network we can simply use a MAC address. We will see later, in which way this could be implemented. When a router receives a "hello" packet he knows, that the sender of this packet has to be his neighbor. Then he drops the packet, not to confuse other router with that piece of information. "hello" packets are sent periodically so that new incoming nodes can be considered. There also should be a timer for all neighbours. This is to react, when a neighbour is not active anymore.
  *
- * @section sec_fs_rlogic_expcode Adding routing Logic to our skeleton - Explaining the code
+ * @section sec_fs_rlogic_expcode Explaining the code
  *
  * Our new project is more extensive. So before we start coding, we have to think about dividing our routing daemon into parts. There are many different solutions for our routing program. We will see now how you could work with such a problem. In fact we have the following project files:
  * - des-lsr.c
@@ -35,7 +35,7 @@
  * 
  * As you can see there are two header files. In the des-lsr.h header file flags and prototypes are located, which are necessary for all other project files. So this is the „main header“. In the other header file called des-lsr_items.h global data structures are located. These data structures save information about the neighbours of the current node, about the whole graph in a adjacency matrix and have the routing table. So in fact these three data structures are located in the „items header“. The most important file of our project is des-lsr_routinglogic.c. Here you can find periodic function and some of the important callback functions. So for example functions for sending or receiving hello packets or tc (topology change) packets are located here. Incoming or outgoing packets should be analyzed and processed. Therefore we have two other important callbacks in the des-lsr_packethandler.c file.
  *
- * @section sec_fs_rlogic_deslsrc Adding routing Logic to our skeleton - des-lsr.c
+ * @section sec_fs_rlogic_deslsrc Explaining the code - des-lsr.c
  *
  * First have a look on the des-lsr.c file, which is the entry point into our program.
  *
@@ -85,16 +85,16 @@
  * }
  * @endcode
  *
- * This function is indeed similar to the main function in the skeleton we have seen so far. But there are some differences. We have the configuration file as a parameter and initialize the daemon. At the beginning we have to set up logging and initialize our daemon. This time, we want to make the daemon more dynamic, allowing the user to give an additional parameter for the daemonization of or program. So in fact the user can put into the console whether he likes the daemon in daemonized mode or in nondaemonized mode. So in fact the whole if-else-block is for initialization of our daemon. As you can see we use the function dessert_info to give us some debug information on the console. With this function we always what is going on in the inside of our daemon. When you use this daemon in a grid, non daemonized mode should not be used, unless you want to work with all console windows parallel. For most purposes you can just daemonize your programm. As you can see, we afterwards call an important function:
+ * This function is indeed similar to the main function in the skeleton we have seen so far. But there are some differences. We have the configuration file as a parameter and initialize the daemon. At the beginning we have to set up logging and initialize our daemon. This time, we want to make the daemon more dynamic, allowing the user to give an additional parameter for the daemonization of or program. So in fact the user can put into the console whether he likes the daemon in daemonized mode or in nondaemonized mode. The whole if-else-block is for initialization of our daemon. As you can see we use the function dessert_info to give us some debug information on the console. When you use this daemon in a grid, non daemonized mode should not be used, unless you want to work with all console windows parallel. For most purposes you can just daemonize your programm. As you can see, we afterwards call an important function:
  *
  * @code
  * init_logic();
  * dessert_info("routing initialized");
  * @endcode
  * 
- * Now the routing protocol will start his work. For our routing protocol we need some initializations. We will discuss later, how this works in detail. The rest of the code is similar to the skeleton. We have some callback functions, which should be registered and we start our CLI. In the skeleton we had an own function for registering the add interface operation to the CLI, this time we dont need a function, we just type the content into the main function. You already know from the explanation of the link state routing algorithm, that every router has to accept incoming hello, tc (topology change) and normal data packets. For each of these purposes we register callback functions. There is only one callback function for the messages going out to mesh network.
+ * Now the routing protocol will start his work. For our routing protocol we need some initializations. We will discuss later, how this works in detail. The rest of the code is similar to the skeleton. We have some callback functions, which should be registered and we start our CLI. In the skeleton we wrote an own function for registering operations to the CLI, this time we dont need a function, we just type the content into the main function. You already know from the explanation of the link state routing algorithm, that every router has to accept incoming hello, tc (topology change) and normal data packets. For each of these purposes we register callback functions. There is only one callback function for the messages going out to mesh network.
  *
- * @section sec_fs_rlogic_deslsrh Adding routing Logic to our skeleton - des-lsr.h
+ * @section sec_fs_rlogic_deslsrh Explaining the code - des-lsr.h
  *
  * In this header file we have some fundamental constants and prototypes.
  * 
@@ -127,9 +127,9 @@
  * int forward_packet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
  * @endcode
  *
- * This header file is included by all other project file. Therefore we just include here the dessert libraries and some basic libraries like stdio, so that their functions can be used in our whole project. As you can see we have the callbacks from des-lsr_packethandler.c and des-lsr_routinglogic.c. We will see later how this functions work in detail.
+ * This header file is included by all other project files. Therefore we just include here the two dessert libraries (dessert.h and dessert-extra.h) and some basic libraries like stdio, so that their functions can be used in our whole project. As you can see we have the callbacks from des-lsr_packethandler.c and des-lsr_routinglogic.c. We will see later how this functions work in detail.
  * 
- * @section sec_fs_rlogic_deslsritemsh Adding routing Logic to our skeleton - des-lsr_items.h
+ * @section sec_fs_rlogic_deslsritemsh Explaining the code - des-lsr_items.h
  * 
  * In this header file you can find the global data structures.
  * 
@@ -170,7 +170,7 @@
  *
  * You can see, that we made an hello extension for the hello messages. In this extension a sequence number is located. Actually we dont need this number for our routing logic. We just made an extra extension to give you the oppertunity to put more information to it and process the information in your protocol. So in fact its just an example of how to work with such an extension. As data structures you can find a hash map for the neighbours of the current node, a hash map for the neighbours of any node and a hashmap for any node in the network. For the hash maps we have to include the uthash library. The last hash map is simply a list of all nodes in the network and has a direct link to the hashmap of the neighbours of this node. In a way this could be seen as a form of an adjacency matrix. Or in fact you can simply translate this data structure into an adjacency matrix.
  * 
- * @section sec_fs_rlogic_deslsrphc Adding routing Logic to our skeleton - des-lsr_packethandler.c
+ * @section sec_fs_rlogic_deslsrphc Explaining the code - des-lsr_packethandler.c
  * 
  * There are two important files left. In this two files we have all of the routing logic and other important functions located. First of all we will look at the packet handler file. In this file we just have two callbacks. The sys_to_mesh function processes packets going to the mesh network to other mesh router. In the mesh_to_sys function the packets were sent from other mesh router. So in fact these functions are important for sending and receiving packets to/from the network. The sys_to_mesh function has to find out, which of the neighbours is the next hop for an outgoing package. Therefore it should lookup necessary information from the routing table. The mesh_to_sys callback just has to check whether the incoming packet is for the current node, else it should drop the packet.
  * 
@@ -203,7 +203,7 @@
  * 
  * We should discuss the sys_to_mesh function now. As you can see we have to extract the layer 2.5 information from the outgoing packet. The reason is simple: in the l25->ether_dhost the destination for the packet is given. From the routing table, which is a hash table (as we seen in the items header), we lookup the destination information. If this information about the destination node is available and the next hop entry for that node is not set to broadcast (which means that it is not in the initial state and we already filled in the real MAC address of the destination), we just copy the next_hop information for this destination node into the destination field of the msg and send the packet to the meshed network. Therefore we use the dessert_meshsend_fast function, which simply send the message without creating a copy. In most cases it is recommanded to use this function to get a daemon with better performance. In the skeleton we use the dessert_meshsend(msg, NULL); function instead. Now that you know both functions, you should use the dessert_meshsend_fast in most cases. So all in all the sys_to_mesh function gets the next hop information and puts it into the outgoing message. Now we will discuss the mesh_to_sys function. This function simply checks whether an incoming packet is dedicated to this mesh router. Therefore it checks whether the incoming message is sent from the router itself or is a broadcast or multicast message. If so, we call dessert_syssend_msg(msg); to send the incoming message through the sys interface.
  * 
- * @section sec_fs_rlogic_deslsrrlc Adding routing Logic to our skeleton - des-lsr_routingLogic.c
+ * @section sec_fs_rlogic_deslsrrlc Explaining the code - des-lsr_routingLogic.c
  * 
  * We come the the most important file and the most important functions of our project. The other project files are only for setup or just have some data structures or flags. Now we come to the part which actively takes over the routing and fills those data structures with information. Lets directly look into the code:
  * 
