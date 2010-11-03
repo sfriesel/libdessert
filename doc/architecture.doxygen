@@ -6,19 +6,16 @@
  *
  * @section arch_sec System Architecture
  *
- * DES-SERT uses <a href="http://www.tcpdump.org/">libpcap</a> to receive packets 
- * from network interfaces. User space generated packets are received via 
- * a TUN or TAP interface which the kernel provides for routing
- * daemons based on DES-SERT.
+ * libdessert is an ANSI-C library which was designed for underlay routing. Thus it is located between the data link and the network layer of the ISO/OSI model. The framework runs in the user space, hence it uses <a href="http://www.tcpdump.org/">libpcap</a> for receiving packets from the network interfaces (kernel space).
  *
  *  \image html lib-kernel-if.png "DES-SERT System Architecture"
  *  \image latex lib-kernel-if.eps "DES-SERT System Architecture" width=.7\linewidth
  *
+ * As you can see in the image, DES-SERT based routing daemons are located in the user space, too. They use the libdessert library for all the routing needs. User space generated packets are sent/received via a kernel provided  so called TUN/TAP interface. In other words: Over the TUN/TAP interface local generated packets will be forwarded from the protocol stack of the operating system to the network. When a packet was trasmitted successfully, it will be received at the TUN/TAP interface of the destination and will be forwarded to the user space.
+ *
  * @subsection messages_subsec DES-SERT Messages
  *
- * Every packet you send or receive is represented as a
- * DES-SERT message. From a programmers point of view, a DES-SERT message
- * is just a C-structure:
+ * Every packet sent/received by an DES-SERT based daemon is represented as a DES-SERT message. From a programmers point of view, a DES-SERT message is just a C-structure:
  *
  * @code
  *  typedef struct __attribute__ ((__packed__)) dessert_msg {
@@ -39,34 +36,13 @@
  *  } dessert_msg_t;
  * @endcode
  *
- * Every message sent over the underlay network has this structure.
- * All data in a ::dessert_msg_t is stored in network byte order.
- * DES-SERT tries to take care of this structure as much as possible.
- * Developers have to only provide a value for the destination in the 
- * Ethernet header (ether_dhost) in dessert_msg_t.l2h.
+ * Every message sent over the underlay network has this structure. This stucture is not flexible in his length, which means that the DES-SERT message has a fixed length, too. The data in a ::dessert_msg_t is stored in network byte order. In most cases a developer only has to provide a value for the destination in the ethernet header (ether_dhost) in dessert_msg_t.l2h. Other values in the struct will be filled by DES-SERT, which in fact tries to take care of this structure as much as possible. 
  *
- * If you have to send some management data with a packet, e.g., some kind of
- * metric value your routing protocol uses, you should try to fit this
- * data into the dessert_msg_t.u8 or dessert_msg_t.u16 field.
- * These fields will never be modified by DES-SERT except on initialization
- * via dessert_msg_new(). the dessert_msg_t.ttl field shoud be used to implement time-to-live
- * support to limit the propagation of packets to a particular number of
- * hops. If you do not need such a feature, you can use the dessert_msg_t.ttl field for other
- * tasks.
+ * If you have to send some management data with a packet, e.g., some kind of metric value your routing protocol uses, you should try to fit this data into the dessert_msg_t.u8 or dessert_msg_t.u16 field. These fields will never be modified by DES-SERT except on initialization via dessert_msg_new(). The dessert_msg_t.ttl field shoud be used to implement time-to-live support to limit the propagation of packets to a particular number of hops. If you do not need such a feature, you can use the dessert_msg_t.ttl field for other tasks. For most cases this fields will not be sufficient for your management data. Therefore DES-SERT has an extension mechanism, which will be discussed later.
  *
- * ::dessert_msg_t is just a simple C-structure but there are several 
- * utility functions available - please have a look at \ref dessert.h and this
- * doxygen documentation. The most important ones are: dessert_msg_new() and
- * dessert_msg_destroy(). The first one allocates memory for a DES-SERT 
- * message including space for payload and extensions and initializes the
- * structure. The latter function destroys the DES-SERT message and frees the
- * memory. For normal data packets or received management packets you usually never 
- * need to create or destroy DES-SERT messages as the framework will handle these tasks.
- * You only need to use these functions when sending deamon generated packets, e.g., management
- * packets sent in some specific interval. Last but not least, the dessert_msg_clone() function is provided which
- * creates a copy of the message including extensions and payload.
+ * ::dessert_msg_t is just a simple C-structure but there are several utility functions available. The most important ones are located in \ref dessert.h or will be discussed in this doxygen documentation. Important ones are: dessert_msg_new() and dessert_msg_destroy(). The first one allocates memory for a DES-SERT message including space for payload and extensions and initializes the structure. The latter function destroys the DES-SERT message and frees the memory. For normal data packets or received management packets you usually never need to create or destroy DES-SERT messages as the framework will handle these tasks. You only need to use these functions when sending deamon generated packets, e.g., management packets sent in some specific interval. Last but not least, the dessert_msg_clone() function is provided which creates a copy of the message including extensions and payload.
  *
- *  @code
+ * @code
  *  int dessert_msg_new(dessert_msg_t **msgout);
  *
  *  int dessert_msg_clone(dessert_msg_t **msgnew, const dessert_msg_t *msgold, uint8_t sparse);
@@ -77,11 +53,7 @@
  *
  * @subsection extensions_subsec DES-SERT Extensions
  *
- * A DES-SERT extension is data piggybacked on a DES-SERT message.
- * The corresponding C-structure consists of a 8-bit user supplied type field, 
- * an 8-bit length field and user supplied data (up to 253 bytes). Extensions
- * are thus type-length-value (TLV) elements and similar to what <a href="http://tools.ietf.org/html/rfc5444" target=_blank>RFC 5444</a> tries
- * to provide.
+ * As we previously said the fields in a DES-SERT message isnt sufficient for your management data. Therefore DES-SERT provides an extension mechanism, which simply is data piggybacked on a DES-SERT message. The corresponding C-structure consists of an 8-bit user supplied type field, an 8-bit length field and user supplied data (up to 253 bytes). Extensions are thus type-length-value (TLV) elements and similar to what <a href="http://tools.ietf.org/html/rfc5444" target=_blank>RFC 5444</a> tries to provide.
  *
  * @code
  *  typedef struct __attribute__ ((__packed__)) dessert_ext {
@@ -91,8 +63,7 @@
  *  } dessert_ext_t;
  * @endcode
  *
- * Extensions can be added to a DES-SERT message by dessert_msg_addext(),
- * retrieved with dessert_msg_getext(), and removed with dessert_msg_delext().
+ * Extensions can be added to a DES-SERT message by dessert_msg_addext(), retrieved with dessert_msg_getext(), and removed with dessert_msg_delext().
  *
  * @code
  *  int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, size_t len);
@@ -103,41 +74,23 @@
  *
  * @endcode
  *
- * It is recommended not to put single data fields in extensions, but
- * combine semantically related data in a struct and attach this struct
- * as an extension because every extension introduces 16-bit overhead 
- * to the packet.
+ * Every extension introduces 16-bit overhead to the packet. Therefore it is recommended not to put single data fields in extensions, but combine semantically related data in a struct and attach this complete struct as an extension.
  *
- * The extension feature of DES-SERT can be used to add, modify, and delete
- * arbitrary data in a straight forward and easy way. You should try to
- * piggyback as much management data onto data packets to reduce the 
- * traffic on the medium. Whatever information an extension will provide
- * is entirely up to you: MPLS-like labels, topology information, urgent information, ...
+ * The extension feature of DES-SERT can be used to add, modify, and delete arbitrary data in a straight forward and easy way. You should try to piggyback as much management data onto data packets to reduce the traffic on the medium. Whatever information an extension will provide is entirely up to you: MPLS-like labels, topology information, urgent information, ...
  *
  *  \image html piggybacking.png "Piggybacking of extensions in DES-SERT messages"
  *  \image latex piggybacking.eps "Piggybacking of extensions in DES-SERT messages" width=.6\linewidth
  *
- *
  * @subsection pipelines_subsec Processing Pipelines
  *
- * Routing algorithms are often split up in several parts like packet
- * validation, loop-detection or routing table lookup.
- * To implement these as independent and clear as possible, DES-SERT enables
- * you to split up your packet processing in as many parts as you like.
+ * Routing algorithms are often split up in several parts like packet validation, loop-detection or routing table lookup. To implement these as independent and clear as possible, DES-SERT enables you to split up your packet processing in as many parts as you like. There are two separate processing pipelines - one for packets received from the user space via a TUN/TAP interface provided by the kernel (see ::dessert_sysif_t) and one for packets received via a network interface used as mesh interfaces (see ::dessert_meshif_t).
  *
- * There are two separate processing pipelines - one for packets received
- * from the user space via a TUN or TAP interface provided by the kernel (see ::dessert_sysif_t) and
- * one for packets received via a network interface used as mesh interfaces
- * (see ::dessert_meshif_t).
+ * When your daemon genereated packet should be sent to the network it will run through the sys pipeline. The therefore defined pipeline functions will process your message. Nearly all of the routing logic of the daemons will be found in this functions. When a sent packet arrives at the destination it will be processed by the mesh pipeline.
  *
  *  \image html pipelining.png "Pipelining in DES-SERT daemons"
  *  \image latex pipelining.eps "Pipelining in DES-SERT daemons" width=.6\linewidth
  *
- * You can register callback functions at these pipelines with
- * dessert_sysrxcb_add() or dessert_meshrxcb_add(). Both take an additional
- * integer argument ("priority") specifying the order the callbacks should
- * be called. Lower values represent a higher priority and thus an earlier position in
- * the pipeline. A callback function represents a stage of a pipeline.
+ * You can register callback functions at these pipelines with dessert_sysrxcb_add() or dessert_meshrxcb_add(). Both take an additional integer argument ("priority") specifying the order the callbacks should be called. Lower values represent a higher priority and thus an earlier position in the pipeline. A callback function represents a stage of a pipeline.
  *
  * @code
  *  int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio);
@@ -147,25 +100,13 @@
  *  int dessert_meshrxcb_del(dessert_meshrxcb_t* c);
  * @endcode
  *
- * If a callback returns #DESSERT_MSG_KEEP the packed will be processed by
- * further callbacks, if it returns #DESSERT_MSG_DROP the message will be
- * dropped and no further callbacks will be called. In the latter case,
- * DES-SERT will automatically free the memory.
+ * If a callback returns #DESSERT_MSG_KEEP the packed will be processed by further callbacks, if it returns #DESSERT_MSG_DROP the message will be dropped and no further callbacks will be called. In the latter case, DES-SERT will automatically free the memory.
  *
  * @subsection sparse_subsec Message Size Management
  *
- * When packets (IP datagrams or Ethernet frames) are received from user space,
- * they are automatically encapsulated in a DES-SERT message. The allocated memory
- * is of maximum size so that you can start to add extensions as long as payload
- * and extensions do not get too large.
+ * When packets (IP datagrams or ethernet frames) are received from user space, they are automatically encapsulated in a DES-SERT message. The allocated memory is of maximum size so that you can start to add extensions as long as payload and extensions do not get too large.
  *
- * Packets received from the network will probably have a smaller size and are
- * called "sparse" messages. If you need to add extensions or enlarge the payload 
- * of a message, you need to tell DES-SERT to enlarge the buffer for you. In sparse messages
- * the flag #DESSERT_FLAG_SPARSE is set. The buffer will be automatically 
- * enlarged by returning #DESSERT_MSG_NEEDNOSPARSE from the callback. After DES-SERT has
- * reallocated the memory, the callback will be called again and the #DESSERT_FLAG_SPARSE 
- * will not be set anymore.
+ * Packets received from the network will probably have a smaller size and are called "sparse" messages. If you need to add extensions or enlarge the payload  of a message, you need to tell DES-SERT to enlarge the buffer for you. In sparse messages the flag #DESSERT_FLAG_SPARSE is set. The buffer will be automatically enlarged by returning #DESSERT_MSG_NEEDNOSPARSE from the callback. After DES-SERT has reallocated the memory, the callback will be called again and the #DESSERT_FLAG_SPARSE will not be set anymore.
  *
  * @code
  *   if (proc->lflags & DESSERT_FLAG_SPARSE) {
