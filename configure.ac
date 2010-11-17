@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([libdessert], [0.97], [des-sert@spline.inf.fu-berlin.de])
+AC_INIT([libdessert], [0.98], [des-sert@spline.inf.fu-berlin.de])
 AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
 AC_CONFIG_MACRO_DIR([m4])
 
