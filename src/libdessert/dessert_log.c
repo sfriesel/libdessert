@@ -186,46 +186,44 @@ char* _dessert_log_rbuf_nextline(void) {
  * @param[in] *fmt printf format string
  * @param[in] ... (var-arg) printf like variables
  **/
-void _dessert_log(int level, const char* func, const char* file, int line,
-		const char *fmt, ...) {
-	va_list args;
-	char *rbuf_line = NULL;
-	char buf[DESSERT_LOGLINE_MAX];
-	char lf[80];
-	char *lt;
-	char lds[27];
-	struct tm ldd;
-	time_t ldi;
-	int lf_slen, buf_slen;
+void _dessert_log(int level, const char* func, const char* file, int line, const char *fmt, ...) {
+    va_list args;
+    char *rbuf_line = NULL;
+    char buf[DESSERT_LOGLINE_MAX];
+    char lf[80];
+    char *lt;
+    char lds[27];
+    struct tm ldd;
+    time_t ldi;
+    int lf_slen, buf_slen;
 
-	if (_dessert_loglevel < level)
-		return;
+    if(_dessert_loglevel < level) {
+      return;
+    }
 
-	snprintf(lf, 80, " (%s@%s:%d)", func, file, line);
-	lf_slen = strlen(lf);
+    snprintf(lf, 80, " (%s@%s:%d)", func, file, line);
+    lf_slen = strlen(lf);
 
-	va_start(args, fmt);
-	vsnprintf(buf, DESSERT_LOGLINE_MAX, fmt, args);
-	va_end(args);
-	buf_slen = strlen(buf);
+    va_start(args, fmt);
+    vsnprintf(buf, DESSERT_LOGLINE_MAX, fmt, args);
+    va_end(args);
+    buf_slen = strlen(buf);
 
-	if (_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) {
-		syslog(level, "%s%s", buf, lf);
-	}
+    if(_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) {
+        syslog(level, "%s%s", buf, lf);
+    }
 
-	if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
-		pthread_rwlock_rdlock(&_dessert_logrbuf_len_lock);
-		rbuf_line = _dessert_log_rbuf_nextline();
-	}
+    if(_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
+        pthread_rwlock_rdlock(&_dessert_logrbuf_len_lock);
+        rbuf_line = _dessert_log_rbuf_nextline();
+    }
 
-	if (_dessert_logflags & (_DESSERT_LOGFLAG_LOGFILE | _DESSERT_LOGFLAG_STDERR
-			| _DESSERT_LOGFLAG_RBUF)) {
-
-		time(&ldi);
-		localtime_r(&ldi, &ldd);
-		snprintf(lds, 26, "%04d-%02d-%02d %02d:%02d:%02d%+05.1f ", ldd.tm_year
-				+ 1900, ldd.tm_mon + 1, ldd.tm_mday, ldd.tm_hour, ldd.tm_min,
-				ldd.tm_sec, (double) ldd.tm_gmtoff / 3600);
+    if(_dessert_logflags & (_DESSERT_LOGFLAG_LOGFILE | _DESSERT_LOGFLAG_STDERR | _DESSERT_LOGFLAG_RBUF)) {
+        time(&ldi);
+        localtime_r(&ldi, &ldd);
+        snprintf(lds, 26, "%04d-%02d-%02d %02d:%02d:%02d%+05.1f ", ldd.tm_year
+                + 1900, ldd.tm_mon + 1, ldd.tm_mday, ldd.tm_hour, ldd.tm_min,
+                ldd.tm_sec, (double) ldd.tm_gmtoff / 3600);
 
         switch (level) {
           case LOG_EMERG:
@@ -254,57 +252,39 @@ void _dessert_log(int level, const char* func, const char* file, int line,
               break;
         }
 
-// 		if (32 + buf_slen + lf_slen > 80) {
-            if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
-              pthread_mutex_lock(&_dessert_logfile_mutex);
-              if(dessert_logfd != NULL) {
-                fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
-              }
+        if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
+          pthread_mutex_lock(&_dessert_logfile_mutex);
+          if(dessert_logfd != NULL) {
+            fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+          }
 #ifdef HAVE_LIBZ
-              else if(dessert_logfdgz != NULL) {
-                gzprintf(dessert_logfdgz, "%s%s%s\n%80s\n", lds, lt, buf, lf);
-              }
+          else if(dessert_logfdgz != NULL) {
+            gzprintf(dessert_logfdgz, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+          }
 #endif
-              pthread_mutex_unlock(&_dessert_logfile_mutex);
-            }
-            if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR)
-                fprintf(stderr, "%s%s%s\n%80s\n", lds, lt, buf, lf);
-            if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL)
-                snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds,
-                        lt, buf, lf);
-// 		} else {
-// 			while (32 + buf_slen + lf_slen < 80) {
-// 				buf[buf_slen++] = ' ';
-// 			}
-// 			buf[buf_slen] = '\0';
-// 			if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
-//               if(dessert_logfd != NULL)
-// 				fprintf(dessert_logfd, "%s%s%s%s\n", lds, lt, buf, lf);
+          pthread_mutex_unlock(&_dessert_logfile_mutex);
+        }
+        if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR) {
+            fprintf(stderr, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+        }
+        if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL) {
+            snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds,
+                    lt, buf, lf);
+        }
+// TODO why is this section separated from the fprintf | gzprint above?!?
+// currently disabled due to segfault when two threads are accessing zlib functions
+//         if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
+//           if(dessert_logfd != NULL)
+//             fflush(dessert_logfd);
 // #ifdef HAVE_LIBZ
-//               else if(dessert_logfdgz != NULL)
-//                 gzprintf(dessert_logfdgz, "%s%s%s%s\n", lds, lt, buf, lf);
+//           else if(dessert_logfdgz != NULL)
+//             gzflush(dessert_logfdgz, Z_FULL_FLUSH);
 // #endif
-//             }
-// 			if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR)
-// 				fprintf(stderr, "%s%s%s%s\n", lds, lt, buf, lf);
-// 			if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL)
-// 				snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s%s", lds, lt,
-// 						buf, lf);
-// 		}
-
-		if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
-          if(dessert_logfd != NULL)
-			fflush(dessert_logfd);
-#ifdef HAVE_LIBZ
-          else if(dessert_logfdgz != NULL)
-            gzflush(dessert_logfdgz, Z_FULL_FLUSH);
-#endif
-		}
-		if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
-			pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
-		}
-
-	}
+//         }
+        if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
+            pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
+        }
+    }
 }
 
 /** command "logging file" */
