@@ -65,6 +65,7 @@ int _dessert_logrbuf_cur = 0; /* current position */
 int _dessert_logrbuf_used = 0; /* used slots */
 pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; /* for resizing */
 pthread_mutex_t _dessert_logrbuf_mutex = PTHREAD_MUTEX_INITIALIZER; /* for moving _dessert_logrbuf_cur */
+pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* internal functions forward declarations \todo cleanup */
 
@@ -226,47 +227,51 @@ void _dessert_log(int level, const char* func, const char* file, int line,
 				+ 1900, ldd.tm_mon + 1, ldd.tm_mday, ldd.tm_hour, ldd.tm_min,
 				ldd.tm_sec, (double) ldd.tm_gmtoff / 3600);
 
-		switch (level) {
-		case LOG_EMERG:
-			lt = "EMERG: ";
-			break;
-		case LOG_ALERT:
-			lt = "ALERT: ";
-			break;
-		case LOG_CRIT:
-			lt = "CRIT:  ";
-			break;
-		case LOG_ERR:
-			lt = "ERR:   ";
-			break;
-		case LOG_WARNING:
-			lt = "WARN:  ";
-			break;
-		case LOG_NOTICE:
-			lt = "NOTICE:";
-			break;
-		case LOG_INFO:
-			lt = "INFO:  ";
-			break;
-		default:
-			lt = "DEBUG: ";
-			break;
-		}
+        switch (level) {
+          case LOG_EMERG:
+              lt = "EMERG: ";
+              break;
+          case LOG_ALERT:
+              lt = "ALERT: ";
+              break;
+          case LOG_CRIT:
+              lt = "CRIT:  ";
+              break;
+          case LOG_ERR:
+              lt = "ERR:   ";
+              break;
+          case LOG_WARNING:
+              lt = "WARN:  ";
+              break;
+          case LOG_NOTICE:
+              lt = "NOTICE:";
+              break;
+          case LOG_INFO:
+              lt = "INFO:  ";
+              break;
+          default:
+              lt = "DEBUG: ";
+              break;
+        }
 
 // 		if (32 + buf_slen + lf_slen > 80) {
-			if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
-              if(dessert_logfd != NULL)
-				fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+            if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
+              pthread_mutex_lock(&_dessert_logfile_mutex);
+              if(dessert_logfd != NULL) {
+                fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+              }
 #ifdef HAVE_LIBZ
-              else if(dessert_logfdgz != NULL)
+              else if(dessert_logfdgz != NULL) {
                 gzprintf(dessert_logfdgz, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+              }
 #endif
+              pthread_mutex_unlock(&_dessert_logfile_mutex);
             }
-			if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR)
-				fprintf(stderr, "%s%s%s\n%80s\n", lds, lt, buf, lf);
-			if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL)
-				snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds,
-						lt, buf, lf);
+            if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR)
+                fprintf(stderr, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+            if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL)
+                snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds,
+                        lt, buf, lf);
 // 		} else {
 // 			while (32 + buf_slen + lf_slen < 80) {
 // 				buf[buf_slen++] = ' ';
