@@ -1,8 +1,8 @@
 ??? - 0.98
 	- Added monitor interface support
-	
+    - Added mutex for lock file writes
 
-??? - 0.97
+unreleased - 0.97
     - Increased maximum number of characters in a log message from 1024 to 4096
     - Current libtool version = 1.4.1
 
