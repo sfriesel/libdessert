@@ -193,83 +193,69 @@ int dessert_cli_run() {
 
 /** internal function to initialize libcli */
 int _dessert_cli_init() {
+    dessert_cli = cli_init();
 
-	dessert_cli = cli_init();
+    /* set host name */
+    memset(_dessert_cli_hostname, 0x0, HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1);
+    gethostname(_dessert_cli_hostname, HOST_NAME_MAX);
+    strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), ":", 1);
+    strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname),
+            dessert_proto, DESSERT_PROTO_STRLEN);
+    cli_set_hostname(dessert_cli, _dessert_cli_hostname);
 
-	/* set host name */
-	memset(_dessert_cli_hostname, 0x0, HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1);
-	gethostname(_dessert_cli_hostname, HOST_NAME_MAX);
-	strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), ":", 1);
-	strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname),
-			dessert_proto, DESSERT_PROTO_STRLEN);
-	cli_set_hostname(dessert_cli, _dessert_cli_hostname);
-
-	/* initialize show commands */
-    dessert_cli_show = cli_register_command(dessert_cli,
-            NULL,
-            "show",
-            NULL,
-            PRIVILEGE_UNPRIVILEGED,
-            MODE_EXEC,
+    /* initialize show commands */
+    dessert_cli_show = cli_register_command(dessert_cli, NULL, "show",
+            NULL, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "display information");
-	cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",
-			_dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"Display information about this program.");
-	cli_register_command(dessert_cli, dessert_cli_show, "logging",
-			_dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"show logging ringbuffer");
-    cli_register_command(dessert_cli,
-            dessert_cli_show,
-            "loglevel",
-            _dessert_cli_cmd_show_loglevel,
-            PRIVILEGE_UNPRIVILEGED,
-            MODE_EXEC,
+    cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",
+            _dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+            "Display information about this program.");
+    cli_register_command(dessert_cli, dessert_cli_show, "logging",
+            _dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+            "show logging ringbuffer");
+    cli_register_command(dessert_cli, dessert_cli_show, "loglevel",
+            _dessert_cli_cmd_show_loglevel, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "show loglevel");
-	cli_register_command(dessert_cli, dessert_cli_show, "meshifs",
-			_dessert_cli_cmd_showmeshifs, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"Print list of registered interfaces used by the daemon.");
-	cli_register_command(dessert_cli, dessert_cli_show, "sysif", _dessert_cli_cmd_showsysif,
-			PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"Print the name of the TUN/TAP interface used as system interface.");
+    cli_register_command(dessert_cli, dessert_cli_show, "meshifs",
+            _dessert_cli_cmd_showmeshifs, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+            "Print list of registered interfaces used by the daemon.");
+    cli_register_command(dessert_cli, dessert_cli_show, "sysif", _dessert_cli_cmd_showsysif,
+            PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+            "Print the name of the TUN/TAP interface used as system interface.");
 
-	/* initialize config mode commands */
-	dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
-			"interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-			"create or configure interfaces");
-	dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
-			PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
-	dessert_cli_cfg_no_iface = cli_register_command(dessert_cli,
-            dessert_cli_cfg_no,
-            "interface",
-            NULL,
-            PRIVILEGE_PRIVILEGED,
-            MODE_CONFIG,
+    /* initialize config mode commands */
+    dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL, "interface",
+            NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "create or configure interfaces");
+    dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
+            PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
+    dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface",
+            NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "remove interface or negate interface config");
-    cli_register_command(dessert_cli,
-            NULL,
-            "loglevel",
-            _dessert_cli_cmd_set_loglevel,
-            PRIVILEGE_PRIVILEGED,
-            MODE_CONFIG,
-            "set the loglevel [(d)ebug, (i)nfo, (n)otice, (w)arning, (e)rror, (c)ritical, e(m)ergency]");
-	dessert_cli_cfg_logging = cli_register_command(dessert_cli, NULL,
-			"logging", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-			"change logging config");
-	dessert_cli_cfg_no_logging = cli_register_command(dessert_cli,
-			dessert_cli_cfg_no, "logging", NULL, PRIVILEGE_PRIVILEGED,
-			MODE_CONFIG, "disable logging for...");
-	cli_register_command(dessert_cli, dessert_cli_cfg_logging, "ringbuffer",
-			_dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-			"set logging ringbuffer size (in lines)");
-	cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "ringbuffer",
-			_dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-			"disable logging to ringbuffer");
-	cli_register_command(dessert_cli, dessert_cli_cfg_logging, "file",
-			_dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-			"set logfile and enable file logging");
-	cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "file",
-			_dessert_cli_no_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-			"set logfile disable file logging");
+    cli_register_command(dessert_cli, NULL, "loglevel",
+            _dessert_cli_cmd_set_loglevel, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "set the loglevel [debug, info, notice, warning, error, critical, emergency]");
+    cli_register_command(dessert_cli, NULL, "log_flush_interval",
+            _dessert_cli_log_interval, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "set log file flush interval [s]");
+    dessert_cli_cfg_logging = cli_register_command(dessert_cli, NULL,
+            "logging", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "change logging config");
+    dessert_cli_cfg_no_logging = cli_register_command(dessert_cli,
+            dessert_cli_cfg_no, "logging", NULL, PRIVILEGE_PRIVILEGED,
+            MODE_CONFIG, "disable logging for...");
+    cli_register_command(dessert_cli, dessert_cli_cfg_logging, "ringbuffer",
+            _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "set logging ringbuffer size (in lines)");
+    cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "ringbuffer",
+            _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "disable logging to ringbuffer");
+    cli_register_command(dessert_cli, dessert_cli_cfg_logging, "file",
+            _dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "set logfile and enable file logging");
+    cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "file",
+            _dessert_cli_no_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "set logfile disable file logging");
 
     cli_register_command(dessert_cli,
             NULL,
@@ -283,14 +269,11 @@ int _dessert_cli_init() {
                 PRIVILEGE_PRIVILEGED, MODE_CONFIG,
                 "write process id to file");
 
-	/* initialize other commands */
-	cli_register_command(dessert_cli, NULL, "shutdown",
-			_dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC,
-			"shut daemon down");
-
-
-
-	return DESSERT_OK;
+    /* initialize other commands */
+    cli_register_command(dessert_cli, NULL, "shutdown",
+            _dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC,
+            "shut daemon down");
+    return DESSERT_OK;
 }
 
 /******************************************************************************

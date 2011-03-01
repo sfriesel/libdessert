@@ -121,6 +121,7 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
 int _dessert_cli_no_logging_file(struct cli_def *cli, char *command, char *argv[], int argc);
 int _dessert_cli_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc);
 int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc);
+int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], int argc);
 
 /******************************************************************************
  *
@@ -132,12 +133,12 @@ int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command, char 
 
 /** callback list entry for dessert mesh interface callbacks */
 typedef struct dessert_meshrxcbe {
-	/** pointer to callback to call */
-	dessert_meshrxcb_t *c;
-	/** priority - lowest first */
-	int prio;
-	/** next entry in list */
-	struct dessert_meshrxcbe *next;
+    /** pointer to callback to call */
+    dessert_meshrxcb_t *c;
+    /** priority - lowest first */
+    int prio;
+    /** next entry in list */
+    struct dessert_meshrxcbe *next;
 } dessert_meshrxcbe_t;
 
 int _dessert_meshif_gethwaddr(dessert_meshif_t *meshif);
@@ -155,12 +156,12 @@ int _dessert_getHWAddr(char* device, char* hwaddr);
 
 /** callback list entry for tun/tap callbacks */
 typedef struct dessert_sysrxcbe {
-	/** pointer to callback to call */
-	dessert_sysrxcb_t *c;
-	/** priority - lowest first */
-	int prio;
-	/** next entry in list */
-	struct dessert_sysrxcbe *next;
+    /** pointer to callback to call */
+    dessert_sysrxcb_t *c;
+    /** priority - lowest first */
+    int prio;
+    /** next entry in list */
+    struct dessert_sysrxcbe *next;
 } dessert_sysrxcbe_t;
 
 extern dessert_sysif_t *_dessert_sysif;

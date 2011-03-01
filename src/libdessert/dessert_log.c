@@ -57,6 +57,7 @@ char dessert_logprefix[12];
 
 int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
 int _dessert_loglevel = LOG_INFO;
+dessert_periodic_t* _dessert_log_flush_periodic = NULL;
 
 /* the logging ringbuffer */
 char *_dessert_logrbuf = NULL; /* pointer to begin */
@@ -85,32 +86,32 @@ pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER;
  *
  **/
 int dessert_logcfg(uint16_t opts) {
-	snprintf(dessert_logprefix, 12, "dessert/%s", dessert_proto);
+    snprintf(dessert_logprefix, 12, "dessert/%s", dessert_proto);
 
-	pthread_rwlock_wrlock(&dessert_cfglock);
+    pthread_rwlock_wrlock(&dessert_cfglock);
 
-	/* configure logging */
-	if ((opts & DESSERT_LOG_SYSLOG) && !(opts & DESSERT_LOG_NOSYSLOG)) {
-		if (!(_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG)) {
-			/* initialize syslog channel */
-			openlog(dessert_logprefix, LOG_PID, LOG_DAEMON);
-		}
-		_dessert_logflags |= _DESSERT_LOGFLAG_SYSLOG;
-	} else if (!(opts & DESSERT_LOG_SYSLOG) && (opts & DESSERT_LOG_NOSYSLOG)) {
-		if (_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) {
-			/* close syslog channel */
-			closelog();
-		}
-		_dessert_logflags &= ~_DESSERT_LOGFLAG_SYSLOG;
-	}
+    /* configure logging */
+    if ((opts & DESSERT_LOG_SYSLOG) && !(opts & DESSERT_LOG_NOSYSLOG)) {
+        if (!(_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG)) {
+            /* initialize syslog channel */
+            openlog(dessert_logprefix, LOG_PID, LOG_DAEMON);
+        }
+        _dessert_logflags |= _DESSERT_LOGFLAG_SYSLOG;
+    } else if (!(opts & DESSERT_LOG_SYSLOG) && (opts & DESSERT_LOG_NOSYSLOG)) {
+        if (_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) {
+            /* close syslog channel */
+            closelog();
+        }
+        _dessert_logflags &= ~_DESSERT_LOGFLAG_SYSLOG;
+    }
 
-	if ((opts & DESSERT_LOG_STDERR) && !(opts & DESSERT_LOG_NOSTDERR)
-			&& !(_dessert_status & _DESSERT_STATUS_DAEMON)) {
-		_dessert_logflags |= _DESSERT_LOGFLAG_STDERR;
-	} else if ((!(opts & DESSERT_LOG_STDERR) && (opts & DESSERT_LOG_NOSTDERR))
-			|| (_dessert_status & _DESSERT_STATUS_DAEMON)) {
-		_dessert_logflags &= ~_DESSERT_LOGFLAG_STDERR;
-	}
+    if ((opts & DESSERT_LOG_STDERR) && !(opts & DESSERT_LOG_NOSTDERR)
+            && !(_dessert_status & _DESSERT_STATUS_DAEMON)) {
+        _dessert_logflags |= _DESSERT_LOGFLAG_STDERR;
+    } else if ((!(opts & DESSERT_LOG_STDERR) && (opts & DESSERT_LOG_NOSTDERR))
+            || (_dessert_status & _DESSERT_STATUS_DAEMON)) {
+        _dessert_logflags &= ~_DESSERT_LOGFLAG_STDERR;
+    }
 
 #ifdef HAVE_LIBZ
     // enable or disable compression
@@ -122,31 +123,31 @@ int dessert_logcfg(uint16_t opts) {
     }
 #endif
 
-	if ((opts & DESSERT_LOG_FILE) && !(opts & DESSERT_LOG_NOFILE)
-			&& (dessert_logfd != NULL
+    if ((opts & DESSERT_LOG_FILE) && !(opts & DESSERT_LOG_NOFILE)
+            && (dessert_logfd != NULL
 #ifdef HAVE_LIBZ
-			|| dessert_logfdgz != NULL
+            || dessert_logfdgz != NULL
 #endif
-			)) {
-		_dessert_logflags |= _DESSERT_LOGFLAG_LOGFILE;
-	} else if ((!(opts & DESSERT_LOG_FILE) && (opts & DESSERT_LOG_NOFILE))
-			|| (dessert_logfd == NULL
+            )) {
+        _dessert_logflags |= _DESSERT_LOGFLAG_LOGFILE;
+    } else if ((!(opts & DESSERT_LOG_FILE) && (opts & DESSERT_LOG_NOFILE))
+            || (dessert_logfd == NULL
 #ifdef HAVE_LIBZ
-			&& dessert_logfdgz == NULL
+            && dessert_logfdgz == NULL
 #endif
-			)) {
-		_dessert_logflags &= ~_DESSERT_LOGFLAG_LOGFILE;
-	}
+            )) {
+        _dessert_logflags &= ~_DESSERT_LOGFLAG_LOGFILE;
+    }
 
-	if ((opts & DESSERT_LOG_RBUF) && !(opts & DESSERT_LOG_NORBUF)) {
-		_dessert_logflags |= _DESSERT_LOGFLAG_RBUF;
-	} else if (!(opts & DESSERT_LOG_RBUF) && (opts & DESSERT_LOG_NORBUF)) {
-		_dessert_logflags &= ~_DESSERT_LOGFLAG_RBUF;
-	}
+    if ((opts & DESSERT_LOG_RBUF) && !(opts & DESSERT_LOG_NORBUF)) {
+        _dessert_logflags |= _DESSERT_LOGFLAG_RBUF;
+    } else if (!(opts & DESSERT_LOG_RBUF) && (opts & DESSERT_LOG_NORBUF)) {
+        _dessert_logflags &= ~_DESSERT_LOGFLAG_RBUF;
+    }
 
-	pthread_rwlock_unlock(&dessert_cfglock);
+    pthread_rwlock_unlock(&dessert_cfglock);
 
-	return 0;
+    return 0;
 }
 
 /******************************************************************************
@@ -158,21 +159,21 @@ int dessert_logcfg(uint16_t opts) {
  ******************************************************************************/
 
 char* _dessert_log_rbuf_nextline(void) {
-	char* r = NULL;
-	pthread_mutex_lock(&_dessert_logrbuf_mutex);
-	if (_dessert_logrbuf_len > 0) {
-		if (_dessert_logrbuf_cur >= _dessert_logrbuf_len) {
-			_dessert_logrbuf_cur = 0;
-		}
-		r = _dessert_logrbuf + (DESSERT_LOGLINE_MAX * _dessert_logrbuf_cur);
-		_dessert_logrbuf_cur++;
-		if (_dessert_logrbuf_used < _dessert_logrbuf_len - 1) {
-			_dessert_logrbuf_used++;
-		}
-	}
-	pthread_mutex_unlock(&_dessert_logrbuf_mutex);
+    char* r = NULL;
+    pthread_mutex_lock(&_dessert_logrbuf_mutex);
+    if (_dessert_logrbuf_len > 0) {
+        if (_dessert_logrbuf_cur >= _dessert_logrbuf_len) {
+            _dessert_logrbuf_cur = 0;
+        }
+        r = _dessert_logrbuf + (DESSERT_LOGLINE_MAX * _dessert_logrbuf_cur);
+        _dessert_logrbuf_cur++;
+        if (_dessert_logrbuf_used < _dessert_logrbuf_len - 1) {
+            _dessert_logrbuf_used++;
+        }
+    }
+    pthread_mutex_unlock(&_dessert_logrbuf_mutex);
 
-	return (r);
+    return (r);
 }
 
 /** internal log function
@@ -271,35 +272,85 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
             snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds,
                     lt, buf, lf);
         }
-// TODO why is this section separated from the fprintf | gzprint above?!?
-// currently disabled due to segfault when two threads are accessing zlib functions
-//         if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
-//           if(dessert_logfd != NULL)
-//             fflush(dessert_logfd);
-// #ifdef HAVE_LIBZ
-//           else if(dessert_logfdgz != NULL)
-//             gzflush(dessert_logfdgz, Z_FULL_FLUSH);
-// #endif
-//         }
+
         if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
             pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
         }
     }
 }
 
+/**
+ * Flush the messages to the log file if compression is applied
+ *
+ * @param data ignored
+ * @param scheduled time when the callback should have been called
+ * @param interval ignored
+ */
+int dessert_flush_log(void *data, struct timeval *scheduled, struct timeval *interval) {
+    #ifdef HAVE_LIBZ
+        if(dessert_logfdgz != NULL) {
+            pthread_mutex_lock(&_dessert_logfile_mutex);
+            int r = gzflush(dessert_logfdgz, Z_SYNC_FLUSH);
+            pthread_mutex_unlock(&_dessert_logfile_mutex);
+            dessert_debug("*** flushed log ***");
+            if(r != Z_OK) {
+                dessert_warn("gzflush returned %d", r);
+            }
+        }
+    #endif
+}
+
+/**
+ * Modify the interval to flush the log file.
+ * The log file is flushed every periode.
+ *
+ * @param argv[0] interval as string, "0" disables flushing
+ */
+int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], int argc) {
+    if (argc != 1) {
+        cli_print(cli, "usage %s INTERVAL\n", command);
+        return CLI_ERROR;
+    }
+
+    // disable
+    if(_dessert_log_flush_periodic) {
+        dessert_periodic_del(_dessert_log_flush_periodic);
+        _dessert_log_flush_periodic = NULL;
+    }
+
+    uint8_t i = strtod(argv[0], NULL);
+    // enable
+    if(i){
+        struct timeval interval;
+        interval.tv_sec = i;
+        interval.tv_usec = 0;
+        struct timeval schedule;
+        gettimeofday(&schedule, NULL);
+        TIMEVAL_ADD(&schedule, i, 0);
+
+        _dessert_log_flush_periodic = dessert_periodic_add(dessert_flush_log, NULL, &schedule, &interval);
+        cli_print(cli, "log flush interval set to %d seconds\n", i);
+        dessert_notice("log flush interval set to %d seconds", i);
+    }
+    else {
+        cli_print(cli, "log flushing disabled\n", i);
+        dessert_notice("log flushing disabled", i);
+    }
+    return CLI_OK;
+}
+
 /** command "logging file" */
-int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[],
-		int argc) {
-	FILE *newlogdf = NULL;
+int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], int argc) {
+    FILE *newlogdf = NULL;
 #ifdef HAVE_LIBZ
     gzFile *newlogdfgz = NULL;
     const char gz[] = ".gz";
 #endif
 
-	if (argc != 1) {
-		cli_print(cli, "usage %s filename\n", command);
-		return CLI_ERROR;
-	}
+    if (argc != 1) {
+        cli_print(cli, "usage %s filename\n", command);
+        return CLI_ERROR;
+    }
 
 #ifdef HAVE_LIBZ
     // see if the filename ends with ".gz"
@@ -325,28 +376,27 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[],
       newlogdf = fopen(argv[0], "a");
     }
 
-	if (newlogdf == NULL
+    if (newlogdf == NULL
 #ifdef HAVE_LIBZ
       && newlogdfgz == NULL
 #endif
       ) {
-		dessert_err("failed o open %s as logfile\n", argv[0]);
-		cli_print(cli, "failed o open %s as logfile\n", argv[0]);
-		return CLI_ERROR;
-	}
+        dessert_err("failed to open %s as logfile\n", argv[0]);
+        cli_print(cli, "failed to open %s as logfile\n", argv[0]);
+        return CLI_ERROR;
+    }
 
-	/* clean up old logfile first */
-	if (dessert_logfd != NULL) {
-		dessert_logcfg(DESSERT_LOG_NOFILE);
-		fclose(dessert_logfd);
-	}
+    /* clean up old logfile first */
+    if (dessert_logfd != NULL) {
+        dessert_logcfg(DESSERT_LOG_NOFILE);
+        fclose(dessert_logfd);
+    }
 #ifdef HAVE_LIBZ
-	if (dessert_logfdgz != NULL) {
+    if (dessert_logfdgz != NULL) {
         dessert_logcfg(DESSERT_LOG_NOFILE);
         gzclose(dessert_logfdgz);
     }
 #endif
-
     if(newlogdf) {
       dessert_logfd = newlogdf;
       dessert_logcfg(DESSERT_LOG_FILE | DESSERT_LOG_NOGZ);
@@ -357,8 +407,7 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[],
       dessert_logcfg(DESSERT_LOG_FILE | DESSERT_LOG_GZ);
     }
 #endif
-
-	return CLI_OK;
+    return CLI_OK;
 }
 
 int _dessert_closeLogFile(int signal) {
@@ -378,6 +427,9 @@ int _dessert_closeLogFile(int signal) {
   return 0;
 }
 
+/**
+ * Registers a SIGTERM handler
+ */
 int _dessert_log_init() {
   dessert_signalcb_add(SIGTERM, _dessert_closeLogFile);
   return 0;
@@ -390,79 +442,75 @@ int _dessert_cli_no_logging_file(struct cli_def *cli, char *command, char *argv[
 }
 
 /** command "logging ringbuffer" */
-int _dessert_cli_logging_ringbuffer(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-	int newlen = -1;
-	if (argc != 1 || (newlen = (int) strtol(argv[0], NULL, 10)) < 0) {
-		cli_print(cli, "usage %s [buffer length]\n", command);
-		return CLI_ERROR;
-	}
+int _dessert_cli_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc) {
+    int newlen = -1;
+    if (argc != 1 || (newlen = (int) strtol(argv[0], NULL, 10)) < 0) {
+        cli_print(cli, "usage %s [buffer length]\n", command);
+        return CLI_ERROR;
+    }
 
-	if (newlen == _dessert_logrbuf_len)
-		return CLI_OK;
+    if (newlen == _dessert_logrbuf_len)
+        return CLI_OK;
 
-	if (newlen == 0) {
-		cli_print(cli,
-				"will not set buffer length to 0 - use no logging ringbuffer instead\n");
-		return CLI_ERROR;
-	}
+    if (newlen == 0) {
+        cli_print(cli,
+                "will not set buffer length to 0 - use no logging ringbuffer instead\n");
+        return CLI_ERROR;
+    }
 
-	pthread_rwlock_wrlock(&_dessert_logrbuf_len_lock);
+    pthread_rwlock_wrlock(&_dessert_logrbuf_len_lock);
 
-	/* make logging buffer larger - easy if not ENOMEM*/
-	if (newlen > _dessert_logrbuf_len) {
-		_dessert_logrbuf = realloc(_dessert_logrbuf, newlen
-				* DESSERT_LOGLINE_MAX * sizeof(char));
-		if (_dessert_logrbuf == NULL) {
-			_dessert_logrbuf_len = 0;
-			_dessert_logrbuf_cur = 0;
-		} else {
-			_dessert_logrbuf_len = newlen;
-		}
-		dessert_logcfg(DESSERT_LOG_RBUF);
-		/* make logging buffer smaller - pain in the ass */
-	} else if (newlen < _dessert_logrbuf_len) {
-		/* move current log buffer if needed */
-		if (_dessert_logrbuf_cur > newlen) {
-			memmove(_dessert_logrbuf, _dessert_logrbuf + (DESSERT_LOGLINE_MAX
-					* (_dessert_logrbuf_cur - newlen)), newlen
-					* DESSERT_LOGLINE_MAX * sizeof(char));
-			_dessert_logrbuf_cur -= newlen;
-		}
-		_dessert_logrbuf = realloc(_dessert_logrbuf, newlen
-				* DESSERT_LOGLINE_MAX * sizeof(char));
-		if (_dessert_logrbuf == NULL) {
-			_dessert_logrbuf_len = 0;
-			_dessert_logrbuf_cur = 0;
-		} else {
-			_dessert_logrbuf_len = newlen;
-		}
-	} else {
-		dessert_err("this never happens");
-	}
-	if (_dessert_logrbuf_used > _dessert_logrbuf_len - 1)
-		_dessert_logrbuf_used = _dessert_logrbuf_len - 1;
-	pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
-	return CLI_OK;
-
+    /* make logging buffer larger - easy if not ENOMEM*/
+    if (newlen > _dessert_logrbuf_len) {
+        _dessert_logrbuf = realloc(_dessert_logrbuf, newlen
+                * DESSERT_LOGLINE_MAX * sizeof(char));
+        if (_dessert_logrbuf == NULL) {
+            _dessert_logrbuf_len = 0;
+            _dessert_logrbuf_cur = 0;
+        } else {
+            _dessert_logrbuf_len = newlen;
+        }
+        dessert_logcfg(DESSERT_LOG_RBUF);
+        /* make logging buffer smaller - pain in the ass */
+    } else if (newlen < _dessert_logrbuf_len) {
+        /* move current log buffer if needed */
+        if (_dessert_logrbuf_cur > newlen) {
+            memmove(_dessert_logrbuf, _dessert_logrbuf + (DESSERT_LOGLINE_MAX
+                    * (_dessert_logrbuf_cur - newlen)), newlen
+                    * DESSERT_LOGLINE_MAX * sizeof(char));
+            _dessert_logrbuf_cur -= newlen;
+        }
+        _dessert_logrbuf = realloc(_dessert_logrbuf, newlen
+                * DESSERT_LOGLINE_MAX * sizeof(char));
+        if (_dessert_logrbuf == NULL) {
+            _dessert_logrbuf_len = 0;
+            _dessert_logrbuf_cur = 0;
+        } else {
+            _dessert_logrbuf_len = newlen;
+        }
+    } else {
+        dessert_err("this never happens");
+    }
+    if (_dessert_logrbuf_used > _dessert_logrbuf_len - 1)
+        _dessert_logrbuf_used = _dessert_logrbuf_len - 1;
+    pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
+    return CLI_OK;
 }
 
 /** command "no logging ringbuffer" */
-int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-	if (_dessert_logrbuf == NULL) {
-		return CLI_OK;
-	} else {
-		pthread_rwlock_wrlock(&_dessert_logrbuf_len_lock);
-		dessert_logcfg(DESSERT_LOG_NORBUF);
-		free(_dessert_logrbuf);
-		_dessert_logrbuf = NULL;
-		_dessert_logrbuf_len = 0;
-		_dessert_logrbuf_cur = 0;
-		pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
-		return CLI_OK;
-	}
-
+int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc) {
+    if (_dessert_logrbuf == NULL) {
+        return CLI_OK;
+    } else {
+        pthread_rwlock_wrlock(&_dessert_logrbuf_len_lock);
+        dessert_logcfg(DESSERT_LOG_NORBUF);
+        free(_dessert_logrbuf);
+        _dessert_logrbuf = NULL;
+        _dessert_logrbuf_len = 0;
+        _dessert_logrbuf_cur = 0;
+        pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
+        return CLI_OK;
+    }
 }
 
 /** just a helper function */
@@ -495,101 +543,89 @@ int _dessert_loglevel_to_string(uint8_t level, char* buffer, size_t len) {
     return 0;
 }
 
-int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv[],
-        int argc) {
+int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv[], int argc) {
      if(argc != 1 ) {
-        cli_print(cli, "usage %s [(d)ebug, (i)nfo, (n)otice, (w)arning, (e)rror, (c)ritical, e(m)ergency]", command);
+        cli_print(cli, "usage %s [debug, info, notice, warning, error, critical, emergency]", command);
         return CLI_ERROR;
     }
 
-    switch(argv[0][0]) {
-        case 'd':
-        case 'D':
-            _dessert_loglevel = LOG_DEBUG;
-            break;
-        case 'i':
-        case 'I':
-            _dessert_loglevel = LOG_INFO;
-            break;
-        case 'n':
-        case 'N':
-            _dessert_loglevel = LOG_NOTICE;
-            break;
-        case 'w':
-        case 'W':
-            _dessert_loglevel = LOG_WARNING;
-            break;
-        case 'e':
-        case 'E':
-            _dessert_loglevel = LOG_ERR;
-            break;
-        case 'c':
-        case 'C':
-            _dessert_loglevel = LOG_CRIT;
-            break;
-        case 'm':
-        case 'M':
-            _dessert_loglevel = LOG_EMERG;
-            break;
-        default:
-            cli_print(cli, "invalid loglevel specified: %s", argv[0]);
-            dessert_warn("invalid loglevel specified: %s", argv[0]);
+    if(strcmp(argv[0], "debug") == 0)
+        _dessert_loglevel = LOG_DEBUG;
+    else if(strcmp(argv[0], "info") == 0)
+        _dessert_loglevel = LOG_INFO;
+    else if(strcmp(argv[0], "notice") == 0)
+        _dessert_loglevel = LOG_NOTICE;
+    else if(strcmp(argv[0], "warning") == 0)
+        _dessert_loglevel = LOG_WARNING;
+    else if(strcmp(argv[0], "error") == 0)
+        _dessert_loglevel = LOG_ERR;
+    else if(strcmp(argv[0], "critical") == 0)
+        _dessert_loglevel = LOG_CRIT;
+    else if(strcmp(argv[0], "emergency") == 0)
+        _dessert_loglevel = LOG_EMERG;
+    else {
+        cli_print(cli, "invalid loglevel specified: %s", argv[0]);
+        dessert_warn("invalid loglevel specified: %s", argv[0]);
     }
+
     char buf[20];
     _dessert_loglevel_to_string(_dessert_loglevel, buf, 20);
     cli_print(cli, "loglevel is set to \"%s\"", buf);
     dessert_notice("loglevel is set to \"%s\"", buf);
+
+    return CLI_OK;
 }
 
 int _dessert_cli_cmd_show_loglevel(struct cli_def *cli, char *command, char *argv[], int argc) {
     char buf[20];
     _dessert_loglevel_to_string(_dessert_loglevel, buf, 20);
     cli_print(cli, "loglevel is set to \"%s\"", buf);
+
+    return CLI_OK;
 }
 
 /** command "show logging" */
-int _dessert_cli_cmd_logging(struct cli_def *cli, char *command, char *argv[],
-		int argc) {
-	pthread_rwlock_rdlock(&_dessert_logrbuf_len_lock);
-	int i = 0;
-	int max = _dessert_logrbuf_len - 1;
-	char* line;
+int _dessert_cli_cmd_logging(struct cli_def *cli, char *command, char *argv[], int argc) {
+    pthread_rwlock_rdlock(&_dessert_logrbuf_len_lock);
+    int i = 0;
+    int max = _dessert_logrbuf_len - 1;
+    char* line;
 
-	if (_dessert_logrbuf_len < 1) {
-		cli_print(
-				cli,
-				"logging to ringbuffer is disables - use \"logging ringbuffer [int]\" in config-mode first");
-		pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
-		return CLI_ERROR;
-	}
+    if (_dessert_logrbuf_len < 1) {
+        cli_print(
+                cli,
+                "logging to ringbuffer is disabled - use \"logging ringbuffer [int]\" in config-mode first");
+        pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
+        return CLI_ERROR;
+    }
 
-	if (argc == 1) {
-		int max2 = (int) strtol(argv[0], NULL, 10);
-		if (max2 > 0) {
-			max = max2;
-		}
-	}
+    if (argc == 1) {
+        int max2 = (int) strtol(argv[0], NULL, 10);
+        if (max2 > 0) {
+            max = max2;
+        }
+    }
 
-	/* where to start and print? */
-	if (max > _dessert_logrbuf_used) {
-		max = _dessert_logrbuf_used;
-	}
-	i = _dessert_logrbuf_cur - max - 1;
-	if (i < 0) {
-		i += _dessert_logrbuf_len;
-	}
+    /* where to start and print? */
+    if (max > _dessert_logrbuf_used) {
+        max = _dessert_logrbuf_used;
+    }
+    i = _dessert_logrbuf_cur - max - 1;
+    if (i < 0) {
+        i += _dessert_logrbuf_len;
+    }
 
-	while (max > 0) {
-		i++;
-		max--;
-		if (i == _dessert_logrbuf_len) {
-			i = 0;
-		}
-		line = _dessert_logrbuf + (DESSERT_LOGLINE_MAX * i);
-		cli_print(cli, "%s", line);
-	}
+    while (max > 0) {
+        i++;
+        max--;
+        if (i == _dessert_logrbuf_len) {
+            i = 0;
+        }
+        line = _dessert_logrbuf + (DESSERT_LOGLINE_MAX * i);
+        cli_print(cli, "%s", line);
+    }
 
-	pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
+    pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
 
-	return CLI_OK;
+    return CLI_OK;
 }
