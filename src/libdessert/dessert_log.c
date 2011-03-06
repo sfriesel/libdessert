@@ -285,6 +285,8 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
  * @param data ignored
  * @param scheduled time when the callback should have been called
  * @param interval ignored
+ *
+ * @return 0 (do not unregister)
  */
 int dessert_flush_log(void *data, struct timeval *scheduled, struct timeval *interval) {
     if(dessert_logfd != NULL) {
@@ -303,6 +305,7 @@ int dessert_flush_log(void *data, struct timeval *scheduled, struct timeval *int
     }
 #endif
     dessert_debug("*** flushed log ***");
+    return 0;
 }
 
 /**
