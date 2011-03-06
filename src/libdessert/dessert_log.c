@@ -66,7 +66,7 @@ int _dessert_logrbuf_cur = 0; /* current position */
 int _dessert_logrbuf_used = 0; /* used slots */
 pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; /* for resizing */
 pthread_mutex_t _dessert_logrbuf_mutex = PTHREAD_MUTEX_INITIALIZER; /* for moving _dessert_logrbuf_cur */
-pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to prevent simultaneous accesses from threads */
 
 /* internal functions forward declarations \todo cleanup */
 
@@ -280,24 +280,29 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 }
 
 /**
- * Flush the messages to the log file if compression is applied
+ * Flush the messages to the log file
  *
  * @param data ignored
  * @param scheduled time when the callback should have been called
  * @param interval ignored
  */
 int dessert_flush_log(void *data, struct timeval *scheduled, struct timeval *interval) {
-    #ifdef HAVE_LIBZ
-        if(dessert_logfdgz != NULL) {
-            pthread_mutex_lock(&_dessert_logfile_mutex);
-            int r = gzflush(dessert_logfdgz, Z_SYNC_FLUSH);
-            pthread_mutex_unlock(&_dessert_logfile_mutex);
-            dessert_debug("*** flushed log ***");
-            if(r != Z_OK) {
-                dessert_warn("gzflush returned %d", r);
-            }
+    if(dessert_logfd != NULL) {
+        pthread_mutex_lock(&_dessert_logfile_mutex);
+        fflush(dessert_logfd);
+        pthread_mutex_unlock(&_dessert_logfile_mutex);
+    }
+#ifdef HAVE_LIBZ
+    if(dessert_logfdgz != NULL) {
+        pthread_mutex_lock(&_dessert_logfile_mutex);
+        int r = gzflush(dessert_logfdgz, Z_SYNC_FLUSH);
+        pthread_mutex_unlock(&_dessert_logfile_mutex);
+        if(r != Z_OK) {
+            dessert_warn("gzflush returned %d", r);
         }
-    #endif
+    }
+#endif
+    dessert_debug("*** flushed log ***");
 }
 
 /**
@@ -318,7 +323,7 @@ int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], 
         _dessert_log_flush_periodic = NULL;
     }
 
-    uint8_t i = (uint8_t) strtoul(argv[0], NULL);
+    uint8_t i = (uint8_t) strtoul(argv[0], NULL, 10);
     // enable
     if(i){
         struct timeval interval;

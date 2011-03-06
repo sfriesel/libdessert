@@ -312,9 +312,7 @@ static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
 
 	if (meshif == NULL) {
 		cli_print(dessert_cli, "No mesh interfaces registered!");
-
 		return CLI_ERROR;
-
 	} else {
 		MESHIFLIST_ITERATOR_START(meshif) {
 			_dessert_cli_cmd_showmeshifs_print_helper(cli, meshif);
@@ -325,16 +323,14 @@ static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
 }
 
 /** command "show sysif" */
-static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-
+static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
 	dessert_sysif_t *sysif = _dessert_sysif;
 
 	if (sysif == NULL) {
 		cli_print(cli, "\nNo system interface registered!");
-
 		return CLI_ERROR;
-	} else {
+	}
+	else {
 		cli_print(cli, "\nStatistics for system interface [%s]", sysif->if_name);
 		cli_print(cli,
 				"    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
@@ -420,18 +416,53 @@ static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
 	return CLI_OK;
 }
 
+// struct cli_def* _dessert_clone_cli() {
+//     struct cli_def *cli;
+//     struct cli_command *c;
+//
+//     if (!(cli = calloc(sizeof(struct cli_def), 1)))
+//         return 0;
+//
+//     cli->buf_size = 1024;
+//     if (!(cli->buffer = calloc(cli->buf_size, 1))) {
+//         free_z(cli);
+//         return 0;
+//     }
+//
+//     cli->commands = dessert_cli->commands;
+//
+//     cli->privilege = cli->mode = -1;
+//     cli_set_privilege(cli, PRIVILEGE_UNPRIVILEGED);
+//     cli_set_configmode(cli, MODE_EXEC, 0);
+//
+//     return cli;
+// }
+//
+// static void *_dessert_cli_thread(void* arg) {
+//   int sd = *((int*) arg);
+//   struct cli_def* dessert_cli_thread = _dessert_clone_cli();;
+//   cli_loop(dessert_cli_thread, sd); /* pass the connection off to libcli */
+//   close(sd);
+//   return NULL;
+// }
+
 /** internal thread function running the cli */
 static void *_dessert_cli_accept_thread(void* arg) {
-  int *s = (int *) arg;
-  int c;
+  int *s = (int*) arg;
+  int sd;
 
-  while((c = accept(*s, NULL, 0))) {
-      cli_loop(dessert_cli, c); /* pass the connection off to libcli */
-      close(c);
+  while((sd = accept(*s, NULL, 0))) {
+//       pthread_t t;
+//       pthread_create(&t, NULL, _dessert_cli_thread, &sd);
+//       pthread_detach(t);
+      cli_loop(dessert_cli, sd); /* pass the connection off to libcli */
+      close(sd);
   }
+  /* we should never get here */
+  dessert_warn("sd=%d, closing CLI", sd);
   cli_done(dessert_cli); /* free data structures */
 
-  return (NULL);
+  return NULL;
 }
 
 /** internal helper function to _dessert_cli_cmd_showmeshifs */
