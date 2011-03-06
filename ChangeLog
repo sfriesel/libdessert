@@ -1,10 +1,9 @@
-20110301 - 0.99
+20110305 - 0.99
     - Logs can now be flushed every x seconds when zlib is used
     - Full string is now evaluated to update the loglevel (previously only first character)
-    - TO BE RELEASED
+    - libtool version = 1.5.1
 
 20110226 - 0.98
-    - Added monitor interface support
     - Added mutex for lock file writes
     - libtool version = 1.4.1
 

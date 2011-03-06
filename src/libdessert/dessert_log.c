@@ -318,7 +318,7 @@ int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], 
         _dessert_log_flush_periodic = NULL;
     }
 
-    uint8_t i = strtod(argv[0], NULL);
+    uint8_t i = (uint8_t) strtoul(argv[0], NULL);
     // enable
     if(i){
         struct timeval interval;

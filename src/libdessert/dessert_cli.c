@@ -137,19 +137,19 @@ FILE* dessert_cli_get_cfg(int argc, char** argv) {
 * @retval DESSERT_ERR otherwise
 */
 int dessert_set_cli_port(uint16_t port) {
-    if (_dessert_cli_running == 1) {
-		dessert_err("CLI is already running!");
-    	return DESSERT_ERR;
-    }
+  if (_dessert_cli_running == 1) {
+      dessert_err("CLI is already running!");
+      return DESSERT_ERR;
+  }
 
-	if (port >= 1024 && port <= 49151)
-		_cli_port = port;
-	else {
-		port = 0;
-		dessert_err("Port number has to be in [1024, 49151]");
-	}
-	dessert_notice("CLI on port %d", _cli_port);
-	return (port == 0 ? DESSERT_ERR : DESSERT_OK);
+  if (port >= 1024 && port <= 49151)
+      _cli_port = port;
+  else {
+      port = 0;
+      dessert_err("Port number has to be in [1024, 49151]");
+  }
+  dessert_notice("CLI on port %d", _cli_port);
+  return (port == 0 ? DESSERT_ERR : DESSERT_OK);
 }
 
 /** Start up the command line interface.
@@ -161,26 +161,24 @@ int dessert_set_cli_port(uint16_t port) {
  *
  */
 int dessert_cli_run() {
-	_dessert_cli_running = 1;
-	int on = 1;
+  _dessert_cli_running = 1;
+  int on = 1;
 
-	/* listen for connections */
-	_dessert_cli_sock = socket(AF_INET6, SOCK_STREAM, 0);
-	setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-	memset(&_dessert_cli_addr, 0, sizeof(_dessert_cli_addr));
-	_dessert_cli_addr.sin6_family = AF_INET6;
-	_dessert_cli_addr.sin6_addr = in6addr_any;
-	_dessert_cli_addr.sin6_port = htons(_cli_port);
-	if (bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr,
-			sizeof(_dessert_cli_addr))) {
-		dessert_err("cli socket bind to port %d failed - %s", _cli_port, strerror(errno));
-		return -errno;
-	}
-	listen(_dessert_cli_sock, 8);
-	dessert_debug("starting worker thread for CLI on port %d", _cli_port);
-	pthread_create(&_dessert_cli_worker, NULL, _dessert_cli_accept_thread,
-			&_dessert_cli_sock);
-	return DESSERT_OK;
+  /* listen for connections */
+  _dessert_cli_sock = socket(AF_INET6, SOCK_STREAM, 0);
+  setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+  memset(&_dessert_cli_addr, 0, sizeof(_dessert_cli_addr));
+  _dessert_cli_addr.sin6_family = AF_INET6;
+  _dessert_cli_addr.sin6_addr = in6addr_any;
+  _dessert_cli_addr.sin6_port = htons(_cli_port);
+  if(bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr, sizeof(_dessert_cli_addr))) {
+      dessert_err("cli socket bind to port %d failed - %s", _cli_port, strerror(errno));
+      return -errno;
+  }
+  listen(_dessert_cli_sock, 8);
+  dessert_debug("starting worker thread for CLI on port %d", _cli_port);
+  pthread_create(&_dessert_cli_worker, NULL, _dessert_cli_accept_thread, &_dessert_cli_sock);
+  return DESSERT_OK;
 }
 
 /******************************************************************************
@@ -424,17 +422,16 @@ static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
 
 /** internal thread function running the cli */
 static void *_dessert_cli_accept_thread(void* arg) {
-	int *s = (int *) arg;
-	int c;
+  int *s = (int *) arg;
+  int c;
 
-	while ((c = accept(*s, NULL, 0))) {
-		cli_loop(dessert_cli, c); /* pass the connection off to libcli */
-		close(c);
-	}
+  while((c = accept(*s, NULL, 0))) {
+      cli_loop(dessert_cli, c); /* pass the connection off to libcli */
+      close(c);
+  }
+  cli_done(dessert_cli); /* free data structures */
 
-	cli_done(dessert_cli); /* free data structures */
-
-	return (NULL);
+  return (NULL);
 }
 
 /** internal helper function to _dessert_cli_cmd_showmeshifs */
