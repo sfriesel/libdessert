@@ -417,6 +417,7 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
 
 int _dessert_closeLogFile(int signal) {
     dessert_notice("closing log file");
+    pthread_mutex_lock(&_dessert_logfile_mutex);
     dessert_logcfg(DESSERT_LOG_NOFILE);
     if (dessert_logfd != NULL) {
         fclose(dessert_logfd);
@@ -429,7 +430,8 @@ int _dessert_closeLogFile(int signal) {
     }
     dessert_logfdgz = NULL;
 #endif
-  return 0;
+    pthread_mutex_unlock(&_dessert_logfile_mutex);
+    return 0;
 }
 
 /**
