@@ -44,7 +44,6 @@ end
 dofile("dessert-ext-eth.lua")
 dofile("dessert-ext-ping.lua")
 dofile("dessert-ext-trace.lua")
-dofile("des-ara.lua")
 
 -- Create a new dissector
 DESSERT = Proto ("dessert", "DES-SERT")
