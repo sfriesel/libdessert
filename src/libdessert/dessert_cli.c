@@ -66,10 +66,13 @@ uint16_t _cli_port = 4519; // should be default port number
 /* internal functions forward declarations*/
 static void *_dessert_cli_accept_thread(void* arg);
 static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command, char *argv[], int argc);
 static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif);
 /******************************************************************************
  *
@@ -220,17 +223,37 @@ int _dessert_cli_init() {
     cli_register_command(dessert_cli, dessert_cli_show, "sysif", _dessert_cli_cmd_showsysif,
             PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "Print the name of the TUN/TAP interface used as system interface.");
+    cli_register_command(dessert_cli, dessert_cli_show, "monifs",_dessert_cli_cmd_showmonifs,
+			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+			"Print list of registered monitor interfaces.");
 
-    /* initialize config mode commands */
+	cli_register_command(dessert_cli, dessert_cli_show, "mondb",_dessert_cli_cmd_showmondb,
+			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+			"Print the monitor database - get informed about your connections.");			
+	/* initialize config mode commands */
+	dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
+			"interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+			"create or configure interfaces");
+	
+	cli_register_command(dessert_cli, dessert_cli_cfg_iface,
+                        "monitor", _dessert_cli_cmd_monitor_all, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                        "Makes for the given  802.11-Interfaces a Monitor-Interfaces");
+
     dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL, "interface",
             NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "create or configure interfaces");
+
     dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
             PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
     dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface",
             NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "remove interface or negate interface config");
-    cli_register_command(dessert_cli, NULL, "loglevel",
+    	
+/*	cli_register_command(dessert_cli, dessert_cli_show, "monitor",_dessert_cli_cmd_monitor_all,
+			PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+			"Makes for all  802.11-Interfaces a Monitor-Interface");
+*/	
+	    cli_register_command(dessert_cli, NULL, "loglevel",
             _dessert_cli_cmd_set_loglevel, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "set the loglevel [debug, info, notice, warning, error, critical, emergency]");
     cli_register_command(dessert_cli, NULL, "log_flush_interval",
@@ -304,7 +327,33 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
     return CLI_ERROR;
 }
 
-/** command "show meshifs" */
+/** command "interface monitor"*/
+
+static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
+                char *argv[], int argc) {
+	
+	if(argc>=1 &&  32000 > atoi(argv[0]) && atoi(argv[0]) > 0 ){
+	  
+	  array_size_node=atoi(argv[0]);
+	  dessert_info("%d RSSI values per mac-adress will be recorded - default is 10",atoi(argv[0]));
+	}
+	
+	if(argc>=2 &&  32000 > atoi(argv[1]) && atoi(argv[1]) > 0  ){
+	  
+	  timer_range=atoi(argv[1]);
+	  dessert_info("RSSI values are valid for %d seconds - default is 3",atoi(argv[1]));
+	}
+	  
+	_dessert_set_mon();
+	
+	dessert_monitoring_start(); // starts capt. RSSI values
+
+	return CLI_OK;	
+}
+
+
+
+/**command "show meshifs" */
 static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
 		char *argv[], int argc) {
 
@@ -320,6 +369,47 @@ static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
 
 		return CLI_OK;
 	}
+}
+
+
+/**command "show showmonifs" */
+static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command,
+		char *argv[], int argc) {
+
+      char k,i;
+      
+	for(i=0;i<mon_ifs_counter;++i){ 
+	      
+		  for(k=0;k<matrix_counter;++k){
+		  
+			//dev_mon_name is the name of the real interface from the virtual monitor interface
+			if(strcmp(addr_matrix[k].dev_name,devString[i])==0){
+
+				cli_print(cli, "\nInformation for monitor interface [%s]", addr_matrix[k].dev_name);
+				cli_print(cli, "\t Macadress\t: [%02x:%02x:%02x:%02x:%02x:%02x]",
+					  addr_matrix[k].addr[0], addr_matrix[k].addr[1], addr_matrix[k].addr[2],
+					  addr_matrix[k].addr[3], addr_matrix[k].addr[4],addr_matrix[k].addr[5]);
+				cli_print(cli, "\t Related Device\t: [%s]", addr_matrix[k].dev_mon_name);
+
+			}
+
+		  }
+	}
+      
+      return CLI_OK;
+	
+}
+
+/**command "show showmondb" */
+static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command,
+		char *argv[], int argc) {
+
+
+      print_database();
+
+      
+      return CLI_OK;
+	
 }
 
 /** command "show sysif" */

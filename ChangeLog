@@ -1,3 +1,7 @@
+20110330 - 1.00
+    - Merged RSSI branch / monitor interface support
+    - libtool version = 2.0.1
+
 20110305 - 0.99
     - Logs can now be flushed every x seconds when zlib is used
     - Full string is now evaluated to update the loglevel (previously only first character)

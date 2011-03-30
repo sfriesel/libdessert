@@ -425,6 +425,8 @@ int dessert_init(const char* proto, int version, uint16_t opts);
 int dessert_pid(char* pidfile);
 int dessert_run(void);
 void dessert_exit(void);
+void wlanoff(void);
+
 
 /***************************************************************************//**
  * @}
@@ -566,9 +568,34 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 /** flag for dessert_meshif_add - do not filter out non-des-sert frames in libpcap */
 #define DESSERT_IF_NOFILTER 0x2
 
+/** max. amount of monitor interfaces - relevant for monitorfunctions */
+#define NUMBER_OF_WIRELESSDEVICES 10
+
+
+/******************************************************************************
+ * static variables
+ ******************************************************************************/
+
+/** the root of the linked matrix - relevant for monitorfunctions */
+struct d_list_node* node;
+
+/** shows if the matrix has been intialized- relevant for monitorfunctions */
+u_short status;
+
+/** contains the names of the monitor interfaces - relevant for monitorfunctions */
+char devString[10][10];
+
+/** contains the names of the monitor interfaces - relevant for monitorfunctions */
+int mon_ifs_counter;
+
 /******************************************************************************
  * functions
  ******************************************************************************/
+/* monitoring frames*/
+int dessert_monitoring_start();
+int dessert_search_con( u_char sa[6], u_char da[6]);
+int _dessert_set_mon(void);
+int _dessert_del_mon(void);
 
 /* sending messages */
 int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface);

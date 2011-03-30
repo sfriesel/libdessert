@@ -5,7 +5,7 @@ includedir=${prefix}/include
 
 Name: libdessert
 Description: DES-SERT - an Extensible Routing-Framework for Testbeds
-Version: 0.99
+Version: 1.00
 Libs: -lpthread -L${libdir} -ldessert
 Cflags:  -I${includedir}
 
