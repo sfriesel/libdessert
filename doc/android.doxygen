@@ -33,13 +33,13 @@
  *
  * From now on this documentation refers to the NDK root directory as $NDK.
  *
- * Now switch to the directory $NDK directory and call the following script as shown:
+ * Now switch to the $NDK directory and call the following script as shown:
  *
  * - ./make-standalone-toolchain.sh --ndk-dir=$NDK --install-dir=/your/install/location
  *
  * After you ran the script successfully, you have a working android toolchain installed in the install location you specified above.
  *
- * At last, we have to set the environment variable ANDROID_TOOLCHAIN now:
+ * At last, we have to set the environment variable ANDROID_TOOLCHAIN:
  *
  * - export ANDROID_TOOLCHAIN=/your/toolchain/location
  *
@@ -49,7 +49,7 @@
  *
  * - export PATH=/script/location:${PATH}
  *
- * If you now type "android-gcc -v" it should print out the currently used gcc version.
+ * If you now type "android-gcc -v" it should print out the currently used gcc version. If not, recheck if you did everything correctly until now.
  *
  * @section sec_Android_compile Compiling a daemon
  *
@@ -61,14 +61,14 @@
  *
  * @section sec_Android_dessert-manager Installing the dessert-manager application
  *
- * The installation process of the dessert-manager android application is pretty straight forward. It is recommended to use ecplipse with the adt plugin to do so:
+ * The installation process of the dessert-manager android application is pretty straight forward. It is recommended to use eclipse with adt plugin:
  *
- * - Install ecplise and the adt (android development tools) plugin
+ * - Install eclipse and adt (android development tools) plugin
  * - Import the dessert-manager project as "android project" from <a href="">here</a>.
  * - Build it and install the .apk file to your phone. A simple way to achieve that would be using "adb install dessert-manager.apk" from your SDK installation.
  *
  * @section sec_Android_repository
  *
- * The dessert-manager application we installed above fetches the daemon package files from a htpp repository. That means, if you want to use your own daemons, you will have to set
- * up a small web server and make your .zip packages availabe there.
+ * The dessert-manager application we installed above fetches the daemon package files from a http repository. That means, if you want to use your own daemons, you will have to set
+ * up a small web server and make your .zip packages available there.
  */
