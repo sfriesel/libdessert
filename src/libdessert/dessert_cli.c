@@ -307,21 +307,20 @@ int _dessert_cli_init() {
 
 static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc) {
     if (_dessert_cli_running == 1) {
-    	cli_print(dessert_cli,"CLI is already running!");
-    	return CLI_ERROR;
+        cli_print(dessert_cli,"CLI is already running!");
+        return CLI_ERROR;
     }
-
     return (dessert_set_cli_port((uint16_t) atoi(argv[0]))==DESSERT_ERR?CLI_ERROR:CLI_OK);
 }
 
 static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc) {
     if(argc != 1) {
-      cli_print(cli, "usage: pid /path/to/file.pid");
-      return CLI_ERROR;
+        cli_print(cli, "usage: pid /path/to/file.pid");
+        return CLI_ERROR;
     }
 
     if(dessert_pid(argv[0]) == DESSERT_OK)
-      return CLI_OK;
+        return CLI_OK;
 
     cli_print(cli, "could not read/write/close file or pid already written: %s", argv[0]);
     return CLI_ERROR;
@@ -343,8 +342,6 @@ static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
     return CLI_OK;
 }
 
-
-
 /**command "show meshifs" */
 static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
     char *argv[], int argc) {
@@ -360,7 +357,6 @@ static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
         return CLI_OK;
     }
 }
-
 
 /**command "show showmonifs" */
 static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command,
