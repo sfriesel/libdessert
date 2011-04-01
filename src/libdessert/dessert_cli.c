@@ -229,12 +229,12 @@ int _dessert_cli_init() {
 
 	cli_register_command(dessert_cli, dessert_cli_show, "mondb",_dessert_cli_cmd_showmondb,
 			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"Print the monitor database - get informed about your connections.");			
+			"Print the monitor database - get informed about your connections.");
 	/* initialize config mode commands */
 	dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
 			"interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"create or configure interfaces");
-	
+
 	cli_register_command(dessert_cli, dessert_cli_cfg_iface,
                         "monitor", _dessert_cli_cmd_monitor_all, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
                         "Makes for the given  802.11-Interfaces a Monitor-Interfaces");
@@ -248,11 +248,11 @@ int _dessert_cli_init() {
     dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface",
             NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "remove interface or negate interface config");
-    	
+
 /*	cli_register_command(dessert_cli, dessert_cli_show, "monitor",_dessert_cli_cmd_monitor_all,
 			PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"Makes for all  802.11-Interfaces a Monitor-Interface");
-*/	
+*/
 	    cli_register_command(dessert_cli, NULL, "loglevel",
             _dessert_cli_cmd_set_loglevel, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "set the loglevel [debug, info, notice, warning, error, critical, emergency]");
@@ -328,182 +328,156 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
 }
 
 /** command "interface monitor"*/
-
 static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
-                char *argv[], int argc) {
-	
-	if(argc>=1 &&  32000 > atoi(argv[0]) && atoi(argv[0]) > 0 ){
-	  
-	  array_size_node=atoi(argv[0]);
-	  dessert_info("%d RSSI values per mac-adress will be recorded - default is 10",atoi(argv[0]));
-	}
-	
-	if(argc>=2 &&  32000 > atoi(argv[1]) && atoi(argv[1]) > 0  ){
-	  
-	  timer_range=atoi(argv[1]);
-	  dessert_info("RSSI values are valid for %d seconds - default is 3",atoi(argv[1]));
-	}
-	  
-	_dessert_set_mon();
-	
-	dessert_monitoring_start(); // starts capt. RSSI values
-
-	return CLI_OK;	
+    char *argv[], int argc) {
+    if(argc>=1 &&  32000 > atoi(argv[0]) && atoi(argv[0]) > 0) {
+        array_size_node=atoi(argv[0]);
+        dessert_info("%d RSSI values per mac-adress will be recorded - default is 10",atoi(argv[0]));
+    }
+    if(argc>=2 &&  32000 > atoi(argv[1]) && atoi(argv[1]) > 0) {
+        timer_range=atoi(argv[1]);
+        dessert_info("RSSI values are valid for %d seconds - default is 3",atoi(argv[1]));
+    }
+    _dessert_set_mon();
+    dessert_monitoring_start(); // starts capt. RSSI values
+    return CLI_OK;
 }
 
 
 
 /**command "show meshifs" */
 static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-
-	dessert_meshif_t *meshif = dessert_meshiflist_get();
-
-	if (meshif == NULL) {
-		cli_print(dessert_cli, "No mesh interfaces registered!");
-		return CLI_ERROR;
-	} else {
-		MESHIFLIST_ITERATOR_START(meshif) {
-			_dessert_cli_cmd_showmeshifs_print_helper(cli, meshif);
-		}MESHIFLIST_ITERATOR_STOP;
-
-		return CLI_OK;
-	}
+    char *argv[], int argc) {
+    dessert_meshif_t *meshif = dessert_meshiflist_get();
+    if (meshif == NULL) {
+        cli_print(dessert_cli, "No mesh interfaces registered!");
+        return CLI_ERROR;
+    }
+    else {
+        MESHIFLIST_ITERATOR_START(meshif) {
+            _dessert_cli_cmd_showmeshifs_print_helper(cli, meshif);
+        }MESHIFLIST_ITERATOR_STOP;
+        return CLI_OK;
+    }
 }
 
 
 /**command "show showmonifs" */
 static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-
-      char k,i;
-      
-	for(i=0;i<mon_ifs_counter;++i){ 
-	      
-		  for(k=0;k<matrix_counter;++k){
-		  
-			//dev_mon_name is the name of the real interface from the virtual monitor interface
-			if(strcmp(addr_matrix[k].dev_name,devString[i])==0){
-
-				cli_print(cli, "\nInformation for monitor interface [%s]", addr_matrix[k].dev_name);
-				cli_print(cli, "\t Macadress\t: [%02x:%02x:%02x:%02x:%02x:%02x]",
-					  addr_matrix[k].addr[0], addr_matrix[k].addr[1], addr_matrix[k].addr[2],
-					  addr_matrix[k].addr[3], addr_matrix[k].addr[4],addr_matrix[k].addr[5]);
-				cli_print(cli, "\t Related Device\t: [%s]", addr_matrix[k].dev_mon_name);
-
-			}
-
-		  }
-	}
-      
-      return CLI_OK;
-	
+    char *argv[], int argc) {
+    char k,i;
+    for(i=0;i<mon_ifs_counter;++i) {
+        for(k=0;k<matrix_counter;++k) {
+            //dev_mon_name is the name of the real interface from the virtual monitor interface
+            if(strcmp(addr_matrix[k].dev_name,devString[i])==0) {
+                cli_print(cli, "\nInformation for monitor interface [%s]", addr_matrix[k].dev_name);
+                cli_print(cli, "\t Macadress\t: [%02x:%02x:%02x:%02x:%02x:%02x]",
+                        addr_matrix[k].addr[0], addr_matrix[k].addr[1], addr_matrix[k].addr[2],
+                        addr_matrix[k].addr[3], addr_matrix[k].addr[4],addr_matrix[k].addr[5]);
+                cli_print(cli, "\t Related Device\t: [%s]", addr_matrix[k].dev_mon_name);
+            }
+        }
+    }
+    return CLI_OK;
 }
 
 /**command "show showmondb" */
 static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-
-
-      print_database();
-
-      
-      return CLI_OK;
-	
+    char *argv[], int argc) {
+    print_database();
+    return CLI_OK;
 }
 
 /** command "show sysif" */
 static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
-	dessert_sysif_t *sysif = _dessert_sysif;
-
-	if (sysif == NULL) {
-		cli_print(cli, "\nNo system interface registered!");
-		return CLI_ERROR;
-	}
-	else {
-		cli_print(cli, "\nStatistics for system interface [%s]", sysif->if_name);
-		cli_print(cli,
-				"    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
-				sysif->hwaddr[0], sysif->hwaddr[1], sysif->hwaddr[2],
-				sysif->hwaddr[3], sysif->hwaddr[4], sysif->hwaddr[5]);
-		cli_print(cli, "    Packets received      : [%"PRIi64"]", sysif->ipkts);
-		cli_print(cli, "    Packets send          : [%"PRIi64"]", sysif->opkts);
-		cli_print(cli, "    Bytes received        : [%"PRIi64"]", sysif->ibytes);
-		cli_print(cli, "    Bytes send            : [%"PRIi64"]", sysif->obytes);
-
-		return CLI_OK;
-	}
+    dessert_sysif_t *sysif = _dessert_sysif;
+    if (sysif == NULL) {
+        cli_print(cli, "\nNo system interface registered!");
+        return CLI_ERROR;
+    }
+    else {
+        cli_print(cli, "\nStatistics for system interface [%s]", sysif->if_name);
+        cli_print(cli,
+                "    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
+                sysif->hwaddr[0], sysif->hwaddr[1], sysif->hwaddr[2],
+                sysif->hwaddr[3], sysif->hwaddr[4], sysif->hwaddr[5]);
+        cli_print(cli, "    Packets received      : [%"PRIi64"]", sysif->ipkts);
+        cli_print(cli, "    Packets send          : [%"PRIi64"]", sysif->opkts);
+        cli_print(cli, "    Bytes received        : [%"PRIi64"]", sysif->ibytes);
+        cli_print(cli, "    Bytes send            : [%"PRIi64"]", sysif->obytes);
+        return CLI_OK;
+    }
 }
 
 /** command "show dessert-info" */
 static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
-		char *argv[], int argc) {
-	cli_print(cli, "\nprotocol running:   %s v %d", dessert_proto, dessert_ver);
-	cli_print(cli, "libdessert version: %s", VERSION);
-	cli_print(
-			cli,
-			" ------------------------------------------------------------------------------ ");
-	cli_print(
-			cli,
-			" Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).            ");
-	cli_print(
-			cli,
-			" All rights reserved.                                                           ");
-	cli_print(
-			cli,
-			"                                                                                ");
-	cli_print(
-			cli,
-			" These sources were originally developed by Philipp Schmidt                     ");
-	cli_print(
-			cli,
-			" at Freie Universitaet Berlin (http://www.fu-berlin.de/),                       ");
-	cli_print(
-			cli,
-			" Computer Systems and Telematics / Distributed, Embedded Systems (DES) group    ");
-	cli_print(
-			cli,
-			" (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)                     ");
-	cli_print(
-			cli,
-			" ------------------------------------------------------------------------------ ");
-	cli_print(
-			cli,
-			" This program is free software: you can redistribute it and/or modify it under  ");
-	cli_print(
-			cli,
-			" the terms of the GNU General Public License as published by the Free Software  ");
-	cli_print(
-			cli,
-			" Foundation, either version 3 of the License, or (at your option) any later     ");
-	cli_print(
-			cli,
-			" version.                                                                       ");
-	cli_print(
-			cli,
-			"                                                                                ");
-	cli_print(
-			cli,
-			" This program is distributed in the hope that it will be useful, but WITHOUT    ");
-	cli_print(
-			cli,
-			" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS  ");
-	cli_print(
-			cli,
-			" FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. ");
-	cli_print(
-			cli,
-			"                                                                                ");
-	cli_print(
-			cli,
-			" You should have received a copy of the GNU General Public License along with   ");
-	cli_print(
-			cli,
-			" this program. If not, see http://www.gnu.org/licenses/ .                       ");
-	cli_print(
-			cli,
-			" ------------------------------------------------------------------------------ ");
-	return CLI_OK;
+    char *argv[], int argc) {
+    cli_print(cli, "\nprotocol running:   %s v %d", dessert_proto, dessert_ver);
+    cli_print(cli, "libdessert version: %s", VERSION);
+    cli_print(
+            cli,
+            " ------------------------------------------------------------------------------ ");
+    cli_print(
+            cli,
+            " Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).            ");
+    cli_print(
+            cli,
+            " All rights reserved.                                                           ");
+    cli_print(
+            cli,
+            "                                                                                ");
+    cli_print(
+            cli,
+            " These sources were originally developed by Philipp Schmidt                     ");
+    cli_print(
+            cli,
+            " at Freie Universitaet Berlin (http://www.fu-berlin.de/),                       ");
+    cli_print(
+            cli,
+            " Computer Systems and Telematics / Distributed, Embedded Systems (DES) group    ");
+    cli_print(
+            cli,
+            " (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)                     ");
+    cli_print(
+            cli,
+            " ------------------------------------------------------------------------------ ");
+    cli_print(
+            cli,
+            " This program is free software: you can redistribute it and/or modify it under  ");
+    cli_print(
+            cli,
+            " the terms of the GNU General Public License as published by the Free Software  ");
+    cli_print(
+            cli,
+            " Foundation, either version 3 of the License, or (at your option) any later     ");
+    cli_print(
+            cli,
+            " version.                                                                       ");
+    cli_print(
+            cli,
+            "                                                                                ");
+    cli_print(
+            cli,
+            " This program is distributed in the hope that it will be useful, but WITHOUT    ");
+    cli_print(
+            cli,
+            " ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS  ");
+    cli_print(
+            cli,
+            " FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. ");
+    cli_print(
+            cli,
+            "                                                                                ");
+    cli_print(
+            cli,
+            " You should have received a copy of the GNU General Public License along with   ");
+    cli_print(
+            cli,
+            " this program. If not, see http://www.gnu.org/licenses/ .                       ");
+    cli_print(
+            cli,
+            " ------------------------------------------------------------------------------ ");
+    return CLI_OK;
 }
 
 // struct cli_def* _dessert_clone_cli() {
