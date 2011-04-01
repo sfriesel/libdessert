@@ -56,7 +56,7 @@ AC_SUBST([CLI_LIBS])
 AX_PTHREAD(,[AC_MSG_ERROR([Your system does not support a pthread variant, libdessert will not work])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h netinet/in.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h syslog.h unistd.h])
+AC_CHECK_HEADERS([ netlink/genl/genl.h iwlib.h arpa/inet.h fcntl.h netinet/in.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h syslog.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
