@@ -367,374 +367,249 @@ int delete(struct d_list_node* present_node_vertikal){
 
    return 0;
 }
+
 void maintenance(void* nothing){
+    int sum;
+    int i;
+    int counter =0;
 
-	int sum;
-	int i;
-	int counter =0;
+    if(status == 0) {
+        //  printf("STATUS 0 print_db");
+        return;
+    }
+    else {
+        pthread_mutex_lock(&sema1);
+        struct d_list_node* present_node_vertikal;
+        struct d_list_node* present_node_horizontal; // = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
+        present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
 
-	if(status == 0){
-	//  printf("STATUS 0 print_db");
-	  return;
-	}
-	else{
-
-
-	    pthread_mutex_lock(&sema1);
-
-	    struct d_list_node* present_node_vertikal;
-	    struct d_list_node* present_node_horizontal; // = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
-	    present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
-
-	    //vertical level
-	    while(1==1){
-
-
-		present_node_horizontal = present_node_vertikal;
-
-		sum=0;
-
-	      // horizontal level
-		while(1==1){
-
-
-
-			sum += avg_node(present_node_horizontal);
-
-
-			if(!present_node_horizontal->next){
-
-
-
-			    if(sum==0){
-			      // if all horizontal nodes of a vertical level are too old the level will be deleted
-			      delete(present_node_vertikal);
-
-			    }
-
-			    break;
-			}
-
-
-			present_node_horizontal = present_node_horizontal->next;
-
-		}
-
-		if(!present_node_vertikal->down){
-
-		      pthread_mutex_unlock (&sema1);
-		      return;
-		}
-
-		    present_node_vertikal = present_node_vertikal->down;
-
-	    }
-	}
-
-
+        //vertical level
+        while(1==1) {
+            present_node_horizontal = present_node_vertikal;
+            sum=0;
+            // horizontal level
+            while(1==1){
+                sum += avg_node(present_node_horizontal);
+                if(!present_node_horizontal->next){
+                    if(sum==0){
+                        // if all horizontal nodes of a vertical level are too old the level will be deleted
+                        delete(present_node_vertikal);
+                    }
+                    break;
+                }
+                present_node_horizontal = present_node_horizontal->next;
+            }
+            if(!present_node_vertikal->down) {
+                pthread_mutex_unlock (&sema1);
+                return;
+            }
+            present_node_vertikal = present_node_vertikal->down;
+        }
+    }
 }
 
 void maintenance_start(void* nothing){
-
-  while(1){
-
-    sleep(10);
-    maintenance(nothing);
-
-  }
-
+    while(1){
+        sleep(10);
+        maintenance(nothing);
+    }
 }
 
 int dessert_search_con( u_char sa[6], u_char *dest_dev){
-
-
-
-        if(status == 0){
-	   // printf("\nSTATUS 0");
-	  return 0;
-	}
-        else{
-
-	    pthread_mutex_lock(&sema1);
-	    int i;
-	    int counter =0;
-
-	    struct d_list_node* present_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
-
-	    present_node = node; // node is the static global root of the whole database / dynamic matrix
-
-	      // searching in the vertical level
-	    while(1==1){
-
-
-		    for(i=0;i<6;i++){
-
-
-			    if(present_node->sa[i]==sa[i])counter++;
-
-
-		    }
-		    // vertical matrix level found
-		    if(counter==6){
-
-
-			    counter=0;
-			    break;
-
-		    }
-
-		    counter=0;
-
-		    // No vertical matrix level found, build new vertical level
-		    if(!present_node->down){
-
-		      pthread_mutex_unlock(&sema1);
-
-		      return 0;
-		    }
-
-		    present_node = present_node->down;
-
-	    }
-
-	    // searching in the horizontal level
-	    while(1==1){
-
-
-
-		    if(strcmp(present_node->da,dest_dev)==0){
-		      pthread_mutex_unlock(&sema1);
-		     // printf("\nDE LOCK search");
-		      return avg_node(present_node);
-		    }
-
-
-		    if(!present_node->next){
-
-
-			    pthread_mutex_unlock(&sema1);
-
-			    return 0;
-		    }
-
-		    present_node = present_node->next;
-	    }
-
-
-
-	}
-
-
+    if(status == 0) {
+        // printf("\nSTATUS 0");
+        return 0;
+    }
+    else {
+        pthread_mutex_lock(&sema1);
+        int i;
+        int counter =0;
+        struct d_list_node* present_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
+        present_node = node; // node is the static global root of the whole database / dynamic matrix
+        // searching in the vertical level
+        while(1==1) {
+            for(i=0;i<6;i++){
+                if(present_node->sa[i]==sa[i]) {
+                    counter++;
+                }
+            }
+            // vertical matrix level found
+            if(counter==6) {
+                counter=0;
+                break;
+            }
+            counter=0;
+            // No vertical matrix level found, build new vertical level
+            if(!present_node->down) {
+                pthread_mutex_unlock(&sema1);
+                return 0;
+            }
+            present_node = present_node->down;
+        }
+        // searching in the horizontal level
+        while(1==1){
+            if(strcmp(present_node->da,dest_dev)==0) {
+                pthread_mutex_unlock(&sema1);
+                // printf("\nDE LOCK search");
+                return avg_node(present_node);
+            }
+            if(!present_node->next) {
+                pthread_mutex_unlock(&sema1);
+                return 0;
+            }
+            present_node = present_node->next;
+        }
+    }
 }
 
 //inserts a value in a node
 void insert_value_node(struct d_list_node* node_temp,u_int8_t wr_antsignal){
-
-
-  node_temp->array_pointer[node_temp->counter]= wr_antsignal;
-
-  node_temp->time_array_pointer[node_temp->counter]= time(NULL);
-
-  if(++node_temp->counter == array_size_node) node_temp->counter=0;
-
-  return;
+    node_temp->array_pointer[node_temp->counter]= wr_antsignal;
+    node_temp->time_array_pointer[node_temp->counter]= time(NULL);
+    if(++node_temp->counter == array_size_node) {
+        node_temp->counter=0;
+    }
+    return;
 }
 
 //inserts a value in the matrix
 void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_management* management){
+    int i;
+    int counter =0;
+    struct d_list_node* present_node;
 
+    //initial first value in the matrix
+    pthread_mutex_lock(&sema1);
+    //printf("\nLOCK insert");
 
-  int i;
-  int counter =0;
-
-  struct d_list_node* present_node;
-
-
-  //initial first value in the matrix
-  pthread_mutex_lock(&sema1);
-  //printf("\nLOCK insert");
-
-  if(status==0){
-    // variable node is the root node in the matrix
-    node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
-
-    // fill root node of the matrix
-    bcopy( management->sa, node->sa, 6);
-
-    bcopy( dest_dev, node->da, 16);
-
-    node->array_pointer = (u_char*) calloc (array_size_node,sizeof(u_char));
-    node->time_array_pointer = (time_t*) calloc (array_size_node,sizeof(time_t));
-
-    node->counter=0;
-    node->up = NULL;
-    node->down=NULL;
-    node->pre=NULL;
-    node->next=NULL;
-
-    insert_value_node(node,wr_antsignal);
-
-
-    status++;
-    pthread_mutex_unlock(&sema1);
-     // printf("\nDE LOCK insert");
-
-  }
-
-  else{
-    // begin at root node
-    present_node = node;
-
-
-    while(1==1){
-
-      for(i=0;i<6;i++){
-
-	if(present_node->sa[i]==management->sa[i])counter++;
-
-      }
-	//printf("vertical counter: %d \n",counter);
-
-	// vertical matrix level found
-	if(counter==6){
-	  //printf("vertical level found\n");
-	  //richtige vertikale Ebene gefunden
-	  counter=0;;
-	  break;
-	}
-    counter=0;
-
-    // No vertical matrix level found, build new vertical level
-    if(!present_node->down){
-
-
-      struct d_list_node* new_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
-      present_node->down = new_node;
-      new_node->up = present_node;
-      new_node->pre=NULL;
-      new_node->next=NULL;
-
-      bcopy( management->sa, new_node->sa, 6);
-      bcopy( dest_dev, new_node->da, 16);
-
-      new_node->array_pointer = (u_char*) calloc (array_size_node,sizeof(u_char));
-      new_node->time_array_pointer = (time_t*) calloc (array_size_node,sizeof(time_t));
-
-      new_node->counter=0;
-      // insert the wr_antsignal into the node
-      insert_value_node(new_node,wr_antsignal);
-
-      counter=0;
-      pthread_mutex_unlock(&sema1);
-      //  printf("\nDE LOCK insert");
-      return;
+    if(status==0) {
+        // variable node is the root node in the matrix
+        node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
+        // fill root node of the matrix
+        bcopy( management->sa, node->sa, 6);
+        bcopy( dest_dev, node->da, 16);
+        node->array_pointer = (u_char*) calloc (array_size_node,sizeof(u_char));
+        node->time_array_pointer = (time_t*) calloc (array_size_node,sizeof(time_t));
+        node->counter=0;
+        node->up = NULL;
+        node->down=NULL;
+        node->pre=NULL;
+        node->next=NULL;
+        insert_value_node(node,wr_antsignal);
+        status++;
+        pthread_mutex_unlock(&sema1);
+        // printf("\nDE LOCK insert");
     }
+    else{
+        // begin at root node
+        present_node = node;
+        while(1==1) {
+            for(i=0;i<6;i++) {
+                if(present_node->sa[i]==management->sa[i]) {
+                    counter++;
+                }
+            }
+            //printf("vertical counter: %d \n",counter);
+            // vertical matrix level found
+            if(counter==6){
+            //printf("vertical level found\n");
+            //richtige vertikale Ebene gefunden
+            counter=0;;
+            break;
+            }
+            counter=0;
+            // No vertical matrix level found, build new vertical level
+            if(!present_node->down) {
+                struct d_list_node* new_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
+                present_node->down = new_node;
+                new_node->up = present_node;
+                new_node->pre=NULL;
+                new_node->next=NULL;
 
-    present_node = present_node->down;
+                bcopy( management->sa, new_node->sa, 6);
+                bcopy( dest_dev, new_node->da, 16);
 
+                new_node->array_pointer = (u_char*) calloc (array_size_node,sizeof(u_char));
+                new_node->time_array_pointer = (time_t*) calloc (array_size_node,sizeof(time_t));
+
+                new_node->counter=0;
+                // insert the wr_antsignal into the node
+                insert_value_node(new_node,wr_antsignal);
+
+                counter=0;
+                pthread_mutex_unlock(&sema1);
+                //  printf("\nDE LOCK insert");
+                return;
+            }
+            present_node = present_node->down;
+        }
+        // searching in the horizontal level
+        while(1==1) {
+            if(strcmp(present_node->da,dest_dev)==0){
+                //richtige horizontale Ebene gefunden,dann wert einfuegen
+                insert_value_node(present_node,wr_antsignal);
+                counter=0;
+                pthread_mutex_unlock(&sema1);
+                //  printf("\nDE LOCK insert");
+                break;
+            }
+            counter=0;
+            //insert new node
+            if(!present_node->next) {
+                struct d_list_node* new_node2;
+                    new_node2 = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
+                    present_node->next = new_node2;
+                    new_node2->pre = present_node;
+                    new_node2->up = NULL;
+                    new_node2->down = NULL;
+                    bcopy( management->sa, new_node2->sa, 6);
+                    bcopy( dest_dev, new_node2->da, 16);
+                    new_node2->array_pointer = (u_char*) calloc (array_size_node,sizeof(u_char));
+                    new_node2->time_array_pointer = (time_t*) calloc (array_size_node,sizeof(time_t));
+                    new_node2->counter=0;
+                    insert_value_node(new_node2,wr_antsignal);
+                    pthread_mutex_unlock(&sema1);
+                    //  printf("\nLOCK insert");
+                    break;
+            }
+            present_node = present_node->next;
+            //printf("NEXT node horziontal\n");
+        }
     }
-
-  // searching in the horizontal level
-
-    while(1==1){
-
-
-
-      if(strcmp(present_node->da,dest_dev)==0){
-	//richtige horizontale Ebene gefunden,dann wert einfuegen
-	insert_value_node(present_node,wr_antsignal);
-	counter=0;
-	pthread_mutex_unlock(&sema1);
-	//  printf("\nDE LOCK insert");
-	break;
-      }
-
-      counter=0;
-
-    //insert new node
-      if(!present_node->next){
-
-	struct d_list_node* new_node2;
-
-	new_node2 = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
-	present_node->next = new_node2;
-	new_node2->pre = present_node;
-	new_node2->up = NULL;
-	new_node2->down = NULL;
-
-	bcopy( management->sa, new_node2->sa, 6);
-	bcopy( dest_dev, new_node2->da, 16);
-
-	new_node2->array_pointer = (u_char*) calloc (array_size_node,sizeof(u_char));
-	new_node2->time_array_pointer = (time_t*) calloc (array_size_node,sizeof(time_t));
-
-	new_node2->counter=0;
-
-	insert_value_node(new_node2,wr_antsignal);
-	pthread_mutex_unlock(&sema1);
-	//  printf("\nLOCK insert");
-	break;
-      }
-
-      present_node = present_node->next;
-      //printf("NEXT node horziontal\n");
-    }
-
-
-  }
- return;
-
+    return;
 }
-
-
 
 char merge_hwaddr(char counter, struct addr_matrix addr_matrix[]){
-
-  char i=0;
-  char j=0;
-  char timer=0;
-  char k=0;
-  for(j=0;j<counter;++j){
-
-    for(i=0;i<counter;++i){
-
-      if(i!=j){
-	timer=0;
-
-	for(k=0;k<6;++k){
-
-	  if(addr_matrix[j].addr[k] == addr_matrix[i].addr[k]){
-
-		++timer;
-	  }
-	}
-
-	if(timer==6){
-
-	  //checks if hw_addr is related to an interface and a monitor interface
-	  if(addr_matrix[i].dev_name[0]=='m' && addr_matrix[i].dev_name[1]=='o' &&
-	    addr_matrix[i].dev_name[2]=='n' && addr_matrix[i].dev_name[3]=='i' && addr_matrix[i].dev_name[4]=='_'){
-
-	      bcopy( addr_matrix[j].dev_name, addr_matrix[i].dev_mon_name, 16);
-
-	  }
-
-	}
-
-      }
-      else{
-      }
-
+    char i=0;
+    char j=0;
+    char timer=0;
+    char k=0;
+    for(j=0;j<counter;++j) {
+        for(i=0;i<counter;++i) {
+            if(i!=j) {
+                timer=0;
+                for(k=0;k<6;++k) {
+                    if(addr_matrix[j].addr[k] == addr_matrix[i].addr[k]) {
+                        ++timer;
+                    }
+                }
+                if(timer==6) {
+                    //checks if hw_addr is related to an interface and a monitor interface
+                    if(addr_matrix[i].dev_name[0]=='m' && addr_matrix[i].dev_name[1]=='o' &&
+                        addr_matrix[i].dev_name[2]=='n' && addr_matrix[i].dev_name[3]=='i' &&                   addr_matrix[i].dev_name[4]=='_'){
+                        bcopy( addr_matrix[j].dev_name, addr_matrix[i].dev_mon_name, 16);
+                    }
+                }
+            }
+            else{
+                //
+            }
+        }
     }
-  }
-  return 0;
-
+    return 0;
 }
 
-char get_hwaddr(struct addr_matrix addr_matrix[])
-{
-
-
+char get_hwaddr(struct addr_matrix addr_matrix[]) {
     struct ifreq ifr;
     struct ifreq *IFR;
     struct ifconf ifc;
@@ -754,118 +629,97 @@ char get_hwaddr(struct addr_matrix addr_matrix[])
     IFR = ifc.ifc_req;
     i=ifc.ifc_len / sizeof(struct ifreq);
 
-
-
     for (i; --i >= 0; IFR++) {
-
         strcpy(ifr.ifr_name, IFR->ifr_name);
         if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
             if (! (ifr.ifr_flags & IFF_LOOPBACK)) { // NO loopback interfaces
                 if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
                     bcopy( ifr.ifr_hwaddr.sa_data, addr_matrix[counter].addr, 6);
-		    strcpy(addr_matrix[counter].dev_name, IFR->ifr_name);
-		    ++counter;
+                    strcpy(addr_matrix[counter].dev_name, IFR->ifr_name);
+                    ++counter;
                 }
-	    }
+            }
         }
     }
     i=0;
 
     close(s);
-
     return counter;
-
-
 }
 
 void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char *packet) {
+    struct sniff_management* management;
+    u_short temp1=0;
+    u_short temp2=0;
+    u_int i;
+    u_int eing;
+    struct ieee80211_radiotap_header* radiotap;
+
+    u_int input;
+    u_int ausg;
+    int bitmask;
+
+    /* define radiotap header */
+    radiotap = (struct ieee80211_radiotap_header*) (packet);
+
+    input = radiotap->it_len;
+
+    bitmask = radiotap->it_present;
+
+    struct radiotap_header_opt_fields erg;
+
+    erg = parse(packet);
 
 
+    int skfd;		/* generic raw socket desc.	*/
+    int goterr = 0;
+    char * ifname= real_dev;
 
-	struct sniff_management* management;
-	u_short temp1=0;
-	u_short temp2=0;
-	u_int i;
-	u_int eing;
-	struct ieee80211_radiotap_header* radiotap;
+    /* Create a channel to the NET kernel. */
+    if((skfd = iw_sockets_open()) < 0) {
+        perror("socket");
+        exit(-1);
+    }
+    struct wireless_config* info;
+    struct iwreq wrq;
 
-	u_int input;
-	u_int ausg;
-	int bitmask;
+    info = (struct wireless_config*) calloc (1,sizeof(struct wireless_config));
 
-	/* define radiotap header */
-	radiotap = (struct ieee80211_radiotap_header*) (packet);
+    if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0) {
+        /* If no wireless name : no wireless extensions */
+        return;
+    }
+    else {
+        strncpy(info->name, wrq.u.name, IFNAMSIZ);
+        info->name[IFNAMSIZ] = '\0';
+    }
 
-	input = radiotap->it_len;
+    if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0) {
+        info->has_freq = 1;
+        info->freq = iw_freq2float(&(wrq.u.freq));
+        info->freq_flags = wrq.u.freq.flags;
+    }
+    info->freq = info->freq/1000000;
+    close(skfd);
 
-	bitmask = radiotap->it_present;
+    if(! (info->freq == erg.wr_channel) ){
+    // printf("\nSettingFreq: %f PacketFreq: %d",  info->freq, erg.wr_channel);
+        return;
+    }
+    else{
+    }
 
-	struct radiotap_header_opt_fields erg;
-
-	erg = parse(packet);
-
-
-	int skfd;		/* generic raw socket desc.	*/
-	int goterr = 0;
-	char * ifname= real_dev;
-
-	/* Create a channel to the NET kernel. */
-	if((skfd = iw_sockets_open()) < 0)
-	  {
-	    perror("socket");
-	    exit(-1);
-	  }
-	struct wireless_config* info;
-
-
-	struct iwreq		wrq;
-
-	info = (struct wireless_config*) calloc (1,sizeof(struct wireless_config));
-
-	  if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0)
-	  /* If no wireless name : no wireless extensions */
-	  return;
-	  else
-	  {
-	    strncpy(info->name, wrq.u.name, IFNAMSIZ);
-	    info->name[IFNAMSIZ] = '\0';
-	  }
-
-	    if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0)
-	  {
-	    info->has_freq = 1;
-	    info->freq = iw_freq2float(&(wrq.u.freq));
-	    info->freq_flags = wrq.u.freq.flags;
-	  }
-	  info->freq = info->freq/1000000;
-
-
-
-	  close(skfd);
-
-	  if(! (info->freq == erg.wr_channel) ){
-	   // printf("\nSettingFreq: %f PacketFreq: %d",  info->freq, erg.wr_channel);
-	    return;
-	  }
-	  else{
-	  }
-
-	  free(info);
-
-	management = (struct sniff_management*)(packet + input);
-
-	insert_value(real_dev, erg.wr_ant_signal, management);
-
-
-	return;
+    free(info);
+    management = (struct sniff_management*)(packet + input);
+    insert_value(real_dev, erg.wr_ant_signal, management);
+    return;
 }
 
 
 
-void * dessert_monitoring(void* device) {
-
+void* dessert_monitoring(void* device) {
     pthread_mutex_lock(&sema2);
-     // printf("\nSEMA2: LOCK ");
+    // printf("\nSEMA2: LOCK ");
     u_char *dev = (u_char*)malloc(16*sizeof(u_char)); /* capture device name */
     u_char real_dev[16];
 
@@ -878,11 +732,9 @@ void * dessert_monitoring(void* device) {
     dev = (u_char *) device;
 
     for(k=0;k<matrix_counter;++k){
-
-	//dev_mon_name is the name of the real interface from the virtual monitor interface
-	if(strcmp(addr_matrix[k].dev_name,dev)==0)bcopy(addr_matrix[k].dev_mon_name , real_dev, 16);
-
-      }
+        //dev_mon_name is the name of the real interface from the virtual monitor interface
+        if(strcmp(addr_matrix[k].dev_name,dev)==0)bcopy(addr_matrix[k].dev_mon_name , real_dev, 16);
+    }
 
     dessert_info("starting worker thread for monitor interface %s [%s]",dev,real_dev);
     // ignore all ACKS / CTS / RTS allow only managementframes and data-franes
@@ -893,14 +745,12 @@ void * dessert_monitoring(void* device) {
 
     int num_packets = 0; /* number of packets to capture */
 
-
     /* open capture device */
     handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
     if (handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         exit(EXIT_FAILURE);
     }
-
 
     if (pcap_datalink(handle) != DLT_IEEE802_11_RADIO) {
         fprintf(stderr, "%s is not 802.11 device or device is not in monitor mode\n", dev);
@@ -923,46 +773,27 @@ void * dessert_monitoring(void* device) {
 
     /* now we can set our callback function */
     pthread_mutex_unlock(&sema2);
-      //    printf("\nSEMA2: DE LOCK ");
+    //    printf("\nSEMA2: DE LOCK ");
     pcap_loop(handle, num_packets, got_packet, real_dev);
-
 
     /* cleanup */
     pcap_freecode(&fp);
     pcap_close(handle);
 
-
     return 0;
-
 }
 
-
-
-
-
-
 int dessert_monitoring_start(){
-
     char i=0;
     char j=0;
     char k=0;
-
     u_char addr[6];
-
 
     pthread_t thread[mon_ifs_counter];
     pthread_t thread_maintenance;
 
     for(i=0;i<mon_ifs_counter;++i){
-
-
-
-     pthread_create(&thread[i], NULL, dessert_monitoring, (void *) devString[i]);
-
-
+        pthread_create(&thread[i], NULL, dessert_monitoring, (void *) devString[i]);
     }
-
     pthread_create(&thread_maintenance, NULL, maintenance_start, NULL);
-
-
 }
