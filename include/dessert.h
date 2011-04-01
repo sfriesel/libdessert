@@ -596,6 +596,7 @@ int dessert_monitoring_start();
 int dessert_search_con( u_char sa[6], u_char da[6]);
 int _dessert_set_mon(void);
 int _dessert_del_mon(void);
+void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(void * mem_ptr, struct d_list_node* node_temp), void * memo_ptr );
 
 /* sending messages */
 int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface);
