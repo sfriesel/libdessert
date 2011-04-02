@@ -226,34 +226,23 @@ int _dessert_cli_init() {
     cli_register_command(dessert_cli, dessert_cli_show, "monifs",_dessert_cli_cmd_showmonifs,
 			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"Print list of registered monitor interfaces.");
-
-	cli_register_command(dessert_cli, dessert_cli_show, "mondb",_dessert_cli_cmd_showmondb,
+    cli_register_command(dessert_cli, dessert_cli_show, "mondb",_dessert_cli_cmd_showmondb,
 			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"Print the monitor database - get informed about your connections.");
-	/* initialize config mode commands */
-	dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
+    
+    /* initialize config mode commands */
+    dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
 			"interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"create or configure interfaces");
-
-	cli_register_command(dessert_cli, dessert_cli_cfg_iface,
+    cli_register_command(dessert_cli, dessert_cli_cfg_iface,
                         "monitor", _dessert_cli_cmd_monitor_all, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
                         "Makes for the given  802.11-Interfaces a Monitor-Interfaces");
-
-    dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL, "interface",
-            NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "create or configure interfaces");
-
     dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
             PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
     dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface",
             NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "remove interface or negate interface config");
-
-/*	cli_register_command(dessert_cli, dessert_cli_show, "monitor",_dessert_cli_cmd_monitor_all,
-			PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"Makes for all  802.11-Interfaces a Monitor-Interface");
-*/
-	    cli_register_command(dessert_cli, NULL, "loglevel",
+    cli_register_command(dessert_cli, NULL, "loglevel",
             _dessert_cli_cmd_set_loglevel, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "set the loglevel [debug, info, notice, warning, error, critical, emergency]");
     cli_register_command(dessert_cli, NULL, "log_flush_interval",
