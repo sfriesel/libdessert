@@ -415,7 +415,7 @@ extern u_char      ether_null[ETHER_ADDR_LEN];
 extern pthread_rwlock_t dessert_cfglock;
 
 /** Signal for which you can register callbacks */
-static const int dessert_supported_signals[] = {SIGTERM, SIGHUP, SIGUSR1, SIGUSR2};
+static const int dessert_supported_signals[] = {SIGINT, SIGTERM, SIGHUP, SIGUSR1, SIGUSR2};
 
 /******************************************************************************
  * functions

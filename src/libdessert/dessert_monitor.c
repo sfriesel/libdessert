@@ -413,12 +413,12 @@ void maintenance_start(void* nothing){
     }
 }
 
-void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(void * mem_ptr, struct d_list_node* node_temp), void * memo_ptr ){	
+void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(void * mem_ptr, struct d_list_node* node_temp), void * memo_ptr ){
     if(status == 0){
-        return; 
-    }	  
+        return;
+    }
     else{
-        
+
         pthread_mutex_lock(&sema1);
         int i;
         int counter =0;
@@ -429,7 +429,7 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
         while(1==1){
 	    for(i=0;i<6;i++){
 	        if(present_node->sa[i]==sa[i])counter++;
-	    } 
+	    }
 	    // vertical matrix level found
 	    if(counter==6){
 	        counter=0;
@@ -443,23 +443,23 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
 	    }
 	    present_node = present_node->down;
         }
-        
+
         /*searching in the horizontal level*/
         while(1==1){
-	    if(strcmp(present_node->da,dest_dev)==0){		      
+	    if(strcmp(present_node->da,dest_dev)==0){
                 (*function_ptr)(memo_ptr, present_node);
                 pthread_mutex_unlock(&sema1);
                 return;
 	    }
-	    
+
 	    if(!present_node->next){
 	        pthread_mutex_unlock(&sema1);
 	        return;
-	    }     
+	    }
 	    present_node = present_node->next;
         }
-	
-    }	
+
+    }
 }
 
 int dessert_search_con( u_char sa[6], u_char *dest_dev){
@@ -830,6 +830,8 @@ int dessert_monitoring_start(){
     pthread_t thread[mon_ifs_counter];
     pthread_t thread_maintenance;
 
+    dessert_signalcb_add(SIGTERM, _dessert_del_mon);
+    dessert_signalcb_add(SIGINT, _dessert_del_mon);
     for(i=0;i<mon_ifs_counter;++i){
         pthread_create(&thread[i], NULL, dessert_monitoring, (void *) devString[i]);
     }

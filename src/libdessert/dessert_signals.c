@@ -95,6 +95,7 @@ int dessert_signalcb_add(int signal, dessert_signalcb_t* callback) {
     new_cb->callback = callback;
     LL_APPEND(sig_handlers->list, new_cb);
     pthread_mutex_unlock(&_dessert_signal_mutex);
+    dessert_notice("registered signal handler for signal %d", signal);
     return 0;
 
     add_failed:
@@ -169,6 +170,9 @@ void* dessert_signal_thread(void* param) {
             case SIGTERM:
                 dessert_debug("caught SIGTERM, preparing to exit main thread");
                 break;
+            case SIGINT:
+                dessert_debug("caught SIGINT, preparing to exit main thread");
+                break;
             case SIGHUP:
                 dessert_debug("caught SIGHUP");
                 break;
@@ -188,11 +192,13 @@ void* dessert_signal_thread(void* param) {
         if(sig_handlers) {
             sig_handlercb_t* cur;
             LL_FOREACH(sig_handlers->list, cur) {
+                dessert_info("calling callback for signal %d", sig_caught);
                 cur->callback(sig_caught);
             }
         }
 
         switch(sig_caught) {
+            case SIGINT:
             case SIGTERM:
                 dessert_debug("exiting main thread");
                 dessert_exit();
@@ -209,6 +215,7 @@ int _dessert_signals_init() {
     sigemptyset(&signal_mask_block);
     sigaddset(&signal_mask_block, SIGTERM);
     sigaddset(&signal_mask_block, SIGHUP);
+    sigaddset(&signal_mask_block, SIGINT);
     int rc = pthread_sigmask(SIG_BLOCK, &signal_mask_block, NULL);
     if (rc != 0) {
         dessert_err("could not set sigmask to block signals");

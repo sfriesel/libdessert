@@ -660,7 +660,6 @@ int _dessert_set_mon() {
 
 /*deletes the monitor devs*/
 int _dessert_del_mon() {
-
     char** cmdString;
     int i,j;
     char buffer [50];
@@ -677,7 +676,7 @@ int _dessert_del_mon() {
             return -1;
         }
     }
-    dessert_info("all interfaces closed");
+    dessert_info("all monitor interfaces closed");
     free(cmdString);
     return 0;
 }

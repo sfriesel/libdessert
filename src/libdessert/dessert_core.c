@@ -181,15 +181,14 @@ int dessert_run() {
 /**Causes dessert_run() to break out of the main loop.
  */
 void dessert_exit() {
-	
-	//deletes the monitor interfaces
-	_dessert_del_mon();
-	
-/* kill snmp_worker thread */
+    //deletes the monitor interfaces
+    _dessert_del_mon();
+
 #ifdef WITH_NET_SNMP
+    /* kill snmp_worker thread */
     dessert_agentx_stop_subagent();
 #endif
-	pthread_cond_signal(&_dessert_exit_do);
+    pthread_cond_signal(&_dessert_exit_do);
 }
 
 /** generates a new, runtime-unique frame id
@@ -212,15 +211,16 @@ dessert_frameid_t _dessert_newframeid() {
  ******************************************************************************/
 
 /** command "shutdown" */
-int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[],
-		int argc) {
-	cli_print(cli, "daemon will shut down now!");
-	if(matrix_counter>0)_dessert_del_mon(); // if monitor mode is enabled
-	pthread_mutex_lock(&_dessert_exit_mutex);
-	pthread_cond_broadcast(&_dessert_exit_do);
-	pthread_mutex_unlock(&_dessert_exit_mutex);
+int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[], int argc) {
+    cli_print(cli, "daemon will shut down now!");
+    if(matrix_counter > 0) {
+        _dessert_del_mon(); // if monitor mode is enabled
+    }
+    pthread_mutex_lock(&_dessert_exit_mutex);
+    pthread_cond_broadcast(&_dessert_exit_do);
+    pthread_mutex_unlock(&_dessert_exit_mutex);
 
-	return CLI_OK;
+    return CLI_OK;
 }
 
 /******************************************************************************
