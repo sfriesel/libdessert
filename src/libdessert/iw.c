@@ -2,7 +2,7 @@
  * nl80211 userspace tool
  *
  * Copyright 2007, 2008	Johannes Berg <johannes@sipsolutions.net>
- 
+
   strongly customized 2010 by Johannes Klick <johannes.klick@fu-berlin.de>
  */
 
@@ -13,10 +13,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>                     
+#include <unistd.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>  
+#include <netlink/genl/ctrl.h>
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 #include <linux/nl80211.h>
@@ -36,7 +36,7 @@ int mon_ifs_counter=0;
 
  /*searches for 802.11 physical interfaces*/
 char** phyDevices(){
-  
+
   char** pArrString;
   int i;
 
@@ -48,16 +48,16 @@ char** phyDevices(){
   DIR *myDir;
   char *dirName="/sys/class/ieee80211";
   struct dirent *entry;
-  
+
   if (!(myDir=opendir(dirName))) {
     dessert_crit("NO PHYs in /sys/class/ieee80211 found.  Check if sysfs is compiled with kernel or wireless devices are already installed.\n");
     return;
- } 
+ }
   while (entry=readdir(myDir) )  {
     if(entry->d_name[0]=='p' && entry->d_name[1]=='h'&& entry->d_name[1]=='h' && i < 10 ){
     strcpy(pArrString[++i],entry->d_name);
   }
-   // store in pArrstring[0] how much devices have been found 
+   // store in pArrstring[0] how much devices have been found
   sprintf(pArrString[0],"%d",i);
   }
   closedir(myDir);
@@ -593,7 +593,7 @@ int configure(int argc, char **argv)
 	if (err < 0){
 		dessert_crit("command failed: %s (%d)\n", strerror(-err), err);
 		return -1;
-		
+
 	}
  out:
 	nl80211_cleanup(&nlstate);
@@ -604,7 +604,7 @@ int configure(int argc, char **argv)
 /*creates the monitor devs*/
 int _dessert_set_mon()
 {
-  
+
     char** cmdString;
     char** argString;
     char* ifconfigString;
@@ -612,20 +612,20 @@ int _dessert_set_mon()
     char buffer [50];
 
     cmdString = (char**)malloc(10*sizeof(char*));
-    ifconfigString = (char*)malloc(32*sizeof(char));	
+    ifconfigString = (char*)malloc(32*sizeof(char));
     for (i=0;i<10;i++){
         cmdString[i] = (char*)malloc(32*sizeof(char));
     }
 
     argString = phyDevices();
-    
+
     if(argString){
         mon_ifs_counter = atoi(argString[0]);
     }
     else{
         return -1;
     }
-      
+
     char ipnum = 111;
     cmdString[0]="iw";
     cmdString[1]="phy";
@@ -634,25 +634,25 @@ int _dessert_set_mon()
     cmdString[6]="type";
     cmdString[7]="monitor";
 
-    for(i=1;i<=mon_ifs_counter;i++){
-        cmdString[2]= argString[i];    
-        sprintf(cmdString[5],"moni_%s",argString[i]);			
-        sprintf(devString[i-1],"moni_%s",argString[i]); // saves the names of the monitor_interfaces    
-        if(configure(8,cmdString)<0){
-	  return -1;
-	}	  
+    for(i=1;i<=mon_ifs_counter;i++) {
+        cmdString[2]= argString[i];
+        sprintf(cmdString[5],"moni_%s",argString[i]);
+        sprintf(devString[i-1],"moni_%s",argString[i]); // saves the names of the monitor_interfaces
+        if(configure(8,cmdString)<0) {
+            return -1;
+        }
         sprintf(ifconfigString,"ifconfig moni_%s 192.168.170.%d up",argString[i],++ipnum);
-        system(ifconfigString);	
+        system(ifconfigString);
         dessert_info("monitor interface %s has been created",devString[i-1]);
     }
     free(cmdString);
     free(ifconfigString);
-    
+
     return 0;
 }
 /*deletes the monitor devs*/
 int _dessert_del_mon(){
-  
+
     char** cmdString;
     int i,j;
     char buffer [50];
@@ -660,23 +660,22 @@ int _dessert_del_mon(){
     for (i=0;i<4;i++){
         cmdString[i] = (char*)malloc(10*sizeof(char));
 
-    }    
-    cmdString[0]="iw";	
+    }
+    cmdString[0]="iw";
     cmdString[1]="dev";
     cmdString[3]="del";
     for(i=0;i<mon_ifs_counter;i++){
-	cmdString[2]=devString[i];
-	if(configure(4,cmdString)<0){
-	    return -1;
+        cmdString[2]=devString[i];
+        if(configure(4,cmdString)<0){
+            return -1;
+        }
     }
-
-    }	
     dessert_info("all interfaces closed");
     free(cmdString);
     return 0;
 }
-  
-  
+
+
 
 
 
