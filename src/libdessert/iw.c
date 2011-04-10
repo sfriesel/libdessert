@@ -672,6 +672,7 @@ int _dessert_del_mon(){
 
     }	
     dessert_info("all interfaces closed");
+    free(cmdString);
     return 0;
 }
   
