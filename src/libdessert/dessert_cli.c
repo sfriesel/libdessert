@@ -326,9 +326,10 @@ static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
         timer_range=atoi(argv[1]);
         dessert_info("RSSI values are valid for %d seconds - default is 3",atoi(argv[1]));
     }
-    _dessert_set_mon();
-    dessert_monitoring_start(); // starts capt. RSSI values
-    return CLI_OK;
+    if(_dessert_set_mon()>=0){
+	dessert_monitoring_start(); // starts capt. RSSI values
+    }
+	return CLI_OK;
 }
 
 /**command "show meshifs" */

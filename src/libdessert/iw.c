@@ -39,45 +39,28 @@ char** phyDevices(){
   char** pArrString;
   int i;
 
-
   pArrString = (char**)malloc(10*sizeof(char*));
-
   for (i=0;i<10;i++){
- 
     pArrString[i] = (char*)malloc(10*sizeof(char));
   }
   i = 0;
-
- 
-  
   DIR *myDir;
   char *dirName="/sys/class/ieee80211";
   struct dirent *entry;
- 
   
   if (!(myDir=opendir(dirName))) {
-    printf("NO PHYs in /sys/class/ieee80211 found.  Check if sysfs is compiled with kernel or wireless devices are already installed.\n");
-    exit(EXIT_FAILURE);
+    dessert_crit("NO PHYs in /sys/class/ieee80211 found.  Check if sysfs is compiled with kernel or wireless devices are already installed.\n");
+    return;
  } 
-  
   while (entry=readdir(myDir) )  {
-
     if(entry->d_name[0]=='p' && entry->d_name[1]=='h'&& entry->d_name[1]=='h' && i < 10 ){
-	
-	strcpy(pArrString[++i],entry->d_name);
-
+    strcpy(pArrString[++i],entry->d_name);
   }
    // store in pArrstring[0] how much devices have been found 
   sprintf(pArrString[0],"%d",i);
-    
-  
-  
-  
   }
   closedir(myDir);
   return pArrString;
-  
-
 }
 
 static char *mntr_flags[NL80211_MNTR_FLAG_MAX + 1] = {
@@ -128,9 +111,7 @@ static int get_if_type(int *argc, char ***argv, enum nl80211_iftype *type)
 		*type = NL80211_IFTYPE_MESH_POINT;
 		return 1;
 	}
-
-
-	fprintf(stderr, "invalid interface type %s\n", tpstr);
+	dessert_crit( "invalid interface type %s\n", tpstr);
 	return -1;
 }
 
@@ -142,7 +123,6 @@ static int handle_interface_add(struct nl_cb *cb,
 	char *mesh_id = NULL;
 	enum nl80211_iftype type;
 	int tpset;
-
 	if (argc < 1)
 		return 1;
 
@@ -233,7 +213,7 @@ static int handle_interface_set(struct nl_cb *cb,
 
 	flags = nlmsg_alloc();
 	if (!flags) {
-		fprintf(stderr, "failed to allocate flags\n");
+		dessert_crit( "failed to allocate flags\n");
 		return 2;
 	}
 
@@ -250,7 +230,7 @@ static int handle_interface_set(struct nl_cb *cb,
 			}
 		}
 		if (!ok) {
-			fprintf(stderr, "unknown flag %s\n", *argv);
+			dessert_crit( "unknown flag %s\n", *argv);
 			err = 2;
 			goto out;
 		}
@@ -364,26 +344,26 @@ static int nl80211_init(struct nl80211_state *state)
 
 	state->nl_handle = nl_handle_alloc();
 	if (!state->nl_handle) {
-		fprintf(stderr, "Failed to allocate netlink handle.\n");
+		dessert_crit("Failed to allocate netlink handle.\n");
 		return -ENOMEM;
 	}
 
 	if (genl_connect(state->nl_handle)) {
-		fprintf(stderr, "Failed to connect to generic netlink.\n");
+		dessert_crit("Failed to connect to generic netlink.\n");
 		err = -ENOLINK;
 		goto out_handle_destroy;
 	}
 
 	state->nl_cache = genl_ctrl_alloc_cache(state->nl_handle);
 	if (!state->nl_cache) {
-		fprintf(stderr, "Failed to allocate generic netlink cache.\n");
+		dessert_crit("Failed to allocate generic netlink cache.\n");
 		err = -ENOMEM;
 		goto out_handle_destroy;
 	}
 
 	state->nl80211 = genl_ctrl_search_by_name(state->nl_cache, "nl80211");
 	if (!state->nl80211) {
-		fprintf(stderr, "nl80211 not found.\n");
+		dessert_crit( "nl80211 not found.\n");
 		err = -ENOENT;
 		goto out_cache_free;
 	}
@@ -408,29 +388,27 @@ static void usage(const char *argv0)
 {
 	struct cmd *cmd;
 
-	fprintf(stderr, "Usage:\t%s [options] command\n", argv0);
-	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "\t--debug\t\tenable netlink debugging\n");
+	dessert_crit( "Usage:\t%s [options] command\n", argv0);
+	dessert_crit( "Options:\n");
+	dessert_crit( "\t--debug\t\tenable netlink debugging\n");
 
-	fprintf(stderr, "Commands:\n");
+	dessert_crit("Commands:\n");
 	for (cmd = &__start___cmd; cmd < &__stop___cmd; cmd++) {
 		switch (cmd->idby) {
 		case CIB_NONE:
-			fprintf(stderr, "\t");
 			/* fall through */
 		case CIB_PHY:
 			if (cmd->idby == CIB_PHY)
-				fprintf(stderr, "\tphy <phyname> ");
+				dessert_crit("\tphy <phyname> ");
 			/* fall through */
 		case CIB_NETDEV:
 			if (cmd->idby == CIB_NETDEV)
-				fprintf(stderr, "\tdev <devname> ");
+				dessert_crit("\tdev <devname> ");
 			if (cmd->section)
-				fprintf(stderr, "%s ", cmd->section);
-			fprintf(stderr, "%s", cmd->name);
+				dessert_crit("%s ", cmd->section);
+			dessert_crit( "%s", cmd->name);
 			if (cmd->args)
-				fprintf(stderr, " %s", cmd->args);
-			fprintf(stderr, "\n");
+				dessert_crit(" %s", cmd->args);
 			break;
 		}
 	}
@@ -535,13 +513,13 @@ static int handle_cmd(struct nl80211_state *state,
 
 	msg = nlmsg_alloc();
 	if (!msg) {
-		fprintf(stderr, "failed to allocate netlink message\n");
+		dessert_crit("failed to allocate netlink message\n");
 		return 2;
 	}
 
 	cb = nl_cb_alloc(debug ? NL_CB_DEBUG : NL_CB_DEFAULT);
 	if (!cb) {
-		fprintf(stderr, "failed to allocate netlink callbacks\n");
+		dessert_crit("failed to allocate netlink callbacks\n");
 		err = 2;
 		goto out_free_msg;
 	}
@@ -579,7 +557,7 @@ static int handle_cmd(struct nl80211_state *state,
 	nlmsg_free(msg);
 	return err;
  nla_put_failure:
-	fprintf(stderr, "building message failed\n");
+	dessert_crit("building message failed\n");
 	return 2;
 }
 
@@ -590,8 +568,9 @@ int configure(int argc, char **argv)
 	const char *argv0;
 
 	err = nl80211_init(&nlstate);
-	if (err)
-		return 1;
+	if (err){
+	  return -1;
+	}
 
 	/* strip off self */
 	argc--;
@@ -611,8 +590,8 @@ int configure(int argc, char **argv)
 	if (err == 1)
 		usage(argv0);
 	if (err < 0){
-		fprintf(stderr, "command failed: %s (%d)\n", strerror(-err), err);
-		exit(EXIT_FAILURE);
+		dessert_crit("command failed: %s (%d)\n", strerror(-err), err);
+		return -1;
 		
 	}
  out:
@@ -621,98 +600,70 @@ int configure(int argc, char **argv)
 	return err;
 }
 
-
 int _dessert_set_mon()
 {
   
-	char** cmdString;
-	char** argString;
-	char* ifconfigString;
-	int i,j;
-	char buffer [50];
+    char** cmdString;
+    char** argString;
+    char* ifconfigString;
+    int i,j;
+    char buffer [50];
 
+    cmdString = (char**)malloc(10*sizeof(char*));
+    ifconfigString = (char*)malloc(32*sizeof(char));	
+    for (i=0;i<10;i++){
+        cmdString[i] = (char*)malloc(32*sizeof(char));
+    }
 
-  
-	cmdString = (char**)malloc(10*sizeof(char*));
-	ifconfigString = (char*)malloc(32*sizeof(char));
-
-	
-	
-	
-	
-	
-	for (i=0;i<10;i++){
- 
-		cmdString[i] = (char*)malloc(32*sizeof(char));
-
-	}
+    argString = phyDevices();
     
-	argString = phyDevices();
-	mon_ifs_counter = atoi(argString[0]);
-	char ipnum = 111;
-	cmdString[0]="iw";
-	cmdString[1]="phy";
-	cmdString[3]="interface";
-	cmdString[4]="add";
-	cmdString[6]="type";
-	cmdString[7]="monitor";
-    
-	for(i=1;i<=mon_ifs_counter;i++){
-  
-	  
+    if(argString){
+        mon_ifs_counter = atoi(argString[0]);
+    }
+    else{
+        return -1;
+    }
+      
+    char ipnum = 111;
+    cmdString[0]="iw";
+    cmdString[1]="phy";
+    cmdString[3]="interface";
+    cmdString[4]="add";
+    cmdString[6]="type";
+    cmdString[7]="monitor";
 
-		cmdString[2]= argString[i];
-    
-		sprintf(cmdString[5],"moni_%s",argString[i]);
-			
-		sprintf(devString[i-1],"moni_%s",argString[i]); // saves the names of the monitor_interfaces
-    
-		configure(8,cmdString);
-	    
-		sprintf(ifconfigString,"ifconfig moni_%s 192.168.170.%d up",argString[i],++ipnum);
-
-		system(ifconfigString);
-	
-		dessert_info("monitor interface %s has been created",devString[i-1]);
-	}
-
-	  
-
-	return 0;
+    for(i=1;i<=mon_ifs_counter;i++){
+        cmdString[2]= argString[i];    
+        sprintf(cmdString[5],"moni_%s",argString[i]);			
+        sprintf(devString[i-1],"moni_%s",argString[i]); // saves the names of the monitor_interfaces    
+        configure(8,cmdString);	    
+        sprintf(ifconfigString,"ifconfig moni_%s 192.168.170.%d up",argString[i],++ipnum);
+        system(ifconfigString);	
+        dessert_info("monitor interface %s has been created",devString[i-1]);
+    }
+    return 0;
 }
 
 int _dessert_del_mon(){
   
-  	char** cmdString;
-	int i,j;
-	char buffer [50];
- 
-	cmdString = (char**)malloc(4*sizeof(char*));
-	
-	for (i=0;i<4;i++){
- 
-		cmdString[i] = (char*)malloc(10*sizeof(char));
+    char** cmdString;
+    int i,j;
+    char buffer [50];
+    cmdString = (char**)malloc(4*sizeof(char*));
+    for (i=0;i<4;i++){
+        cmdString[i] = (char*)malloc(10*sizeof(char));
 
-	}
-    
-	cmdString[0]="iw";
-	
-	cmdString[1]="dev";
-	cmdString[3]="del";
-    
-	for(i=0;i<mon_ifs_counter;i++){
-  
-		cmdString[2]=devString[i];
-		
-		configure(4,cmdString);
-    
-	}
-	
-	dessert_info("all interfaces closed");
+    }    
+    cmdString[0]="iw";	
+    cmdString[1]="dev";
+    cmdString[3]="del";
+    for(i=0;i<mon_ifs_counter;i++){
+	cmdString[2]=devString[i];
+	configure(4,cmdString);
 
-	  
-
-	return 0;
+    }	
+    dessert_info("all interfaces closed");
+    return 0;
 }
   
   

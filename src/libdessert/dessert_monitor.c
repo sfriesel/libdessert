@@ -726,8 +726,8 @@ void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char
 
     /* Create a channel to the NET kernel. */
     if((skfd = iw_sockets_open()) < 0) {
-        perror("socket");
-        exit(-1);
+        dessert_crit("Error while opening socket for frequencefilter");
+        return;
     }
     struct wireless_config* info;
     struct iwreq wrq;
@@ -797,27 +797,27 @@ void* dessert_monitoring(void* device) {
     /* open capture device */
     handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
     if (handle == NULL) {
-        fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
-        exit(EXIT_FAILURE);
+        dessert_crit("Couldn't open device %s: %s\n", dev, errbuf);
+        return;
     }
 
     if (pcap_datalink(handle) != DLT_IEEE802_11_RADIO) {
-        fprintf(stderr, "%s is not 802.11 device or device is not in monitor mode\n", dev);
-        exit(EXIT_FAILURE);
+        dessert_crit("%s is not 802.11 device or device is not in monitor mode\n", dev);
+        return;
     }
 
     /* compile the filter expression */
     if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
-        fprintf(stderr, "Couldn't parse filter %s: %s\n",
+        dessert_crit("Couldn't parse filter %s: %s\n",
                 filter_exp, pcap_geterr(handle));
-        exit(EXIT_FAILURE);
+        return;
     }
 
     /* apply the compiled filter */
     if (pcap_setfilter(handle, &fp) == -1) {
-        fprintf(stderr, "Couldn't install filter %s: %s\n",
+        dessert_crit("Couldn't install filter %s: %s\n",
                 filter_exp, pcap_geterr(handle));
-        exit(EXIT_FAILURE);
+        return;
     }
 
     /* now we can set our callback function */
