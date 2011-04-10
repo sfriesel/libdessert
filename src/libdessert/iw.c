@@ -645,6 +645,9 @@ int _dessert_set_mon()
         system(ifconfigString);	
         dessert_info("monitor interface %s has been created",devString[i-1]);
     }
+    free(cmdString);
+    free(ifconfigString);
+    
     return 0;
 }
 /*deletes the monitor devs*/
