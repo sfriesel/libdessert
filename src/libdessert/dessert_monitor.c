@@ -268,7 +268,6 @@ struct radiotap_header_opt_fields parse(const u_char *packet) {
 
 int print_database() {
     if(status == 0) {
-        //  printf("STATUS 0 print_db");
         return 0;
     }
     else {
@@ -331,7 +330,7 @@ int avg_node(struct d_list_node* node_temp){
     return temp2;
 }
 
-// deletes a node in the vertical level
+/*deletes a node in the vertical level*/
 int delete(struct d_list_node* present_node_vertikal){
     struct d_list_node* present_node_vertikal_1;
     struct d_list_node* present_node_vertikal_2;
@@ -339,7 +338,7 @@ int delete(struct d_list_node* present_node_vertikal){
     present_node_vertikal_1 = present_node_vertikal->up;
     present_node_vertikal_2 = present_node_vertikal->down;
 
-    // special procedure for deleting the root node, only if a another node exists
+    /*special procedure for deleting the root node, only if a another node exists*/
     if(!present_node_vertikal->up && present_node_vertikal->down ){
         node 	= present_node_vertikal->down;
         node->up= NULL;
@@ -348,14 +347,14 @@ int delete(struct d_list_node* present_node_vertikal){
         return 0;
     }
 
-    // deletes the last vertical node only if its not the root node
+    /*deletes the last vertical node only if its not the root node*/
     if(!present_node_vertikal->down && present_node_vertikal->up){
         free(present_node_vertikal);
         present_node_vertikal_1 -> down = NULL;
         return 0;
     }
 
-    // if only root node is in db
+    /*if only root node is in db*/
     if(!present_node_vertikal->down || !present_node_vertikal->up){
         return 0;
     }
@@ -374,7 +373,6 @@ void maintenance(void* nothing){
     int counter =0;
 
     if(status == 0) {
-        //  printf("STATUS 0 print_db");
         return;
     }
     else {
@@ -383,16 +381,16 @@ void maintenance(void* nothing){
         struct d_list_node* present_node_horizontal; // = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
         present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
 
-        //vertical level
+        /*vertical level*/
         while(1==1) {
             present_node_horizontal = present_node_vertikal;
             sum=0;
-            // horizontal level
+            /*horizontal level*/
             while(1==1){
                 sum += avg_node(present_node_horizontal);
                 if(!present_node_horizontal->next){
                     if(sum==0){
-                        // if all horizontal nodes of a vertical level are too old the level will be deleted
+                        /*if all horizontal nodes of a vertical level are too old the level will be deleted*/
                         delete(present_node_vertikal);
                     }
                     break;
@@ -427,7 +425,7 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
         struct d_list_node* present_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
         present_node = node; // node is the static global root of the whole database / dynamic matrix
 
-	// searching in the vertical level
+	/*searching in the vertical level*/
         while(1==1){
 	    for(i=0;i<6;i++){
 	        if(present_node->sa[i]==sa[i])counter++;
@@ -438,7 +436,7 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
 	        break;
 	    }
 	    counter=0;
-	    // no vertical matrix level found, build new vertical level
+	    /*no vertical matrix level found, build new vertical level*/
 	    if(!present_node->down){
 	        pthread_mutex_unlock(&sema1);
 	        return;
@@ -446,7 +444,7 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
 	    present_node = present_node->down;
         }
         
-        // searching in the horizontal level
+        /*searching in the horizontal level*/
         while(1==1){
 	    if(strcmp(present_node->da,dest_dev)==0){		      
                 (*function_ptr)(memo_ptr, present_node);
@@ -466,7 +464,6 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
 
 int dessert_search_con( u_char sa[6], u_char *dest_dev){
     if(status == 0) {
-        // printf("\nSTATUS 0");
         return 0;
     }
     else {
@@ -475,27 +472,27 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev){
         int counter =0;
         struct d_list_node* present_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
         present_node = node; // node is the static global root of the whole database / dynamic matrix
-        // searching in the vertical level
+        /* searching in the vertical level*/
         while(1==1) {
             for(i=0;i<6;i++){
                 if(present_node->sa[i]==sa[i]) {
                     counter++;
                 }
             }
-            // vertical matrix level found
+            /*vertical matrix level found*/
             if(counter==6) {
                 counter=0;
                 break;
             }
             counter=0;
-            // No vertical matrix level found, build new vertical level
+            /*No vertical matrix level found, build new vertical level*/
             if(!present_node->down) {
                 pthread_mutex_unlock(&sema1);
                 return 0;
             }
             present_node = present_node->down;
         }
-        // searching in the horizontal level
+        /*searching in the horizontal level*/
         while(1==1){
             if(strcmp(present_node->da,dest_dev)==0) {
                 pthread_mutex_unlock(&sema1);
@@ -511,7 +508,7 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev){
     }
 }
 
-//inserts a value in a node
+/*inserts a value in a node*/
 void insert_value_node(struct d_list_node* node_temp,u_int8_t wr_antsignal){
     node_temp->array_pointer[node_temp->counter]= wr_antsignal;
     node_temp->time_array_pointer[node_temp->counter]= time(NULL);
@@ -521,7 +518,7 @@ void insert_value_node(struct d_list_node* node_temp,u_int8_t wr_antsignal){
     return;
 }
 
-//inserts a value in the matrix
+/*inserts a value in the matrix*/
 void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_management* management){
     int i;
     int counter =0;
@@ -532,9 +529,9 @@ void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_managemen
     //printf("\nLOCK insert");
 
     if(status==0) {
-        // variable node is the root node in the matrix
+        /* variable node is the root node in the matrix*/
         node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
-        // fill root node of the matrix
+        /*fill root node of the matrix*/
         bcopy( management->sa, node->sa, 6);
         bcopy( dest_dev, node->da, 16);
         node->array_pointer = (u_char*) calloc (array_size_node,sizeof(u_char));
@@ -547,10 +544,10 @@ void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_managemen
         insert_value_node(node,wr_antsignal);
         status++;
         pthread_mutex_unlock(&sema1);
-        // printf("\nDE LOCK insert");
+
     }
     else{
-        // begin at root node
+        /* begin at root node*/
         present_node = node;
         while(1==1) {
             for(i=0;i<6;i++) {
@@ -558,16 +555,13 @@ void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_managemen
                     counter++;
                 }
             }
-            //printf("vertical counter: %d \n",counter);
-            // vertical matrix level found
+            /* vertical matrix level found*/
             if(counter==6){
-            //printf("vertical level found\n");
-            //richtige vertikale Ebene gefunden
             counter=0;;
             break;
             }
             counter=0;
-            // No vertical matrix level found, build new vertical level
+            /* No vertical matrix level found, build new vertical level*/
             if(!present_node->down) {
                 struct d_list_node* new_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
                 present_node->down = new_node;
@@ -582,24 +576,22 @@ void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_managemen
                 new_node->time_array_pointer = (time_t*) calloc (array_size_node,sizeof(time_t));
 
                 new_node->counter=0;
-                // insert the wr_antsignal into the node
+                /*insert the wr_antsignal into the node*/
                 insert_value_node(new_node,wr_antsignal);
 
                 counter=0;
                 pthread_mutex_unlock(&sema1);
-                //  printf("\nDE LOCK insert");
                 return;
             }
             present_node = present_node->down;
         }
-        // searching in the horizontal level
+        /*searching in the horizontal level*/
         while(1==1) {
             if(strcmp(present_node->da,dest_dev)==0){
-                //richtige horizontale Ebene gefunden,dann wert einfuegen
+                /*horizontal level found, insert value*/
                 insert_value_node(present_node,wr_antsignal);
                 counter=0;
                 pthread_mutex_unlock(&sema1);
-                //  printf("\nDE LOCK insert");
                 break;
             }
             counter=0;
@@ -618,11 +610,9 @@ void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_managemen
                     new_node2->counter=0;
                     insert_value_node(new_node2,wr_antsignal);
                     pthread_mutex_unlock(&sema1);
-                    //  printf("\nLOCK insert");
                     break;
             }
             present_node = present_node->next;
-            //printf("NEXT node horziontal\n");
         }
     }
     return;
@@ -752,7 +742,6 @@ void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char
     close(skfd);
 
     if(! (info->freq == erg.wr_channel) ){
-    // printf("\nSettingFreq: %f PacketFreq: %d",  info->freq, erg.wr_channel);
         return;
     }
     else{

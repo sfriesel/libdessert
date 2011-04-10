@@ -34,6 +34,7 @@ int mon_ifs_counter=0;
 
  /* itoa:  convert n to characters in s */
 
+ /*searches for 802.11 physical interfaces*/
 char** phyDevices(){
   
   char** pArrString;
@@ -600,6 +601,7 @@ int configure(int argc, char **argv)
 	return err;
 }
 
+/*creates the monitor devs*/
 int _dessert_set_mon()
 {
   
@@ -636,14 +638,16 @@ int _dessert_set_mon()
         cmdString[2]= argString[i];    
         sprintf(cmdString[5],"moni_%s",argString[i]);			
         sprintf(devString[i-1],"moni_%s",argString[i]); // saves the names of the monitor_interfaces    
-        configure(8,cmdString);	    
+        if(configure(8,cmdString)<0){
+	  return -1;
+	}	  
         sprintf(ifconfigString,"ifconfig moni_%s 192.168.170.%d up",argString[i],++ipnum);
         system(ifconfigString);	
         dessert_info("monitor interface %s has been created",devString[i-1]);
     }
     return 0;
 }
-
+/*deletes the monitor devs*/
 int _dessert_del_mon(){
   
     char** cmdString;
@@ -659,7 +663,9 @@ int _dessert_del_mon(){
     cmdString[3]="del";
     for(i=0;i<mon_ifs_counter;i++){
 	cmdString[2]=devString[i];
-	configure(4,cmdString);
+	if(configure(4,cmdString)<0){
+	    return -1;
+    }
 
     }	
     dessert_info("all interfaces closed");
