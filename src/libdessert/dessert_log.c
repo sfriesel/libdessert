@@ -395,12 +395,12 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
     }
 
     /* clean up old logfile first */
-    if (dessert_logfd != NULL) {
+    if(dessert_logfd != NULL) {
         dessert_logcfg(DESSERT_LOG_NOFILE);
         fclose(dessert_logfd);
     }
 #ifdef HAVE_LIBZ
-    if (dessert_logfdgz != NULL) {
+    if(dessert_logfdgz != NULL) {
         dessert_logcfg(DESSERT_LOG_NOFILE);
         gzclose(dessert_logfdgz);
     }
@@ -418,17 +418,17 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
     return CLI_OK;
 }
 
-int _dessert_closeLogFile(int signal) {
+int _dessert_closeLogFile() {
     dessert_notice("closing log file");
     pthread_mutex_lock(&_dessert_logfile_mutex);
     dessert_logcfg(DESSERT_LOG_NOFILE);
-    if (dessert_logfd != NULL) {
+    if(dessert_logfd != NULL) {
         fclose(dessert_logfd);
     }
     dessert_logfd = NULL;
 
 #ifdef HAVE_LIBZ
-    if (dessert_logfdgz != NULL) {
+    if(dessert_logfdgz != NULL) {
         gzclose(dessert_logfdgz);
     }
     dessert_logfdgz = NULL;
@@ -437,17 +437,9 @@ int _dessert_closeLogFile(int signal) {
     return 0;
 }
 
-/**
- * Registers a SIGTERM handler
- */
-int _dessert_log_init() {
-  dessert_signalcb_add(SIGTERM, _dessert_closeLogFile);
-  return 0;
-}
-
 /** command "no logging file" */
 int _dessert_cli_no_logging_file(struct cli_def *cli, char *command, char *argv[], int argc) {
-    _dessert_closeLogFile(0);
+    _dessert_closeLogFile();
     return CLI_OK;
 }
 

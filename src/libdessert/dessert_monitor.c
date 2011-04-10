@@ -830,8 +830,6 @@ int dessert_monitoring_start(){
     pthread_t thread[mon_ifs_counter];
     pthread_t thread_maintenance;
 
-    dessert_signalcb_add(SIGTERM, _dessert_del_mon);
-    dessert_signalcb_add(SIGINT, _dessert_del_mon);
     for(i=0;i<mon_ifs_counter;++i){
         pthread_create(&thread[i], NULL, dessert_monitoring, (void *) devString[i]);
     }

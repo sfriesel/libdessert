@@ -641,19 +641,20 @@ int _dessert_set_mon() {
     cmdString[6]="type";
     cmdString[7]="monitor";
 
-    for(i=1;i<=mon_ifs_counter;i++) {
+    for(i=1; i<=mon_ifs_counter; i++) {
         cmdString[2]= argString[i];
-        sprintf(cmdString[5],"moni_%s",argString[i]);
-        sprintf(devString[i-1],"moni_%s",argString[i]); // saves the names of the monitor_interfaces
-        if(configure(8,cmdString)<0) {
+        sprintf(cmdString[5], "mon_%s", argString[i]);
+        sprintf(devString[i-1], "mon_%s", argString[i]); // saves the names of the monitor_interfaces
+        if(configure(8, cmdString) <0 ) {
             return -1;
         }
-        sprintf(ifconfigString,"ifconfig moni_%s 192.168.170.%d up",argString[i],++ipnum);
+        sprintf(ifconfigString, "ifconfig mon_%s 192.168.170.%d up", argString[i], ++ipnum);
         system(ifconfigString);
-        dessert_info("monitor interface %s has been created",devString[i-1]);
+        dessert_info("monitor interface %s has been created", devString[i-1]);
     }
     free(cmdString);
-    free(ifconfigString);
+    /* double free!!! */
+    // free(ifconfigString);
 
     return 0;
 }

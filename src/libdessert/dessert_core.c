@@ -60,30 +60,6 @@ static int _dessert_pid(char* pidfile);
  *
  ******************************************************************************/
 
-// /*#ifdef DESSERT_EVENT
-// #include <event.h>
-// #include <signal.h>
-// pthread_t _dessert_event_thread;
-// struct event _dessert_sighup;
-//
-// void _dessert_signal_hup(int fd, short event, void *arg) {
-//     dessert_notice("received SIGHUP");
-// }
-//
-// void *dessert_event_thread(void* param) {
-//     event_init();
-//     event_set(&_dessert_sighup, SIGHUP, EV_SIGNAL|EV_PERSIST, _dessert_signal_hup, &_dessert_sighup);
-//     event_add(&_dessert_sighup, NULL);
-//     event_dispatch();
-// }
-// #endif
-//
-// void _dessert_event_init() {
-//     #ifdef DESSERT_EVENT
-//     pthread_create(&_dessert_event_thread, NULL, dessert_event_thread, NULL);
-//     #endif
-// }*/
-
 /** Initializes dessert framework and sets up logging
  * @arg *proto 4 char string for protocol name
  * @arg version version number of protocol
@@ -91,42 +67,39 @@ static int _dessert_pid(char* pidfile);
  * @returns DESSERT_OK on success, DESSERT_ERR otherwise
  **/
 int dessert_init(const char* proto, int version, uint16_t opts) {
-	pthread_rwlock_wrlock(&dessert_cfglock);
+    pthread_rwlock_wrlock(&dessert_cfglock);
 
-	/* save global config */
-	memset(dessert_proto, 0x0, DESSERT_PROTO_STRLEN + 1);
-	strncpy(dessert_proto, proto, DESSERT_PROTO_STRLEN);
-	dessert_ver = version;
+    /* save global config */
+    memset(dessert_proto, 0x0, DESSERT_PROTO_STRLEN + 1);
+    strncpy(dessert_proto, proto, DESSERT_PROTO_STRLEN);
+    dessert_ver = version;
 
-	/* initialize pseudo constants */
-	memset(ether_broadcast, 255, ETHER_ADDR_LEN);
-	memset(ether_null, 0, ETHER_ADDR_LEN);
+    /* initialize pseudo constants */
+    memset(ether_broadcast, 255, ETHER_ADDR_LEN);
+    memset(ether_null, 0, ETHER_ADDR_LEN);
 
-	pthread_rwlock_unlock(&dessert_cfglock);
+    pthread_rwlock_unlock(&dessert_cfglock);
 
-	/* daemonize if needed */
-	if ((opts & DESSERT_OPT_DAEMONIZE) && !(opts & DESSERT_OPT_NODAEMONIZE)) {
-		_dessert_daemonize();
-	}
+    /* daemonize if needed */
+    if ((opts & DESSERT_OPT_DAEMONIZE) && !(opts & DESSERT_OPT_NODAEMONIZE)) {
+        _dessert_daemonize();
+    }
 
     /* initialize all event thread, sets sigmask */
     _dessert_signals_init();
 
-	/* initialize cli */
-	_dessert_cli_init();
+    /* initialize cli */
+    _dessert_cli_init();
 
-	/* start periodic thread */
-	_dessert_periodic_init();
+    /* start periodic thread */
+    _dessert_periodic_init();
 
 #ifdef WITH_NET_SNMP
     /* initialize net-snmp subagent */
     _dessert_agentx_init_subagent();
 #endif
 
-    /* registers SIGTERM handler to flush and close log file */
-    _dessert_log_init();
-
-	return DESSERT_OK;
+    return DESSERT_OK;
 }
 
 
@@ -171,23 +144,16 @@ int dessert_pid(char* pidfile) {
  * @return arg to dessert_exit
  */
 int dessert_run() {
-	pthread_mutex_lock(&_dessert_exit_mutex);
-	pthread_cond_wait(&_dessert_exit_do, &_dessert_exit_mutex);
-	_dessert_cleanup();
-	pthread_mutex_unlock(&_dessert_exit_mutex);
-	return (_dessert_exit_code);
+    pthread_mutex_lock(&_dessert_exit_mutex);
+    pthread_cond_wait(&_dessert_exit_do, &_dessert_exit_mutex);
+    _dessert_cleanup();
+    pthread_mutex_unlock(&_dessert_exit_mutex);
+    return (_dessert_exit_code);
 }
 
 /**Causes dessert_run() to break out of the main loop.
  */
 void dessert_exit() {
-    //deletes the monitor interfaces
-    _dessert_del_mon();
-
-#ifdef WITH_NET_SNMP
-    /* kill snmp_worker thread */
-    dessert_agentx_stop_subagent();
-#endif
     pthread_cond_signal(&_dessert_exit_do);
 }
 
@@ -195,11 +161,11 @@ void dessert_exit() {
  * @returns runtime-unique frame id
  **/
 dessert_frameid_t _dessert_newframeid() {
-	dessert_frameid_t x;
-	pthread_mutex_lock(&_dessert_nextframeid_mutex);
-	x = _dessert_nextframeid++;
-	pthread_mutex_unlock(&_dessert_nextframeid_mutex);
-	return (x);
+    dessert_frameid_t x;
+    pthread_mutex_lock(&_dessert_nextframeid_mutex);
+    x = _dessert_nextframeid++;
+    pthread_mutex_unlock(&_dessert_nextframeid_mutex);
+    return (x);
 }
 
 /******************************************************************************
@@ -213,13 +179,9 @@ dessert_frameid_t _dessert_newframeid() {
 /** command "shutdown" */
 int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[], int argc) {
     cli_print(cli, "daemon will shut down now!");
-    if(matrix_counter > 0) {
-        _dessert_del_mon(); // if monitor mode is enabled
-    }
     pthread_mutex_lock(&_dessert_exit_mutex);
     pthread_cond_broadcast(&_dessert_exit_do);
     pthread_mutex_unlock(&_dessert_exit_mutex);
-
     return CLI_OK;
 }
 
@@ -233,56 +195,65 @@ int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[], 
 
 /** internal function to clean up things */
 void _dessert_cleanup(void) {
-	/* remove pidfile */
-	if (dessert_pidfile_name != NULL) {
-		unlink(dessert_pidfile_name);
-	}
+    /* remove pidfile */
+    if(dessert_pidfile_name != NULL) {
+        unlink(dessert_pidfile_name);
+    }
+    /* delete monitor interfaces */
+    if(matrix_counter > 0) {
+        _dessert_del_mon();
+    }
+    _dessert_closeLogFile();
+#ifdef WITH_NET_SNMP
+    /* kill snmp_worker thread */
+    dessert_agentx_stop_subagent();
+#endif
 }
 
 /** internal daemonize helper */
 void _dessert_daemonize(void) {
-	pid_t pid, sid;
+    pid_t pid, sid;
 
-	/* Fork off the parent process */
-	pid = fork();
-	if (pid < 0) {
-		perror("could not create daemon process!");
-		exit(EXIT_FAILURE);
-	}
-	/* If we got a good PID, then
-	 we can exit the parent process. */
-	if (pid > 0) {
-		exit(EXIT_SUCCESS);
-	}
+    /* Fork off the parent process */
+    pid = fork();
+    if (pid < 0) {
+        perror("could not create daemon process!");
+        exit(EXIT_FAILURE);
+    }
+    /* If we got a good PID, then
+    we can exit the parent process. */
+    if (pid > 0) {
+        exit(EXIT_SUCCESS);
+    }
 
-	/* Change the file mode mask */
-	umask(0);
+    /* Change the file mode mask */
+    umask(0);
 
-	/* Open any logs here */
+    /* Open any logs here */
 
-	/* Create a new SID for the child process */
-	sid = setsid();
-	if (sid < 0) {
-		perror("could not set sid!");
-		exit(EXIT_FAILURE);
-	}
+    /* Create a new SID for the child process */
+    sid = setsid();
+    if (sid < 0) {
+        perror("could not set sid!");
+        exit(EXIT_FAILURE);
+    }
 
-	/* Change the current working directory */
-	if ((chdir("/")) < 0) {
-		perror("could not chdir /!");
-		exit(EXIT_FAILURE);
-	}
+    /* Change the current working directory */
+    if ((chdir("/")) < 0) {
+        perror("could not chdir /!");
+        exit(EXIT_FAILURE);
+    }
 
-	/* Close out the standard file descriptors */
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
+    /* Close out the standard file descriptors */
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
 
-	/* write config */
-	pthread_rwlock_wrlock(&dessert_cfglock);
-	_dessert_status |= _DESSERT_STATUS_DAEMON;
-	pthread_rwlock_unlock(&dessert_cfglock);
+    /* write config */
+    pthread_rwlock_wrlock(&dessert_cfglock);
+    _dessert_status |= _DESSERT_STATUS_DAEMON;
+    pthread_rwlock_unlock(&dessert_cfglock);
 
-	/* adopt logging */
-	dessert_logcfg(0x0);
+    /* adopt logging */
+    dessert_logcfg(0x0);
 }

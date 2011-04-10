@@ -192,7 +192,7 @@ void* dessert_signal_thread(void* param) {
         if(sig_handlers) {
             sig_handlercb_t* cur;
             LL_FOREACH(sig_handlers->list, cur) {
-                dessert_info("calling callback for signal %d", sig_caught);
+                dessert_debug("calling callback for signal %d", sig_caught);
                 cur->callback(sig_caught);
             }
         }
