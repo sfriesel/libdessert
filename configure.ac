@@ -40,16 +40,17 @@ AC_SUBST([PCAP_LIBS])
 AC_SUBST([PCAP_CFLAGS])
 
 # Checks for libcli
-
 AC_CHECK_HEADERS([libcli.h])
-
 AC_SEARCH_LIBS([cli_print],
                [cli],
                [AC_DEFINE([CLI_LIBS],[-lcli],[defines linkoption for libcli])],
                [AC_MSG_ERROR([libcli could not found, please install development package of libcli])]
 )
-
 AC_SUBST([CLI_LIBS])
+
+# Check for ut*
+AC_CHECK_HEADERS([uthash.h])
+AC_CHECK_HEADERS([utlist.h])
 
 # Checks for libraries.
 

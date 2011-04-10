@@ -1,5 +1,6 @@
 20110330 - 1.00
     - Merged RSSI branch / monitor interface support
+    - Added uthash and utlist header check in configure.ac
     - libtool version = 2.0.1
 
 20110305 - 0.99
