@@ -378,233 +378,240 @@ static int nl80211_init(struct nl80211_state *state)
 	return err;
 }
 
-static void nl80211_cleanup(struct nl80211_state *state)
-{
-	genl_family_put(state->nl80211);
-	nl_cache_free(state->nl_cache);
-	nl_handle_destroy(state->nl_handle);
+static void nl80211_cleanup(struct nl80211_state *state) {
+    genl_family_put(state->nl80211);
+    nl_cache_free(state->nl_cache);
+    nl_handle_destroy(state->nl_handle);
 }
 
-static void usage(const char *argv0)
-{
-	struct cmd *cmd;
+static void usage(const char *argv0) {
+    struct cmd *cmd;
 
-	dessert_crit( "Usage:\t%s [options] command\n", argv0);
-	dessert_crit( "Options:\n");
-	dessert_crit( "\t--debug\t\tenable netlink debugging\n");
-
-	dessert_crit("Commands:\n");
-	for (cmd = &__start___cmd; cmd < &__stop___cmd; cmd++) {
-		switch (cmd->idby) {
-		case CIB_NONE:
-			/* fall through */
-		case CIB_PHY:
-			if (cmd->idby == CIB_PHY)
-				dessert_crit("\tphy <phyname> ");
-			/* fall through */
-		case CIB_NETDEV:
-			if (cmd->idby == CIB_NETDEV)
-				dessert_crit("\tdev <devname> ");
-			if (cmd->section)
-				dessert_crit("%s ", cmd->section);
-			dessert_crit( "%s", cmd->name);
-			if (cmd->args)
-				dessert_crit(" %s", cmd->args);
-			break;
-		}
-	}
+    dessert_crit( "Usage:\t%s [options] command\n", argv0);
+    dessert_crit( "Options:\n");
+    dessert_crit( "\t--debug\t\tenable netlink debugging\n");
+    dessert_crit("Commands:\n");
+    for (cmd = &__start___cmd; cmd < &__stop___cmd; cmd++) {
+        switch (cmd->idby) {
+            case CIB_NONE:
+                /* fall through */
+            case CIB_PHY:
+                if(cmd->idby == CIB_PHY) {
+                    dessert_crit("\tphy <phyname> ");
+                }
+                /* fall through */
+            case CIB_NETDEV:
+                if(cmd->idby == CIB_NETDEV) {
+                    dessert_crit("\tdev <devname> ");
+                }
+                if(cmd->section) {
+                    dessert_crit("%s ", cmd->section);
+                }
+                dessert_crit("%s", cmd->name);
+                if(cmd->args) {
+                    dessert_crit(" %s", cmd->args);
+                }
+                break;
+        }
+    }
 }
 
 
 
-static int phy_lookup(char *name)
-{
-	char buf[200];
-	int fd, pos;
+static int phy_lookup(char *name) {
+    char buf[200];
+    int fd, pos;
 
-	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/%s/index", name);
+    snprintf(buf, sizeof(buf), "/sys/class/ieee80211/%s/index", name);
 
-	fd = open(buf, O_RDONLY);
-	pos = read(fd, buf, sizeof(buf) - 1);
-	if (pos < 0)
-		return -1;
-	buf[pos] = '\0';
-	return atoi(buf);
+    fd = open(buf, O_RDONLY);
+    pos = read(fd, buf, sizeof(buf) - 1);
+    if (pos < 0) {
+        return -1;
+    }
+    buf[pos] = '\0';
+    return atoi(buf);
 }
 
-static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
-			 void *arg)
-{
-	int *ret = arg;
-	*ret = err->error;
-	return NL_STOP;
+static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg) {
+    int *ret = arg;
+    *ret = err->error;
+    return NL_STOP;
 }
 
-static int finish_handler(struct nl_msg *msg, void *arg)
-{
-	return NL_SKIP;
+static int finish_handler(struct nl_msg *msg, void *arg) {
+    return NL_SKIP;
 }
 
-static int ack_handler(struct nl_msg *msg, void *arg)
-{
-	int *ret = arg;
-	*ret = 0;
-	return NL_STOP;
+static int ack_handler(struct nl_msg *msg, void *arg) {
+    int *ret = arg;
+    *ret = 0;
+    return NL_STOP;
 }
 
-static int handle_cmd(struct nl80211_state *state,
-		      enum command_identify_by idby,
-		      int argc, char **argv)
-{
-	struct cmd *cmd;
-	struct nl_cb *cb = NULL;
-	struct nl_msg *msg;
-	int devidx = 0;
-	int err;
-	const char *command, *section;
+static int handle_cmd(struct nl80211_state *state, enum command_identify_by idby, int argc, char **argv) {
+    struct cmd *cmd;
+    struct nl_cb *cb = NULL;
+    struct nl_msg *msg;
+    int devidx = 0;
+    int err;
+    const char *command, *section;
 
-	if (argc <= 1 && idby != CIB_NONE)
-		return 1;
+    if(argc <= 1 && idby != CIB_NONE) {
+        return 1;
+    }
 
-	switch (idby) {
-	case CIB_PHY:
-	  //iw phy phy3 interface add moni3 type monitor
-		devidx = phy_lookup(*argv);
-		argc--;
-		argv++;
-		break;
-	case CIB_NETDEV:
-		devidx = if_nametoindex(*argv);
-		argc--;
-		argv++;
-		break;
-	default:
-		break;
-	}
+    switch (idby) {
+        case CIB_PHY:
+            //iw phy phy3 interface add moni3 type monitor
+            devidx = phy_lookup(*argv);
+            argc--;
+            argv++;
+            break;
+        case CIB_NETDEV:
+            devidx = if_nametoindex(*argv);
+            argc--;
+            argv++;
+            break;
+        default:
+            break;
+    }
 
-	section = command = *argv;
-	argc--;
-	argv++;
+    section = command = *argv;
+    argc--;
+    argv++;
 
-	for (cmd = &__start___cmd; cmd < &__stop___cmd; cmd++) {
-		if (cmd->idby != idby)
-			continue;
-		if (cmd->section) {
-			if (strcmp(cmd->section, section))
-				continue;
-			/* this is a bit icky ... */
-			if (command == section) {
-				if (argc <= 0)
-					return 1;
-				command = *argv;
-				argc--;
-				argv++;
-			}
-		} else if (section != command)
-			continue;
-		if (strcmp(cmd->name, command))
-			continue;
-		if (argc && !cmd->args)
-			continue;
-		break;
-	}
+    for (cmd = &__start___cmd; cmd < &__stop___cmd; cmd++) {
+        if (cmd->idby != idby) {
+            continue;
+        }
+        if (cmd->section) {
+            if (strcmp(cmd->section, section)) {
+                continue;
+            }
+            /* this is a bit icky ... */
+            if (command == section) {
+                if (argc <= 0) {
+                    return 1;
+                }
+                command = *argv;
+                argc--;
+                argv++;
+            }
+        }
+        else {
+            if(section != command) {
+                continue;
+            }
+        }
+        if(strcmp(cmd->name, command)) {
+            continue;
+        }
+        if(argc && !cmd->args) {
+            continue;
+        }
+        break;
+    }
 
-	if (cmd == &__stop___cmd)
-		return 1;
+    if (cmd == &__stop___cmd) {
+        return 1;
+    }
 
-	msg = nlmsg_alloc();
-	if (!msg) {
-		dessert_crit("failed to allocate netlink message\n");
-		return 2;
-	}
+    msg = nlmsg_alloc();
+    if (!msg) {
+        dessert_crit("failed to allocate netlink message\n");
+        return 2;
+    }
 
-	cb = nl_cb_alloc(debug ? NL_CB_DEBUG : NL_CB_DEFAULT);
-	if (!cb) {
-		dessert_crit("failed to allocate netlink callbacks\n");
-		err = 2;
-		goto out_free_msg;
-	}
+    cb = nl_cb_alloc(debug ? NL_CB_DEBUG : NL_CB_DEFAULT);
+    if(!cb) {
+        dessert_crit("failed to allocate netlink callbacks\n");
+        err = 2;
+        goto out_free_msg;
+    }
 
-	genlmsg_put(msg, 0, 0, genl_family_get_id(state->nl80211), 0,
-		    cmd->nl_msg_flags, cmd->cmd, 0);
+    genlmsg_put(msg, 0, 0, genl_family_get_id(state->nl80211), 0, cmd->nl_msg_flags, cmd->cmd, 0);
 
-	switch (idby) {
-	case CIB_PHY:
-		NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, devidx);
-		break;
-	case CIB_NETDEV:
-		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devidx);
-		break;
-	default:
-		break;
-	}
+    switch (idby) {
+        case CIB_PHY:
+            NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, devidx);
+            break;
+        case CIB_NETDEV:
+            NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devidx);
+            break;
+        default:
+            break;
+    }
 
-	err = cmd->handler(cb, msg, argc, argv);
-	if (err)
-		goto out;
+    err = cmd->handler(cb, msg, argc, argv);
+    if(err) {
+        goto out;
+    }
 
-	err = nl_send_auto_complete(state->nl_handle, msg);
-	if (err < 0)
-		goto out;
+    err = nl_send_auto_complete(state->nl_handle, msg);
+    if(err < 0) {
+        goto out;
+    }
 
-	nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &err);
-	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, NULL);
-	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &err);
+    nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &err);
+    nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, NULL);
+    nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &err);
 
-	nl_recvmsgs(state->nl_handle, cb);
- out:
-	nl_cb_put(cb);
- out_free_msg:
-	nlmsg_free(msg);
-	return err;
- nla_put_failure:
-	dessert_crit("building message failed\n");
-	return 2;
+    nl_recvmsgs(state->nl_handle, cb);
+out:
+    nl_cb_put(cb);
+out_free_msg:
+    nlmsg_free(msg);
+    return err;
+nla_put_failure:
+    dessert_crit("building message failed\n");
+    return 2;
 }
 
-int configure(int argc, char **argv)
-{
-	struct nl80211_state nlstate;
-	int err;
-	const char *argv0;
+int configure(int argc, char **argv) {
+    struct nl80211_state nlstate;
+    int err;
+    const char *argv0;
 
-	err = nl80211_init(&nlstate);
-	if (err){
-	  return -1;
-	}
+    err = nl80211_init(&nlstate);
+    if (err){
+        return -1;
+    }
 
-	/* strip off self */
-	argc--;
-	argv0 = *argv++;
+    /* strip off self */
+    argc--;
+    argv0 = *argv++;
 
-	if (strcmp(*argv, "dev") == 0) {
-		argc--;
-		argv++;
-		err = handle_cmd(&nlstate, CIB_NETDEV, argc, argv);
-	} else if (strcmp(*argv, "phy") == 0) {
-		argc--;
-		argv++;
-		err = handle_cmd(&nlstate, CIB_PHY, argc, argv);
-	} else
-		err = handle_cmd(&nlstate, CIB_NONE, argc, argv);
+    if (strcmp(*argv, "dev") == 0) {
+        argc--;
+        argv++;
+        err = handle_cmd(&nlstate, CIB_NETDEV, argc, argv);
+    }
+    else {
+        if (strcmp(*argv, "phy") == 0) {
+            argc--;
+            argv++;
+            err = handle_cmd(&nlstate, CIB_PHY, argc, argv);
+        }
+        else {
+            err = handle_cmd(&nlstate, CIB_NONE, argc, argv);
+        }
+    }
 
-	if (err == 1)
-		usage(argv0);
-	if (err < 0){
-		dessert_crit("command failed: %s (%d)\n", strerror(-err), err);
-		return -1;
-
-	}
- out:
-	nl80211_cleanup(&nlstate);
-
-	return err;
+    if(err == 1) {
+        usage(argv0);
+    }
+    if(err < 0){
+        dessert_crit("command failed: %s (%d)\n", strerror(-err), err);
+        return -1;
+    }
+out:
+    nl80211_cleanup(&nlstate);
+    return err;
 }
 
 /*creates the monitor devs*/
-int _dessert_set_mon()
-{
-
+int _dessert_set_mon() {
     char** cmdString;
     char** argString;
     char* ifconfigString;
@@ -650,8 +657,9 @@ int _dessert_set_mon()
 
     return 0;
 }
+
 /*deletes the monitor devs*/
-int _dessert_del_mon(){
+int _dessert_del_mon() {
 
     char** cmdString;
     int i,j;
@@ -659,7 +667,6 @@ int _dessert_del_mon(){
     cmdString = (char**)malloc(4*sizeof(char*));
     for (i=0;i<4;i++){
         cmdString[i] = (char*)malloc(10*sizeof(char));
-
     }
     cmdString[0]="iw";
     cmdString[1]="dev";
