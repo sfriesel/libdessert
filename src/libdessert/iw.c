@@ -598,7 +598,7 @@ int _dessert_set_mon() {
 
     char ipnum = 111;
     cmdString[0]="iw";
-    cmdString[1]="phy";
+    cmdString[1]="dev";
     cmdString[3]="interface";
     cmdString[4]="add";
     cmdString[6]="type";
@@ -622,6 +622,7 @@ int _dessert_set_mon() {
     return 0;
 }
 
+//TODO
 /*deletes the monitor devs*/
 int _dessert_del_mon() {
     char** cmdString;

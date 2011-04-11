@@ -710,44 +710,44 @@ void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char
     erg = parse(packet);
 
 
-    int skfd;		/* generic raw socket desc.	*/
-    int goterr = 0;
-    char * ifname= real_dev;
-
-    /* Create a channel to the NET kernel. */
-    if((skfd = iw_sockets_open()) < 0) {
-        dessert_crit("Error while opening socket for frequencefilter");
-        return;
-    }
-    struct wireless_config* info;
-    struct iwreq wrq;
-
-    info = (struct wireless_config*) calloc (1,sizeof(struct wireless_config));
-
-    if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0) {
-        /* If no wireless name : no wireless extensions */
-        return;
-    }
-    else {
-        strncpy(info->name, wrq.u.name, IFNAMSIZ);
-        info->name[IFNAMSIZ] = '\0';
-    }
-
-    if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0) {
-        info->has_freq = 1;
-        info->freq = iw_freq2float(&(wrq.u.freq));
-        info->freq_flags = wrq.u.freq.flags;
-    }
-    info->freq = info->freq/1000000;
-    close(skfd);
-
-    if(! (info->freq == erg.wr_channel) ){
-        return;
-    }
-    else{
-    }
-
-    free(info);
+//     int skfd;		/* generic raw socket desc.	*/
+//     int goterr = 0;
+//     char * ifname= real_dev;
+// 
+//     /* Create a channel to the NET kernel. */
+//     if((skfd = iw_sockets_open()) < 0) {
+//         dessert_crit("Error while opening socket for frequencefilter");
+//         return;
+//     }
+//     struct wireless_config* info;
+//     struct iwreq wrq;
+// 
+//     info = (struct wireless_config*) calloc (1,sizeof(struct wireless_config));
+// 
+//     if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0) {
+//         /* If no wireless name : no wireless extensions */
+//         return;
+//     }
+//     else {
+//         strncpy(info->name, wrq.u.name, IFNAMSIZ);
+//         info->name[IFNAMSIZ] = '\0';
+//     }
+// 
+//     if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0) {
+//         info->has_freq = 1;
+//         info->freq = iw_freq2float(&(wrq.u.freq));
+//         info->freq_flags = wrq.u.freq.flags;
+//     }
+//     info->freq = info->freq/1000000;
+//     close(skfd);
+// 
+//     if(! (info->freq == erg.wr_channel) ){
+//         return;
+//     }
+//     else{
+//     }
+// 
+//     free(info);
     management = (struct sniff_management*)(packet + input);
     insert_value(real_dev, erg.wr_ant_signal, management);
     return;
@@ -765,18 +765,18 @@ void* dessert_monitoring(void* device) {
     pcap_t *handle; /* packet capture handle */
     char k=0;
 
-    matrix_counter = get_hwaddr(addr_matrix);
-    merge_hwaddr(matrix_counter, addr_matrix);
+//     matrix_counter = get_hwaddr(addr_matrix);
+//     merge_hwaddr(matrix_counter, addr_matrix);
     dev = (u_char *) device;
 
-    for(k=0;k<matrix_counter;++k){
-        //dev_mon_name is the name of the real interface from the virtual monitor interface
-        if(strcmp(addr_matrix[k].dev_name,dev)==0) {
-            bcopy(addr_matrix[k].dev_mon_name , real_dev, 16);
-        }
-    }
+//     for(k=0;k<matrix_counter;++k){
+//         //dev_mon_name is the name of the real interface from the virtual monitor interface
+//         if(strcmp(addr_matrix[k].dev_name,dev)==0) {
+//             bcopy(addr_matrix[k].dev_mon_name , real_dev, 16);
+//         }
+//     }
 
-    dessert_info("starting worker thread for monitor interface %s [%s]",dev,real_dev);
+    dessert_info("starting worker thread for monitor interface %s",dev);
     // ignore all ACKS / CTS / RTS allow only managementframes and data-franes
     char filter_exp[] = "type mgt subtype beacon or type data"; /* filter expression [3] */
     struct bpf_program fp; /* compiled filter program (expression) */
@@ -823,7 +823,51 @@ void* dessert_monitoring(void* device) {
     return 0;
 }
 
+int _dessert_set_mon2(dessert_meshif_t *iface)
+{
+
+	char** cmdString;
+	char** argString;
+	char* ifconfigString;
+	int i,j;
+	j=0;
+	char buffer [50];
+  
+	cmdString = (char**)malloc(10*sizeof(char*));
+	ifconfigString = (char*)malloc(32*sizeof(char));	
+	
+	for (i=0;i<10;i++){ 
+		cmdString[i] = (char*)malloc(32*sizeof(char));
+	}
+
+	cmdString[0]="iw";
+	cmdString[1]="dev";
+	cmdString[3]="interface";
+	cmdString[4]="add";
+	cmdString[6]="type";
+	cmdString[7]="monitor";
+  
+	cmdString[2]= iface->if_name;
+	sprintf(cmdString[5],"mon_%s",cmdString[2]);
+	
+	sprintf(devString[mon_ifs_counter++],"%s",cmdString[5]); // saves the names of the monitor_interfaces
+	configure(8,cmdString);
+	dessert_info("monitor interface %s has been created",devString[mon_ifs_counter-1]);
+	sprintf(ifconfigString,"ifconfig %s up",devString[mon_ifs_counter-1]);
+	system(ifconfigString);
+
+
+	
+	return 0;
+}
+
+
 int dessert_monitoring_start(){
+  
+    dessert_meshif_t *iface;
+    MESHIFLIST_ITERATOR_START(iface) _dessert_set_mon2(iface);
+    MESHIFLIST_ITERATOR_STOP;
+    
     char i=0;
     char j=0;
     char k=0;
@@ -831,6 +875,7 @@ int dessert_monitoring_start(){
 
     pthread_t thread[mon_ifs_counter];
     pthread_t thread_maintenance;
+
 
     for(i=0;i<mon_ifs_counter;++i){
         pthread_create(&thread[i], NULL, dessert_monitoring, (void *) devString[i]);
