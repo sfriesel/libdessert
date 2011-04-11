@@ -349,9 +349,9 @@ int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], 
 
 /** command "logging file" */
 int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], int argc) {
-    FILE *newlogdf = NULL;
+    FILE *newlogfd = NULL;
 #ifdef HAVE_LIBZ
-    gzFile *newlogdfgz = NULL;
+    gzFile *newlogfdgz = NULL;
     const char gz[] = ".gz";
 #endif
 
@@ -372,21 +372,21 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
       if(wrong_fext) {
         char newname[len+sizeof(gz)+1];
         snprintf(newname, len+sizeof(gz)+1, "%s%s", argv[0], gz);
-        newlogdfgz = gzopen(newname, "a");
+        newlogfdgz = gzopen(newname, "a");
       }
       else {
-        newlogdfgz = gzopen(argv[0], "a");
+        newlogfdgz = gzopen(argv[0], "a");
       }
     }
     else
 #endif
     {
-      newlogdf = fopen(argv[0], "a");
+      newlogfd = fopen(argv[0], "a");
     }
 
-    if (newlogdf == NULL
+    if (newlogfd == NULL
 #ifdef HAVE_LIBZ
-      && newlogdfgz == NULL
+      && newlogfdgz == NULL
 #endif
       ) {
         dessert_err("failed to open %s as logfile\n", argv[0]);
@@ -405,13 +405,13 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
         gzclose(dessert_logfdgz);
     }
 #endif
-    if(newlogdf) {
-      dessert_logfd = newlogdf;
+    if(newlogfd) {
+      dessert_logfd = newlogfd;
       dessert_logcfg(DESSERT_LOG_FILE | DESSERT_LOG_NOGZ);
     }
 #ifdef HAVE_LIBZ
-    if(newlogdfgz) {
-      dessert_logfdgz = newlogdfgz;
+    if(newlogfdgz) {
+      dessert_logfdgz = newlogfdgz;
       dessert_logcfg(DESSERT_LOG_FILE | DESSERT_LOG_GZ);
     }
 #endif
@@ -420,6 +420,11 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
 
 int _dessert_closeLogFile() {
     dessert_notice("closing log file");
+    if(_dessert_log_flush_periodic) {
+        dessert_periodic_del(_dessert_log_flush_periodic);
+        _dessert_log_flush_periodic = NULL;
+    }
+    dessert_flush_log(NULL, NULL, NULL);
     pthread_mutex_lock(&_dessert_logfile_mutex);
     dessert_logcfg(DESSERT_LOG_NOFILE);
     if(dessert_logfd != NULL) {

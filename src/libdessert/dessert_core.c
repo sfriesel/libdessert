@@ -199,10 +199,7 @@ void _dessert_cleanup(void) {
     if(dessert_pidfile_name != NULL) {
         unlink(dessert_pidfile_name);
     }
-    /* delete monitor interfaces */
-    if(matrix_counter > 0) {
-        _dessert_del_mon();
-    }
+    _dessert_del_mon();
     _dessert_closeLogFile();
 #ifdef WITH_NET_SNMP
     /* kill snmp_worker thread */
