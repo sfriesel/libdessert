@@ -384,40 +384,6 @@ static void nl80211_cleanup(struct nl80211_state *state) {
     nl_handle_destroy(state->nl_handle);
 }
 
-static void usage(const char *argv0) {
-    struct cmd *cmd;
-
-    dessert_crit( "Usage:\t%s [options] command\n", argv0);
-    dessert_crit( "Options:\n");
-    dessert_crit( "\t--debug\t\tenable netlink debugging\n");
-    dessert_crit("Commands:\n");
-    for (cmd = &__start___cmd; cmd < &__stop___cmd; cmd++) {
-        switch (cmd->idby) {
-            case CIB_NONE:
-                /* fall through */
-            case CIB_PHY:
-                if(cmd->idby == CIB_PHY) {
-                    dessert_crit("\tphy <phyname> ");
-                }
-                /* fall through */
-            case CIB_NETDEV:
-                if(cmd->idby == CIB_NETDEV) {
-                    dessert_crit("\tdev <devname> ");
-                }
-                if(cmd->section) {
-                    dessert_crit("%s ", cmd->section);
-                }
-                dessert_crit("%s", cmd->name);
-                if(cmd->args) {
-                    dessert_crit(" %s", cmd->args);
-                }
-                break;
-        }
-    }
-}
-
-
-
 static int phy_lookup(char *name) {
     char buf[200];
     int fd, pos;
@@ -598,9 +564,6 @@ int configure(int argc, char **argv) {
         }
     }
 
-    if(err == 1) {
-        usage(argv0);
-    }
     if(err < 0){
         dessert_crit("command failed: %s (%d)\n", strerror(-err), err);
         return -1;
@@ -643,18 +606,18 @@ int _dessert_set_mon() {
 
     for(i=1; i<=mon_ifs_counter; i++) {
         cmdString[2]= argString[i];
-        sprintf(cmdString[5], "mon_%s", argString[i]);
-        sprintf(devString[i-1], "mon_%s", argString[i]); // saves the names of the monitor_interfaces
+        sprintf(cmdString[5], "moni_%s", argString[i]);
+        sprintf(devString[i-1], "moni_%s", argString[i]); // saves the names of the monitor_interfaces
         if(configure(8, cmdString) <0 ) {
             return -1;
         }
-        sprintf(ifconfigString, "ifconfig mon_%s 192.168.170.%d up", argString[i], ++ipnum);
+        sprintf(ifconfigString, "ifconfig moni_%s 192.168.170.%d up", argString[i], ++ipnum);
         system(ifconfigString);
         dessert_info("monitor interface %s has been created", devString[i-1]);
     }
     free(cmdString);
     /* double free!!! */
-    // free(ifconfigString);
+//     free(ifconfigString);
 
     return 0;
 }

@@ -771,14 +771,16 @@ void* dessert_monitoring(void* device) {
 
     for(k=0;k<matrix_counter;++k){
         //dev_mon_name is the name of the real interface from the virtual monitor interface
-        if(strcmp(addr_matrix[k].dev_name,dev)==0)bcopy(addr_matrix[k].dev_mon_name , real_dev, 16);
+        if(strcmp(addr_matrix[k].dev_name,dev)==0) {
+            bcopy(addr_matrix[k].dev_mon_name , real_dev, 16);
+        }
     }
 
     dessert_info("starting worker thread for monitor interface %s [%s]",dev,real_dev);
     // ignore all ACKS / CTS / RTS allow only managementframes and data-franes
     char filter_exp[] = "type mgt subtype beacon or type data"; /* filter expression [3] */
     struct bpf_program fp; /* compiled filter program (expression) */
-        bpf_u_int32 mask; /* subnet mask */
+    bpf_u_int32 mask; /* subnet mask */
     bpf_u_int32 net; /* ip */
 
     int num_packets = 0; /* number of packets to capture */
