@@ -814,7 +814,7 @@ void* dessert_monitoring(void* device) {
     /* now we can set our callback function */
     pthread_mutex_unlock(&sema2);
     //    printf("\nSEMA2: DE LOCK ");
-    pcap_loop(handle, num_packets, got_packet, real_dev);
+    pcap_loop(handle, num_packets, got_packet, dev);
 
     /* cleanup */
     pcap_freecode(&fp);

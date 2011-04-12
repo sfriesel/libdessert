@@ -34,6 +34,7 @@ int mon_ifs_counter=0;
 
  /* itoa:  convert n to characters in s */
 
+ //TODO obsolete
  /*searches for 802.11 physical interfaces*/
 char** phyDevices(){
 
@@ -573,6 +574,7 @@ out:
     return err;
 }
 
+//TODO obsolete
 /*creates the monitor devs*/
 int _dessert_set_mon() {
     char** cmdString;
