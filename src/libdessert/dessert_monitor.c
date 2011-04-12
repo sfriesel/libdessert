@@ -710,44 +710,44 @@ void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char
     erg = parse(packet);
 
 
-//     int skfd;		/* generic raw socket desc.	*/
-//     int goterr = 0;
-//     char * ifname= real_dev;
-// 
-//     /* Create a channel to the NET kernel. */
-//     if((skfd = iw_sockets_open()) < 0) {
-//         dessert_crit("Error while opening socket for frequencefilter");
-//         return;
-//     }
-//     struct wireless_config* info;
-//     struct iwreq wrq;
-// 
-//     info = (struct wireless_config*) calloc (1,sizeof(struct wireless_config));
-// 
-//     if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0) {
-//         /* If no wireless name : no wireless extensions */
-//         return;
-//     }
-//     else {
-//         strncpy(info->name, wrq.u.name, IFNAMSIZ);
-//         info->name[IFNAMSIZ] = '\0';
-//     }
-// 
-//     if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0) {
-//         info->has_freq = 1;
-//         info->freq = iw_freq2float(&(wrq.u.freq));
-//         info->freq_flags = wrq.u.freq.flags;
-//     }
-//     info->freq = info->freq/1000000;
-//     close(skfd);
-// 
-//     if(! (info->freq == erg.wr_channel) ){
-//         return;
-//     }
-//     else{
-//     }
-// 
-//     free(info);
+    int skfd;		/* generic raw socket desc.	*/
+    int goterr = 0;
+    char * ifname= real_dev;
+
+    /* Create a channel to the NET kernel. */
+    if((skfd = iw_sockets_open()) < 0) {
+        dessert_crit("Error while opening socket for frequencefilter");
+        return;
+    }
+    struct wireless_config* info;
+    struct iwreq wrq;
+
+    info = (struct wireless_config*) calloc (1,sizeof(struct wireless_config));
+
+    if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0) {
+        /* If no wireless name : no wireless extensions */
+        return;
+    }
+    else {
+        strncpy(info->name, wrq.u.name, IFNAMSIZ);
+        info->name[IFNAMSIZ] = '\0';
+    }
+
+    if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0) {
+        info->has_freq = 1;
+        info->freq = iw_freq2float(&(wrq.u.freq));
+        info->freq_flags = wrq.u.freq.flags;
+    }
+    info->freq = info->freq/1000000;
+    close(skfd);
+
+    if(! (info->freq == erg.wr_channel) ){
+        return;
+    }
+    else{
+    }
+
+    free(info);
     management = (struct sniff_management*)(packet + input);
     insert_value(real_dev, erg.wr_ant_signal, management);
     return;
