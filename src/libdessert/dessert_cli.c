@@ -359,18 +359,12 @@ static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
 static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command,
     char *argv[], int argc) {
     char k,i;
-    for(i=0;i<mon_ifs_counter;++i) {
-        for(k=0;k<matrix_counter;++k) {
-            //dev_mon_name is the name of the real interface from the virtual monitor interface
-            if(strcmp(addr_matrix[k].dev_name,devString[i])==0) {
-                cli_print(cli, "\nInformation for monitor interface [%s]", addr_matrix[k].dev_name);
-                cli_print(cli, "\t Macadress\t: [%02x:%02x:%02x:%02x:%02x:%02x]",
-                        addr_matrix[k].addr[0], addr_matrix[k].addr[1], addr_matrix[k].addr[2],
-                        addr_matrix[k].addr[3], addr_matrix[k].addr[4],addr_matrix[k].addr[5]);
-                cli_print(cli, "\t Related Device\t: [%s]", addr_matrix[k].dev_mon_name);
-            }
-        }
+    
+    for(i=0;i<mon_ifs_counter;i++){ 
+      
+	cli_print(cli, "\n Monitor device: [%s]", devString[i]);    
     }
+    
     return CLI_OK;
 }
 

@@ -481,8 +481,9 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
 
     }
 }
-
-int dessert_search_con( u_char sa[6], u_char *dest_dev){
+/* this function will return the average RSSI Value of the given connection, you also can provide a d_int* structur
+in this structur you will get the avg value and the number of values used to calculate the average*/
+int dessert_search_con( u_char sa[6], u_char *dest_dev, struct d_int* avg_val){
     if(status == 0) {
         return 0;
     }
@@ -521,7 +522,7 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev){
             if(strcmp(present_node->da,dest_dev)==0) {
                 pthread_mutex_unlock(&sema1);
                 // printf("\nDE LOCK search");
-                return avg_node(present_node,NULL);
+                return avg_node(present_node,avg_val);
             }
             if(!present_node->next) {
                 pthread_mutex_unlock(&sema1);
@@ -642,73 +643,73 @@ void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_managemen
     return;
 }
 
-char merge_hwaddr(char counter, struct addr_matrix addr_matrix[]){
-    char i=0;
-    char j=0;
-    char timer=0;
-    char k=0;
-    for(j=0;j<counter;++j) {
-        for(i=0;i<counter;++i) {
-            if(i!=j) {
-                timer=0;
-                for(k=0;k<6;++k) {
-                    if(addr_matrix[j].addr[k] == addr_matrix[i].addr[k]) {
-                        ++timer;
-                    }
-                }
-                if(timer==6) {
-                    //checks if hw_addr is related to an interface and a monitor interface
-                    if(addr_matrix[i].dev_name[0]=='m' && addr_matrix[i].dev_name[1]=='o' &&
-                        addr_matrix[i].dev_name[2]=='n' && addr_matrix[i].dev_name[3]=='i' &&                   addr_matrix[i].dev_name[4]=='_'){
-                        bcopy( addr_matrix[j].dev_name, addr_matrix[i].dev_mon_name, 16);
-                    }
-                }
-            }
-            else{
-                //
-            }
-        }
-    }
-    return 0;
-}
-
-char get_hwaddr(struct addr_matrix addr_matrix[]) {
-    struct ifreq ifr;
-    struct ifreq *IFR;
-    struct ifconf ifc;
-    char buf[1024];
-    int s, i;
-    char counter = 0;
-
-    s = socket(AF_INET, SOCK_DGRAM, 0);
-    if (s==-1) {
-        return -1;
-    }
-
-    ifc.ifc_len = sizeof(buf);
-    ifc.ifc_buf = buf;
-    ioctl(s, SIOCGIFCONF, &ifc);
-
-    IFR = ifc.ifc_req;
-    i=ifc.ifc_len / sizeof(struct ifreq);
-
-    for (i; --i >= 0; IFR++) {
-        strcpy(ifr.ifr_name, IFR->ifr_name);
-        if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
-            if (! (ifr.ifr_flags & IFF_LOOPBACK)) { // NO loopback interfaces
-                if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-                    bcopy( ifr.ifr_hwaddr.sa_data, addr_matrix[counter].addr, 6);
-                    strcpy(addr_matrix[counter].dev_name, IFR->ifr_name);
-                    ++counter;
-                }
-            }
-        }
-    }
-    i=0;
-
-    close(s);
-    return counter;
-}
+// char merge_hwaddr(char counter, struct addr_matrix addr_matrix[]){
+//     char i=0;
+//     char j=0;
+//     char timer=0;
+//     char k=0;
+//     for(j=0;j<counter;++j) {
+//         for(i=0;i<counter;++i) {
+//             if(i!=j) {
+//                 timer=0;
+//                 for(k=0;k<6;++k) {
+//                     if(addr_matrix[j].addr[k] == addr_matrix[i].addr[k]) {
+//                         ++timer;
+//                     }
+//                 }
+//                 if(timer==6) {
+//                     //checks if hw_addr is related to an interface and a monitor interface
+//                     if(addr_matrix[i].dev_name[0]=='m' && addr_matrix[i].dev_name[1]=='o' &&
+//                         addr_matrix[i].dev_name[2]=='n' && addr_matrix[i].dev_name[3]=='i' &&                   addr_matrix[i].dev_name[4]=='_'){
+//                         bcopy( addr_matrix[j].dev_name, addr_matrix[i].dev_mon_name, 16);
+//                     }
+//                 }
+//             }
+//             else{
+//                 //
+//             }
+//         }
+//     }
+//     return 0;
+// }
+// 
+// char get_hwaddr(struct addr_matrix addr_matrix[]) {
+//     struct ifreq ifr;
+//     struct ifreq *IFR;
+//     struct ifconf ifc;
+//     char buf[1024];
+//     int s, i;
+//     char counter = 0;
+// 
+//     s = socket(AF_INET, SOCK_DGRAM, 0);
+//     if (s==-1) {
+//         return -1;
+//     }
+// 
+//     ifc.ifc_len = sizeof(buf);
+//     ifc.ifc_buf = buf;
+//     ioctl(s, SIOCGIFCONF, &ifc);
+// 
+//     IFR = ifc.ifc_req;
+//     i=ifc.ifc_len / sizeof(struct ifreq);
+// 
+//     for (i; --i >= 0; IFR++) {
+//         strcpy(ifr.ifr_name, IFR->ifr_name);
+//         if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
+//             if (! (ifr.ifr_flags & IFF_LOOPBACK)) { // NO loopback interfaces
+//                 if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
+//                     bcopy( ifr.ifr_hwaddr.sa_data, addr_matrix[counter].addr, 6);
+//                     strcpy(addr_matrix[counter].dev_name, IFR->ifr_name);
+//                     ++counter;
+//                 }
+//             }
+//         }
+//     }
+//     i=0;
+// 
+//     close(s);
+//     return counter;
+// }
 
 void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *packet) {
     struct sniff_management* management;
