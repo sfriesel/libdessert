@@ -30,6 +30,11 @@
 /* ethernet headers are always exactly 14 bytes [1] */
 #define SIZE_ETHERNET 14
 
+struct d_int{
+  int value;
+  int number;
+};
+
 struct d_list_node{
   struct d_list_node *next;
   struct d_list_node *pre;
@@ -266,40 +271,7 @@ struct radiotap_header_opt_fields parse(const u_char *packet) {
     return out;
 }
 
-int print_database() {
-    if(status == 0) {
-        return 0;
-    }
-    else {
-        pthread_mutex_lock(&sema1);
-        int i;
-        int counter =0;
-        struct d_list_node* present_node_vertikal;
-        struct d_list_node* present_node_horizontal;
-        present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
-        //vertical level
-        while(1==1) {
-            present_node_horizontal = present_node_vertikal;
-            // horizontal level
-            while(1==1){
-                cli_print(dessert_cli,"\nDest: %02x:%02x:%02x:%02x:%02x:%02x\t Dev: %s\t RSSI: %d  ",present_node_horizontal->sa[0],
-                present_node_horizontal->sa[1],present_node_horizontal->sa[2],present_node_horizontal->sa[3],present_node_horizontal->sa[4],
-                present_node_horizontal->sa[5],present_node_horizontal->da, avg_node(present_node_horizontal) );
-                if(!present_node_horizontal->next){
-                    break;
-                }
-                present_node_horizontal = present_node_horizontal->next;
-            }
-            if(!present_node_vertikal->down){
-                pthread_mutex_unlock (&sema1);
-                return 0;
-            }
-        present_node_vertikal = present_node_vertikal->down;
-        }
-    }
-}
-
-int avg_node(struct d_list_node* node_temp){
+int avg_node(struct d_list_node* node_temp, struct d_int* avg_val){
     int j=0;
     int temp1=0;
     int temp2=0;
@@ -327,8 +299,52 @@ int avg_node(struct d_list_node* node_temp){
         return 0;
     }
     temp2= temp1 / (counter);
+    if(avg_val){
+    avg_val->value=temp2;
+    avg_val->number=counter;
+    }
     return temp2;
 }
+
+int print_database() {
+    if(status == 0) {
+        return 0;
+    }
+    else {
+        pthread_mutex_lock(&sema1);
+        int i;
+        int counter =0;
+        struct d_list_node* present_node_vertikal;
+        struct d_list_node* present_node_horizontal;
+        present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
+        //vertical level
+	struct d_int* avg_val = (struct d_int*) calloc(1,sizeof(struct d_int*));
+	avg_val->value=0;
+	avg_val->number=0;
+        while(1==1) {
+            present_node_horizontal = present_node_vertikal;
+            // horizontal level
+            while(1==1){
+		avg_node(present_node_horizontal,avg_val);
+                cli_print(dessert_cli,"\nDest: %02x:%02x:%02x:%02x:%02x:%02x\t Dev: %s\t RSSI: %d\t Values: %d",present_node_horizontal->sa[0],
+                present_node_horizontal->sa[1],present_node_horizontal->sa[2],present_node_horizontal->sa[3],present_node_horizontal->sa[4],
+                present_node_horizontal->sa[5],present_node_horizontal->da, avg_val->value, avg_val->number);
+                if(!present_node_horizontal->next){
+                    break;
+                }
+                free(avg_val);
+                present_node_horizontal = present_node_horizontal->next;
+            }
+            if(!present_node_vertikal->down){
+                pthread_mutex_unlock (&sema1);
+                return 0;
+            }
+        present_node_vertikal = present_node_vertikal->down;
+        }
+    }
+}
+
+
 
 /*deletes a node in the vertical level*/
 int delete(struct d_list_node* present_node_vertikal){
@@ -380,14 +396,17 @@ void maintenance(void* nothing){
         struct d_list_node* present_node_vertikal;
         struct d_list_node* present_node_horizontal; // = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
         present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
-
+/*	struct d_int* avg_val = (struct d_int*) calloc(1,sizeof(struct d_int*));
+	avg_val->value=0;
+	avg_val->number=0;
+	*/
         /*vertical level*/
         while(1==1) {
             present_node_horizontal = present_node_vertikal;
             sum=0;
             /*horizontal level*/
             while(1==1){
-                sum += avg_node(present_node_horizontal);
+                sum += avg_node(present_node_horizontal,NULL);
                 if(!present_node_horizontal->next){
                     if(sum==0){
                         /*if all horizontal nodes of a vertical level are too old the level will be deleted*/
@@ -395,6 +414,7 @@ void maintenance(void* nothing){
                     }
                     break;
                 }
+                
                 present_node_horizontal = present_node_horizontal->next;
             }
             if(!present_node_vertikal->down) {
@@ -472,6 +492,10 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev){
         int counter =0;
         struct d_list_node* present_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
         present_node = node; // node is the static global root of the whole database / dynamic matrix
+       /* struct d_int* avg_val = (struct d_int*) calloc(1,sizeof(struct d_int*));
+	avg_val->value=0;
+	avg_val->number=0;
+	*/
         /* searching in the vertical level*/
         while(1==1) {
             for(i=0;i<6;i++){
@@ -497,7 +521,7 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev){
             if(strcmp(present_node->da,dest_dev)==0) {
                 pthread_mutex_unlock(&sema1);
                 // printf("\nDE LOCK search");
-                return avg_node(present_node);
+                return avg_node(present_node,NULL);
             }
             if(!present_node->next) {
                 pthread_mutex_unlock(&sema1);
@@ -686,7 +710,7 @@ char get_hwaddr(struct addr_matrix addr_matrix[]) {
     return counter;
 }
 
-void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char *packet) {
+void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *packet) {
     struct sniff_management* management;
     u_short temp1=0;
     u_short temp2=0;
@@ -712,7 +736,9 @@ void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char
 
     int skfd;		/* generic raw socket desc.	*/
     int goterr = 0;
-    char * ifname= real_dev;
+
+    char * ifname= dev;
+
 
     /* Create a channel to the NET kernel. */
     if((skfd = iw_sockets_open()) < 0) {
@@ -749,7 +775,7 @@ void got_packet(u_char *real_dev, const struct pcap_pkthdr *header, const u_char
 
     free(info);
     management = (struct sniff_management*)(packet + input);
-    insert_value(real_dev, erg.wr_ant_signal, management);
+    insert_value(ifname, erg.wr_ant_signal, management);
     return;
 }
 
@@ -759,7 +785,9 @@ void* dessert_monitoring(void* device) {
     pthread_mutex_lock(&sema2);
     // printf("\nSEMA2: LOCK ");
     u_char *dev = (u_char*)malloc(16*sizeof(u_char)); /* capture device name */
+    
     u_char real_dev[16];
+    struct d_int* avg_val = (struct d_int*) calloc(1,sizeof(struct d_int)); 
 
     char errbuf[PCAP_ERRBUF_SIZE]; /* error buffer */
     pcap_t *handle; /* packet capture handle */
@@ -769,6 +797,8 @@ void* dessert_monitoring(void* device) {
 //     merge_hwaddr(matrix_counter, addr_matrix);
     dev = (u_char *) device;
 
+//    avg_val->dev=dev;
+    
 //     for(k=0;k<matrix_counter;++k){
 //         //dev_mon_name is the name of the real interface from the virtual monitor interface
 //         if(strcmp(addr_matrix[k].dev_name,dev)==0) {
@@ -814,7 +844,7 @@ void* dessert_monitoring(void* device) {
     /* now we can set our callback function */
     pthread_mutex_unlock(&sema2);
     //    printf("\nSEMA2: DE LOCK ");
-    pcap_loop(handle, num_packets, got_packet, dev);
+    pcap_loop(handle, num_packets, got_packet,(u_char*) dev);
 
     /* cleanup */
     pcap_freecode(&fp);
@@ -862,8 +892,16 @@ int _dessert_set_mon2(dessert_meshif_t *iface)
 }
 
 
-int dessert_monitoring_start(){
+int dessert_monitoring_start(char array_size2,char time_range){
   
+    if(array_size2){
+      array_size_node=array_size2;
+    }
+    if(time_range){
+      timer_range=time_range;
+    }
+      
+      
     dessert_meshif_t *iface;
     MESHIFLIST_ITERATOR_START(iface) _dessert_set_mon2(iface);
     MESHIFLIST_ITERATOR_STOP;

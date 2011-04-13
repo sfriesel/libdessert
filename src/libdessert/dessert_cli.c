@@ -315,7 +315,10 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
     return CLI_ERROR;
 }
 
-/** command "interface monitor"*/
+/** command "interface monitor"
+* @param[in] arrysize The first parmeter defines the arraysize of a node
+* @param[in] timer_range The second parameter defines how long collectes RSSI-Values are guilty
+*/
 static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
     char *argv[], int argc) {
     if(argc>=1 &&  32000 > atoi(argv[0]) && atoi(argv[0]) > 0) {
@@ -327,7 +330,7 @@ static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
         dessert_info("RSSI values are valid for %d seconds - default is 3",atoi(argv[1]));
     }
 
-	dessert_monitoring_start(); // starts capt. RSSI values
+	dessert_monitoring_start(NULL,NULL); // starts capt. RSSI values
 
 	return CLI_OK;
 }

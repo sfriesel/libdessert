@@ -592,7 +592,7 @@ int mon_ifs_counter;
  * functions
  ******************************************************************************/
 /* monitoring frames*/
-int dessert_monitoring_start();
+int dessert_monitoring_start(char array_size2,char time_range);
 int dessert_search_con( u_char sa[6], u_char da[6]);
 int _dessert_set_mon(void);
 int _dessert_del_mon(void);
