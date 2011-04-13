@@ -893,6 +893,10 @@ int _dessert_set_mon2(dessert_meshif_t *iface)
 
 
 int dessert_monitoring_start(char array_size2,char time_range){
+    if(status!=0){
+      return -1;
+    }
+  
   
     if(array_size2){
       array_size_node=array_size2;

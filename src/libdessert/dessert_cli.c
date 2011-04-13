@@ -321,6 +321,10 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
 */
 static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
     char *argv[], int argc) {
+  
+    if(status!=0){
+	return -1;
+    }
     if(argc>=1 &&  32000 > atoi(argv[0]) && atoi(argv[0]) > 0) {
         array_size_node=atoi(argv[0]);
         dessert_info("%d RSSI values per mac-adress will be recorded - default is 10",atoi(argv[0]));
