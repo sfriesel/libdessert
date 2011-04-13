@@ -571,6 +571,14 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 /** max. amount of monitor interfaces - relevant for monitorfunctions */
 #define NUMBER_OF_WIRELESSDEVICES 10
 
+/******************************************************************************
+* structs
+******************************************************************************/
+
+struct d_int{
+  int value;
+  int number;
+};
 
 /******************************************************************************
  * static variables
@@ -593,7 +601,7 @@ int mon_ifs_counter;
  ******************************************************************************/
 /* monitoring frames*/
 int dessert_monitoring_start(char array_size2,char time_range);
-int dessert_search_con( u_char sa[6], u_char da[6]);
+int dessert_search_con( u_char sa[6], u_char da[6], struct d_int* avg_val);
 int _dessert_set_mon(void);
 int _dessert_del_mon(void);
 void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(void * mem_ptr, struct d_list_node* node_temp), void * memo_ptr );

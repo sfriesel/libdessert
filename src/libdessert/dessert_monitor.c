@@ -30,10 +30,7 @@
 /* ethernet headers are always exactly 14 bytes [1] */
 #define SIZE_ETHERNET 14
 
-struct d_int{
-  int value;
-  int number;
-};
+
 
 struct d_list_node{
   struct d_list_node *next;
@@ -544,7 +541,11 @@ void insert_value_node(struct d_list_node* node_temp,u_int8_t wr_antsignal){
 }
 
 /*inserts a value in the matrix*/
-void insert_value(u_char* dest_dev, u_int8_t wr_antsignal,struct sniff_management* management){
+void insert_value(u_char* dest_dev_temp, u_int8_t wr_antsignal,struct sniff_management* management){
+    
+  /*strips of the "mon_" tag */
+    char* dest_dev = strndup(dest_dev_temp+4,strlen(dest_dev_temp)-4 );
+    
     int i;
     int counter =0;
     struct d_list_node* present_node;
