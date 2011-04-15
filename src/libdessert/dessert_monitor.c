@@ -766,7 +766,7 @@ void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *pac
         info->freq = iw_freq2float(&(wrq.u.freq));
         info->freq_flags = wrq.u.freq.flags;
     }
-    dessert_info("FREQUENCY: %d", info->freq );
+    dessert_info("FREQUENCY: %f", info->freq );
     info->freq = info->freq/1000000;
     close(skfd);
 
