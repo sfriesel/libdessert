@@ -3100,7 +3100,7 @@ am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
 ac_config_headers="$ac_config_headers config.h"
 
 
-LIBDESSERT_LIBRARY_VERSION=1:6:1
+LIBDESSERT_LIBRARY_VERSION=2:0:1
 
 
 # Checks for programs.
