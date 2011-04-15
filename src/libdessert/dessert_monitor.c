@@ -315,21 +315,20 @@ int print_database() {
         struct d_list_node* present_node_horizontal;
         present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
         //vertical level
-	struct d_int* avg_val = (struct d_int*) calloc(1,sizeof(struct d_int*));
-	avg_val->value=0;
-	avg_val->number=0;
+	struct d_int avg_val;
+	avg_val.value=0;
+	avg_val.number=0;
         while(1==1) {
             present_node_horizontal = present_node_vertikal;
             // horizontal level
             while(1==1){
-		avg_node(present_node_horizontal,avg_val);
+		avg_node(present_node_horizontal,&avg_val);
                 cli_print(dessert_cli,"\nDest: %02x:%02x:%02x:%02x:%02x:%02x\t Dev: %s\t RSSI: %d\t Values: %d",present_node_horizontal->sa[0],
                 present_node_horizontal->sa[1],present_node_horizontal->sa[2],present_node_horizontal->sa[3],present_node_horizontal->sa[4],
-                present_node_horizontal->sa[5],present_node_horizontal->da, avg_val->value, avg_val->number);
+                present_node_horizontal->sa[5],present_node_horizontal->da, avg_val.value, avg_val.number);
                 if(!present_node_horizontal->next){
                     break;
                 }
-                free(avg_val);
                 present_node_horizontal = present_node_horizontal->next;
             }
             if(!present_node_vertikal->down){
