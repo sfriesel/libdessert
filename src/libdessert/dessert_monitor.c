@@ -542,8 +542,7 @@ void insert_value_node(struct d_list_node* node_temp,u_int8_t wr_antsignal){
 /*inserts a value in the matrix*/
 void insert_value(u_char* dest_dev_temp, u_int8_t wr_antsignal,struct sniff_management* management){
     
-  /*strips of the "mon_" tag */
-    char* dest_dev = strndup(dest_dev_temp+4,strlen(dest_dev_temp)-4 );
+    char * dest_dev = dest_dev_temp;
     
     int i;
     int counter =0;
@@ -733,13 +732,16 @@ void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *pac
     struct radiotap_header_opt_fields erg;
 
     erg = parse(packet);
-    dessert_info("Interface %s RSSI: %d", dev,erg.wr_ant_signal);
+   // dessert_info("Interface %s RSSI: %d", dev,erg.wr_ant_signal);
 
 
     int skfd;		/* generic raw socket desc.	*/
     int goterr = 0;
 
     char * ifname= dev;
+    
+    /*strips of the "mon_" tag */
+    ifname = strndup(ifname+4,strlen(ifname)-4 );
 
 
     /* Create a channel to the NET kernel. */
@@ -766,16 +768,19 @@ void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *pac
         info.freq = iw_freq2float(&(wrq.u.freq));
         info.freq_flags = wrq.u.freq.flags;
     }
-    dessert_info("FREQUENCY: %f", info.freq );
+    //dessert_info("FREQUENCY: %f", info.freq );
     info.freq = info.freq/1000000;
     close(skfd);
 
-    if(! (info.freq == erg.wr_channel) ){
+    if(info.freq != erg.wr_channel){
         return;
     }
     else{
     }
     management = (struct sniff_management*)(packet + input);
+    
+
+    
     insert_value(ifname, erg.wr_ant_signal, management);
     return;
 }
