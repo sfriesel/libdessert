@@ -355,7 +355,7 @@ int delete(struct d_list_node* present_node_vertikal){
         node 	= present_node_vertikal->down;
         node->up= NULL;
         free(present_node_vertikal);
-        dessert_info("Root Deleting");
+        dessert_debug("Root Deleting");
         return 0;
     }
 
