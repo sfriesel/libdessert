@@ -1,4 +1,4 @@
-
+#ifndef ANDROID
 #include <pcap.h>
 #include <stdio.h>
 #include <string.h>
@@ -930,3 +930,4 @@ int dessert_monitoring_start(char array_size2,char time_range){
     }
     pthread_create(&thread_maintenance, NULL, maintenance_start, NULL);
 }
+#endif /* ANDROID */
