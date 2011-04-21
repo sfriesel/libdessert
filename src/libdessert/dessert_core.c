@@ -199,7 +199,7 @@ void _dessert_cleanup(void) {
     if(dessert_pidfile_name != NULL) {
         unlink(dessert_pidfile_name);
     }
-#ifdef ANDROID
+#ifndef ANDROID
     _dessert_del_mon();
 #endif
     _dessert_closeLogFile();
