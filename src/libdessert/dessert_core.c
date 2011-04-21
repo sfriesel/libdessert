@@ -199,7 +199,9 @@ void _dessert_cleanup(void) {
     if(dessert_pidfile_name != NULL) {
         unlink(dessert_pidfile_name);
     }
+#ifdef ANDROID
     _dessert_del_mon();
+#endif
     _dessert_closeLogFile();
 #ifdef WITH_NET_SNMP
     /* kill snmp_worker thread */
