@@ -237,9 +237,11 @@ int _dessert_cli_init() {
     dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
 			"interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
 			"create or configure interfaces");
+#ifndef ANDROID
     cli_register_command(dessert_cli, dessert_cli_cfg_iface,
                         "monitor", _dessert_cli_cmd_monitor_all, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
                         "Makes for the given  802.11-Interfaces a Monitor-Interfaces");
+#endif
     dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
             PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
     dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface",
