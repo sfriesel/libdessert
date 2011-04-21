@@ -5,7 +5,7 @@
 
   strongly customized 2010 by Johannes Klick <johannes.klick@fu-berlin.de>
  */
-
+#ifndef ANDROID
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -647,7 +647,7 @@ int _dessert_del_mon() {
     free(cmdString);
     return 0;
 }
-
+#endif /* ANDROID */
 
 
 
