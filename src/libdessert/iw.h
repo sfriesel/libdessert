@@ -1,3 +1,4 @@
+#ifndef ANDROID
 #ifndef __IW_H
 #define __IW_H
 
@@ -55,3 +56,4 @@ int mac_addr_n2a(char *mac_addr, unsigned char *arg);
 const char *iftype_name(enum nl80211_iftype iftype);
 
 #endif /* __IW_H */
+#endif /* ANDROID */
