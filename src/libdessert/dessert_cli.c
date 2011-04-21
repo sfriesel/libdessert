@@ -72,7 +72,9 @@ static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command, char *
 static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc);
+#ifndef ANDROID
 static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command, char *argv[], int argc);
+#endif
 static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif);
 /******************************************************************************
  *
@@ -223,13 +225,14 @@ int _dessert_cli_init() {
     cli_register_command(dessert_cli, dessert_cli_show, "sysif", _dessert_cli_cmd_showsysif,
             PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "Print the name of the TUN/TAP interface used as system interface.");
+#ifndef ANDROID
     cli_register_command(dessert_cli, dessert_cli_show, "monifs",_dessert_cli_cmd_showmonifs,
 			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"Print list of registered monitor interfaces.");
     cli_register_command(dessert_cli, dessert_cli_show, "mondb",_dessert_cli_cmd_showmondb,
 			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
 			"Print the monitor database - get informed about your connections.");
-    
+#endif
     /* initialize config mode commands */
     dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
 			"interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
@@ -319,6 +322,7 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
 * @param[in] arrysize The first parmeter defines the arraysize of a node
 * @param[in] timer_range The second parameter defines how long collectes RSSI-Values are guilty
 */
+#ifndef ANDROID
 static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
     char *argv[], int argc) {
   
@@ -338,7 +342,7 @@ static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
 
 	return CLI_OK;
 }
-
+#endif
 /**command "show meshifs" */
 static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
     char *argv[], int argc) {
