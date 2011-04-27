@@ -199,7 +199,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
     int lf_slen, buf_slen;
 
     if(_dessert_loglevel < level) {
-      return;
+        return;
     }
 
     snprintf(lf, 80, " (%s@%s:%d)", func, file, line);
@@ -253,27 +253,25 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
               break;
         }
 
-        if (_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
-          pthread_mutex_lock(&_dessert_logfile_mutex);
-          if(dessert_logfd != NULL) {
-            fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
-          }
+        if(_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
+            pthread_mutex_lock(&_dessert_logfile_mutex);
+            if(dessert_logfd != NULL) {
+                fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+            }
 #ifdef HAVE_LIBZ
-          else if(dessert_logfdgz != NULL) {
-            gzprintf(dessert_logfdgz, "%s%s%s\n%80s\n", lds, lt, buf, lf);
-          }
+            else if(dessert_logfdgz != NULL) {
+                gzprintf(dessert_logfdgz, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+            }
 #endif
-          pthread_mutex_unlock(&_dessert_logfile_mutex);
+            pthread_mutex_unlock(&_dessert_logfile_mutex);
         }
-        if (_dessert_logflags & _DESSERT_LOGFLAG_STDERR) {
+        if(_dessert_logflags & _DESSERT_LOGFLAG_STDERR) {
             fprintf(stderr, "%s%s%s\n%80s\n", lds, lt, buf, lf);
         }
-        if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL) {
-            snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds,
-                    lt, buf, lf);
+        if(_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL) {
+            snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds, lt, buf, lf);
         }
-
-        if (_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
+        if(_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
             pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
         }
     }
@@ -429,14 +427,14 @@ int _dessert_closeLogFile() {
     dessert_logcfg(DESSERT_LOG_NOFILE);
     if(dessert_logfd != NULL) {
         fclose(dessert_logfd);
+        dessert_logfd = NULL;
     }
-    dessert_logfd = NULL;
 
 #ifdef HAVE_LIBZ
     if(dessert_logfdgz != NULL) {
         gzclose(dessert_logfdgz);
+        dessert_logfdgz = NULL;
     }
-    dessert_logfdgz = NULL;
 #endif
     pthread_mutex_unlock(&_dessert_logfile_mutex);
     return 0;
