@@ -24,6 +24,7 @@ if !ANDROID
     libdessert_la_SOURCES += iw.c \
 			     dessert_monitor.c \
 			     iw.h
+else
     AM_CPPFLAGS += -DANDROID
     libdessert_la_LIBADD += pthreadex.la
 endif
