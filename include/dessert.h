@@ -576,8 +576,8 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 ******************************************************************************/
 
 struct d_int{
-  int value;
-  int number;
+  uint8_t value;
+  uint8_t number;
 };
 
 /******************************************************************************

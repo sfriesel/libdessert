@@ -392,10 +392,7 @@ void maintenance(void* nothing){
         struct d_list_node* present_node_vertikal;
         struct d_list_node* present_node_horizontal; // = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
         present_node_vertikal = node; // node is the static global root of the whole database / dynamic matrix
-/*	struct d_int* avg_val = (struct d_int*) calloc(1,sizeof(struct d_int*));
-	avg_val->value=0;
-	avg_val->number=0;
-	*/
+
         /*vertical level*/
         while(1==1) {
             present_node_horizontal = present_node_vertikal;
@@ -481,7 +478,7 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
 in this structur you will get the avg value and the number of values used to calculate the average*/
 int dessert_search_con( u_char sa[6], u_char *dest_dev, struct d_int* avg_val){
     if(status == 0) {
-        return 0;
+        return 1;
     }
     else {
         pthread_mutex_lock(&sema1);
@@ -489,10 +486,7 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev, struct d_int* avg_val){
         int counter =0;
         struct d_list_node* present_node = (struct d_list_node*) calloc (1,sizeof(struct d_list_node));
         present_node = node; // node is the static global root of the whole database / dynamic matrix
-       /* struct d_int* avg_val = (struct d_int*) calloc(1,sizeof(struct d_int*));
-	avg_val->value=0;
-	avg_val->number=0;
-	*/
+
         /* searching in the vertical level*/
         while(1==1) {
             for(i=0;i<6;i++){
@@ -509,7 +503,7 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev, struct d_int* avg_val){
             /*No vertical matrix level found, build new vertical level*/
             if(!present_node->down) {
                 pthread_mutex_unlock(&sema1);
-                return 0;
+                return 1;
             }
             present_node = present_node->down;
         }
@@ -517,12 +511,12 @@ int dessert_search_con( u_char sa[6], u_char *dest_dev, struct d_int* avg_val){
         while(1==1){
             if(strcmp(present_node->da,dest_dev)==0) {
                 pthread_mutex_unlock(&sema1);
-                // printf("\nDE LOCK search");
-                return avg_node(present_node,avg_val);
+                avg_node(present_node,avg_val);
+		return 0;
             }
             if(!present_node->next) {
                 pthread_mutex_unlock(&sema1);
-                return 0;
+                return 1;
             }
             present_node = present_node->next;
         }
@@ -642,74 +636,6 @@ void insert_value(u_char* dest_dev_temp, u_int8_t wr_antsignal,struct sniff_mana
     return;
 }
 
-// char merge_hwaddr(char counter, struct addr_matrix addr_matrix[]){
-//     char i=0;
-//     char j=0;
-//     char timer=0;
-//     char k=0;
-//     for(j=0;j<counter;++j) {
-//         for(i=0;i<counter;++i) {
-//             if(i!=j) {
-//                 timer=0;
-//                 for(k=0;k<6;++k) {
-//                     if(addr_matrix[j].addr[k] == addr_matrix[i].addr[k]) {
-//                         ++timer;
-//                     }
-//                 }
-//                 if(timer==6) {
-//                     //checks if hw_addr is related to an interface and a monitor interface
-//                     if(addr_matrix[i].dev_name[0]=='m' && addr_matrix[i].dev_name[1]=='o' &&
-//                         addr_matrix[i].dev_name[2]=='n' && addr_matrix[i].dev_name[3]=='i' &&                   addr_matrix[i].dev_name[4]=='_'){
-//                         bcopy( addr_matrix[j].dev_name, addr_matrix[i].dev_mon_name, 16);
-//                     }
-//                 }
-//             }
-//             else{
-//                 //
-//             }
-//         }
-//     }
-//     return 0;
-// }
-// 
-// char get_hwaddr(struct addr_matrix addr_matrix[]) {
-//     struct ifreq ifr;
-//     struct ifreq *IFR;
-//     struct ifconf ifc;
-//     char buf[1024];
-//     int s, i;
-//     char counter = 0;
-// 
-//     s = socket(AF_INET, SOCK_DGRAM, 0);
-//     if (s==-1) {
-//         return -1;
-//     }
-// 
-//     ifc.ifc_len = sizeof(buf);
-//     ifc.ifc_buf = buf;
-//     ioctl(s, SIOCGIFCONF, &ifc);
-// 
-//     IFR = ifc.ifc_req;
-//     i=ifc.ifc_len / sizeof(struct ifreq);
-// 
-//     for (i; --i >= 0; IFR++) {
-//         strcpy(ifr.ifr_name, IFR->ifr_name);
-//         if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
-//             if (! (ifr.ifr_flags & IFF_LOOPBACK)) { // NO loopback interfaces
-//                 if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-//                     bcopy( ifr.ifr_hwaddr.sa_data, addr_matrix[counter].addr, 6);
-//                     strcpy(addr_matrix[counter].dev_name, IFR->ifr_name);
-//                     ++counter;
-//                 }
-//             }
-//         }
-//     }
-//     i=0;
-// 
-//     close(s);
-//     return counter;
-// }
-
 void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *packet) {
     struct sniff_management* management;
     u_short temp1=0;
@@ -732,9 +658,7 @@ void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *pac
     struct radiotap_header_opt_fields erg;
 
     erg = parse(packet);
-   // dessert_info("Interface %s RSSI: %d", dev,erg.wr_ant_signal);
-
-
+    
     int skfd;		/* generic raw socket desc.	*/
     int goterr = 0;
 
@@ -768,7 +692,7 @@ void got_packet(u_char *dev, const struct pcap_pkthdr *header, const u_char *pac
         info.freq = iw_freq2float(&(wrq.u.freq));
         info.freq_flags = wrq.u.freq.flags;
     }
-    //dessert_info("FREQUENCY: %f", info.freq );
+
     info.freq = info.freq/1000000;
     close(skfd);
 
@@ -798,19 +722,8 @@ void* dessert_monitoring(void* device) {
     char errbuf[PCAP_ERRBUF_SIZE]; /* error buffer */
     pcap_t *handle; /* packet capture handle */
     char k=0;
-
-//     matrix_counter = get_hwaddr(addr_matrix);
-//     merge_hwaddr(matrix_counter, addr_matrix);
-    dev = (u_char *) device;
-
-//    avg_val->dev=dev;
     
-//     for(k=0;k<matrix_counter;++k){
-//         //dev_mon_name is the name of the real interface from the virtual monitor interface
-//         if(strcmp(addr_matrix[k].dev_name,dev)==0) {
-//             bcopy(addr_matrix[k].dev_mon_name , real_dev, 16);
-//         }
-//     }
+    dev = (u_char *) device;
 
     dessert_info("starting worker thread for monitor interface %s",dev);
     // ignore all ACKS / CTS / RTS allow only managementframes and data-franes
