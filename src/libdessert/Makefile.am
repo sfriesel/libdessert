@@ -19,7 +19,7 @@ if ANDROID
 			   @CLI_LIBS@\
 			   @PTHREAD_LIBS@
     AM_CPPFLAGS += -DANDROID
-    libdessert_la_LIBADD += pthreadex.a
+    ## libdessert_la_LIBADD += pthreadex.a ## TODO: check why this is here
 else
     libdessert_la_SOURCES += iw.c \
 			     dessert_monitor.c \
