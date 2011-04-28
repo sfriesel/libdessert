@@ -24,7 +24,10 @@ else
     libdessert_la_SOURCES += iw.c \
 			     dessert_monitor.c \
 			     iw.h
-    libdessert_la_LIBADD = -lnl
+    libdessert_la_LIBADD = -lnl \
+			   @PCAP_LIBS@ \
+			   @CLI_LIBS@\
+			   @PTHREAD_LIBS@
 endif
 
 libdessert_la_LDFLAGS = -version-number @LIBDESSERT_LIBRARY_VERSION@
