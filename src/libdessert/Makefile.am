@@ -2,7 +2,6 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include \
               @PCAP_CFLAGS@ \
               @PTHREAD_CFLAGS@
-		
 
 lib_LTLIBRARIES = libdessert.la
 
@@ -15,20 +14,18 @@ libdessert_la_SOURCES = dessert_core.c \
                         dessert_msg.c \
                         dessert_sysiface.c \
                         dessert_internal.h
-		
-libdessert_la_LIBADD = 	@PCAP_LIBS@ \
-                        @CLI_LIBS@ \
-                        @PTHREAD_LIBS@
-
-if !ANDROID
+if ANDROID
+    libdessert_la_LIBADD = @PCAP_LIBS@ \
+			   @CLI_LIBS@\
+			   @PTHREAD_LIBS@
+    AM_CPPFLAGS += -DANDROID
+    libdessert_la_LIBADD += pthreadex.a
+else
     libdessert_la_SOURCES += iw.c \
 			     dessert_monitor.c \
 			     iw.h
-else
-    AM_CPPFLAGS += -DANDROID
-    libdessert_la_LIBADD += pthreadex.la
+    libdessert_la_LIBADD = -lnl
 endif
-		
 
 libdessert_la_LDFLAGS = -version-number @LIBDESSERT_LIBRARY_VERSION@
 
