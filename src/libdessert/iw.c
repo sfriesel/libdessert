@@ -574,57 +574,7 @@ out:
     return err;
 }
 
-//TODO obsolete
-/*creates the monitor devs*/
-int _dessert_set_mon() {
-    char** cmdString;
-    char** argString;
-    char* ifconfigString;
-    int i,j;
-    char buffer [50];
 
-    cmdString = (char**)malloc(10*sizeof(char*));
-    ifconfigString = (char*)malloc(32*sizeof(char));
-    for (i=0;i<10;i++){
-        cmdString[i] = (char*)malloc(32*sizeof(char));
-    }
-
-    argString = phyDevices();
-
-    if(argString){
-        mon_ifs_counter = atoi(argString[0]);
-    }
-    else{
-        return -1;
-    }
-
-    char ipnum = 111;
-    cmdString[0]="iw";
-    cmdString[1]="dev";
-    cmdString[3]="interface";
-    cmdString[4]="add";
-    cmdString[6]="type";
-    cmdString[7]="monitor";
-
-    for(i=1; i<=mon_ifs_counter; i++) {
-        cmdString[2]= argString[i];
-        sprintf(cmdString[5], "moni_%s", argString[i]);
-        sprintf(devString[i-1], "moni_%s", argString[i]); // saves the names of the monitor_interfaces
-        if(configure(8, cmdString) <0 ) {
-            return -1;
-        }
-        sprintf(ifconfigString, "ifconfig moni_%s 192.168.170.%d up", argString[i], ++ipnum);
-        system(ifconfigString);
-        dessert_info("monitor interface %s has been created", devString[i-1]);
-    }
-    free(cmdString);
-    /* double free!!! */
-//     free(ifconfigString);
-
-    return 0;
-}
-
-//TODO
 /*deletes the monitor devs*/
 int _dessert_del_mon() {
     char** cmdString;
