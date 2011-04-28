@@ -3,10 +3,10 @@
 # important configuration variables, check these if something went wrong
 SVN_LIBDESSERT=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/trunk
 SVN_LIBDESSERT_EXTRA=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert-extra/trunk
-SVN_IP6=https://svn.mi.fu-berlin.de/cst-students/MA-Thesis/2010-Baradari-Ramin/Src/include/netinet
-SVN_LIBREGEX=https://svn.mi.fu-berlin.de/cst-students/MA-Thesis/2010-Baradari-Ramin/Src/libregex/
-SVN_LIBPTHREADEX=https://svn.mi.fu-berlin.de/cst-students/MA-Thesis/2010-Baradari-Ramin/Src/libpthreadex/
-SVN_LIBCLIPATCH=https://svn.mi.fu-berlin.de/cst-students/MA-Thesis/2010-Baradari-Ramin/Src/libcli-patch/
+SVN_IP6=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/android/netinet
+SVN_LIBREGEX=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/android/libregex/
+SVN_LIBPTHREADEX=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/android/libpthreadex/
+SVN_LIBCLIPATCH=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/android/libcli-patch/
 
 # the android platform (e.g. android-3, android-4, android-5 ...)
 ANDROID_PLATFORM=android-3
@@ -216,7 +216,11 @@ rm -rf libcli libcli-patch libdessert libpcap-1.1.1 libpthreadex libregex uthash
 echo "Building archive..."
 tar cvzf libdessert_android.tar.gz dessert-lib &> /dev/null
 
-echo "Congratulations. You successfully compiled all needed libraries."
+echo ""
+echo "IMPORTANT: Check if any errors occured! If yes, you first need to manually fix them and restart this script."
+echo ""
+echo "PRESS A KEY TO CONTINUE..."
+read -n 1 -s
 echo "The library has been tar'ed to the file libdessert_android.tar.gz."
 echo "=================================================================="
 echo "As last step you have to set the following environment variables:"
