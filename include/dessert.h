@@ -84,34 +84,32 @@
 #ifndef DESSERT_H
 #define DESSERT_H
 
-#ifdef __DARWIN__
-#include <net/if_dl.h>
-#define TUN_BSD
-#endif
-
 #ifdef __linux__
 #define TUN_LINUX
 #endif
 
-// #ifdef HAVE_CONFIG_H
-// #include <config.h>
-// #endif
-
-#include <pcap.h>
 #include <stdint.h>
-#include <syslog.h>
 #include <stdlib.h>
-#include <libcli.h>
 #include <signal.h>
+#include <net/if.h>
+#include <syslog.h>
+#include <pcap.h>
+#include <libcli.h>
+
+//fix warnings for broken net-snmp include
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef PACKAGE_BUGREPORT
+#include "config.h"
 
 #ifdef ANDROID
 #include <pthread.h>
 #include <pthreadex.h>
-#include <net/if.h>
 #include <net/if_ether.h>
 #include <netinet/in6.h>
 #else
-#include <net/if.h>
 #include <net/ethernet.h>
 #endif
 

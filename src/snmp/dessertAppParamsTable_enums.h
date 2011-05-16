@@ -7,8 +7,6 @@
 #ifndef DESSERTAPPPARAMSTABLE_ENUMS_H
 #define DESSERTAPPPARAMSTABLE_ENUMS_H
 
-#include "dessert.h"
-
 #ifdef __cplusplus
 extern          "C" {
 #endif
