@@ -6,6 +6,15 @@
  *
  * This part of the documentation explains what files you need and what preparations you have to do to be able to compile and build the DES-SERT daemons for Android.
  *
+ *
+ * @section sec_Android_automatic The easy way to set up the build environment
+ *
+ * In most cases you should be able to get a complete and running environment by running the script <a href="https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/trunk/android">android.sh</a>.
+ * It fetches and builds all dependencies and tells you what environment variables you need to set.
+ * After running the script without errors, you can simply do a "make android" from any daemon's source directory to build it.
+ * 
+ * If for any reason you are not satisfied with the automatic script...read on ;). 
+ *
  * @section sec_Android_whatyouneed What files do I need...
  *
  * @subsection sub_files_compilation ...for compilation
