@@ -44,7 +44,7 @@ AC_CHECK_HEADERS([libcli.h])
 AC_SEARCH_LIBS([cli_print],
                [cli],
                [AC_DEFINE([CLI_LIBS],[-lcli],[defines linkoption for libcli])],
-               [AC_MSG_ERROR([libcli could not found, please install development package of libcli])]
+               [AC_MSG_ERROR([libcli could not be found, please install development package of libcli])]
 )
 AC_SUBST([CLI_LIBS])
 
@@ -52,12 +52,14 @@ AC_SUBST([CLI_LIBS])
 AC_CHECK_HEADERS([uthash.h])
 AC_CHECK_HEADERS([utlist.h])
 
+AC_CHECK_HEADERS([iwlib.h])
+
 # Checks for libraries.
 
 AX_PTHREAD(,[AC_MSG_ERROR([Your system does not support a pthread variant, libdessert will not work])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([netlink/genl/genl.h iwlib.h arpa/inet.h fcntl.h netinet/in.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h syslog.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h netinet/in.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h syslog.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
