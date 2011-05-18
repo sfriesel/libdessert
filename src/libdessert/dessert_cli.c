@@ -30,15 +30,6 @@
 #define HOST_NAME_MAX 32
 #endif
 
-#ifdef HAVE_CONFIG_H
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#include <config.h>
-#endif
-
 /* global data storage // P U B L I C */
 
 struct cli_def *dessert_cli;
