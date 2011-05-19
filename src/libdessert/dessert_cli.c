@@ -231,7 +231,7 @@ int _dessert_cli_init() {
 #ifndef ANDROID
     cli_register_command(dessert_cli, dessert_cli_cfg_iface,
                         "monitor", _dessert_cli_cmd_monitor_all, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                        "Makes for the given  802.11-Interfaces a Monitor-Interfaces");
+                        "Creates a monitor interface for a IEEE 802.11 interface");
 #endif
     dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
             PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
@@ -319,19 +319,19 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
 static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
     char *argv[], int argc) {
   
-    if(status!=0){
-	return -1;
+    if(status!=0) {
+    	return -1;
     }
-    if(argc>=1 &&  32000 > atoi(argv[0]) && atoi(argv[0]) > 0) {
+    if(argc>=1 && 32000 > atoi(argv[0]) && atoi(argv[0]) > 0) {
         array_size_node=atoi(argv[0]);
         dessert_info("%d RSSI values per mac-adress will be recorded - default is 10",atoi(argv[0]));
     }
-    if(argc>=2 &&  32000 > atoi(argv[1]) && atoi(argv[1]) > 0) {
+    if(argc>=2 && 32000 > atoi(argv[1]) && atoi(argv[1]) > 0) {
         timer_range=atoi(argv[1]);
         dessert_info("RSSI values are valid for %d seconds - default is 3",atoi(argv[1]));
     }
 
-	dessert_monitoring_start(NULL,NULL); // starts capt. RSSI values
+	dessert_monitoring_start(0, 0); // starts capt. RSSI values
 
 	return CLI_OK;
 }
