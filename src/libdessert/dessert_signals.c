@@ -208,6 +208,7 @@ void* dessert_signal_thread(void* param) {
         }
     }
     dessert_emerg("signal thread exited");
+    return NULL;
 }
 
 int _dessert_signals_init() {

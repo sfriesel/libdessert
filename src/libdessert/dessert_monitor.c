@@ -419,11 +419,12 @@ void maintenance(void* nothing){
     }
 }
 
-void maintenance_start(void* nothing){
+void* maintenance_start(void* nothing){
     while(1){
         sleep(10);
         maintenance(nothing);
     }
+    return NULL;
 }
 
 void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(void * mem_ptr, struct d_list_node* node_temp), void * memo_ptr ){
