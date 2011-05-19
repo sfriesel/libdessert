@@ -167,7 +167,10 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 	/* do ifconfig to set the interface up - strange things happen otherwise */
 	buf = malloc(IF_NAMESIZE + 16);
 	snprintf(buf, IF_NAMESIZE + 15, "ifconfig %s up", _dessert_sysif->if_name);
-	system(buf);
+	int i = system(buf);
+    if(i < 0) {
+        dessert_warning("\"ifconfig %s up\" failed!", _dessert_sysif->if_name);
+    }
 	free(buf);
 
 	/* get hardware address in tap mode if possible */

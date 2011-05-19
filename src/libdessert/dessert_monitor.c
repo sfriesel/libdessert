@@ -803,10 +803,10 @@ int _dessert_set_mon2(dessert_meshif_t *iface)
 	configure(8,cmdString);
 	dessert_info("monitor interface %s has been created",devString[mon_ifs_counter-1]);
 	sprintf(ifconfigString,"ifconfig %s up",devString[mon_ifs_counter-1]);
-	system(ifconfigString);
-
-
-	
+	int r = system(ifconfigString);
+    if(r < 0) {
+        dessert_warning("\"ifconfig %s up\" failed!", devString[mon_ifs_counter-1]);
+    }
 	return 0;
 }
 
