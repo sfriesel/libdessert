@@ -489,7 +489,7 @@ static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
 // static void *_dessert_cli_thread(void* arg) {
 //   int sd = *((int*) arg);
 //   struct cli_def* dessert_cli_thread = _dessert_clone_cli();;
-//   cli_loop(dessert_cli_thread, sd); /* pass the connection off to libcli */
+//   cli_loop(dessert_cli_thread, sd);
 //   close(sd);
 //   return NULL;
 // }

@@ -203,7 +203,7 @@ extern int timer_range;
 /** size of a dessert_msg_proc struct */
 #define DESSERT_MSGPROCLEN sizeof(struct dessert_msg_proc)
 
-// /** maximum frame size to assemble as dessert_msg */
+// maximum frame size to assemble as dessert_msg
 // #define DESSERT_MAXFRAMEBUFLEN DESSERT_MAXFRAMELEN
 
 /******************************************************************************
