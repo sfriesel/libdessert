@@ -534,7 +534,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 /***************************************************************************//**
  * @}
  * @ingroup libdessert
- * @defgroup mesh mesh Interfaces
+ * @defgroup monitor
  *
  * @brief EXTERNAL / PUBLIC
  *
@@ -542,39 +542,8 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
  ******************************************************************************/
 
 /******************************************************************************
- * #defines
+ * structs
  ******************************************************************************/
-
-/** return code for dessert_meshrxcb_t - forces to copy the message and call again*/
-#define DESSERT_MSG_NEEDNOSPARSE     1
-
-/** return code for dessert_meshrxcb_t - forces to generate processing info and call again*/
-#define DESSERT_MSG_NEEDMSGPROC      2
-
-/** return code for dessert_meshrxcb_t and dessert_sysrxcb_t */
-#define DESSERT_MSG_KEEP             0
-
-/** return code for dessert_meshrxcb_t and dessert_sysrxcb_t */
-#define DESSERT_MSG_DROP             -1
-
-/** flag for dessert_meshif_add - set interface in promiscuous-mode (default) */
-#define DESSERT_IF_PROMISC 0x0
-
-/** flag for dessert_meshif_add - do not set interface in promiscuous-mode */
-#define DESSERT_IF_NOPROMISC 0x1
-
-/** flag for dessert_meshif_add - filter out non-des-sert frames in libpcap (default) */
-#define DESSERT_IF_FILTER 0x0
-
-/** flag for dessert_meshif_add - do not filter out non-des-sert frames in libpcap */
-#define DESSERT_IF_NOFILTER 0x2
-
-/** max. amount of monitor interfaces - relevant for monitorfunctions */
-#define NUMBER_OF_WIRELESSDEVICES 10
-
-/******************************************************************************
-* structs
-******************************************************************************/
 
 struct d_int{
   uint8_t value;
@@ -628,6 +597,55 @@ int dessert_search_con( u_char sa[6], u_char da[6], struct d_int* avg_val);
 int _dessert_set_mon(void);
 int _dessert_del_mon(void);
 void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(void * mem_ptr, struct d_list_node* node_temp), void * memo_ptr );
+
+/***************************************************************************//**
+ * @}
+ * @ingroup libdessert
+ * @defgroup mesh mesh Interfaces
+ *
+ * @brief EXTERNAL / PUBLIC
+ *
+ * @{
+ ******************************************************************************/
+
+/******************************************************************************
+ * #defines
+ ******************************************************************************/
+
+/** return code for dessert_meshrxcb_t - forces to copy the message and call again*/
+#define DESSERT_MSG_NEEDNOSPARSE     1
+
+/** return code for dessert_meshrxcb_t - forces to generate processing info and call again*/
+#define DESSERT_MSG_NEEDMSGPROC      2
+
+/** return code for dessert_meshrxcb_t and dessert_sysrxcb_t */
+#define DESSERT_MSG_KEEP             0
+
+/** return code for dessert_meshrxcb_t and dessert_sysrxcb_t */
+#define DESSERT_MSG_DROP             -1
+
+/** flag for dessert_meshif_add - set interface in promiscuous-mode (default) */
+#define DESSERT_IF_PROMISC 0x0
+
+/** flag for dessert_meshif_add - do not set interface in promiscuous-mode */
+#define DESSERT_IF_NOPROMISC 0x1
+
+/** flag for dessert_meshif_add - filter out non-des-sert frames in libpcap (default) */
+#define DESSERT_IF_FILTER 0x0
+
+/** flag for dessert_meshif_add - do not filter out non-des-sert frames in libpcap */
+#define DESSERT_IF_NOFILTER 0x2
+
+/** max. amount of monitor interfaces - relevant for monitorfunctions */
+#define NUMBER_OF_WIRELESSDEVICES 10
+
+/******************************************************************************
+* structs
+******************************************************************************/
+
+/******************************************************************************
+ * functions
+ ******************************************************************************/
 
 /* sending messages */
 int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface);
