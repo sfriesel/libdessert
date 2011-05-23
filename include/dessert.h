@@ -142,6 +142,9 @@
 /** runtime-unique frame id */
 typedef uint64_t dessert_frameid_t;
 
+/** ethernet address */
+typedef uint8_t mac_addr[ETHER_ADDR_LEN];
+
 /** Structure of the DES-SERT Message
  *
  * All packets sent over a network using DES-SERT based routing daemons
@@ -571,6 +574,28 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
 struct d_int{
   uint8_t value;
   uint8_t number;
+};
+
+struct rssi_sample {
+	time_t time;
+	int8_t rssi;
+	int8_t noise;
+	u_int8_t rate;
+	u_int8_t retry;
+};
+
+struct avg_node_result {
+	int8_t avg_rssi;
+	int8_t avg_noise;
+	u_int8_t avg_rate;
+	u_int8_t amount;
+	u_int8_t sum_retries;
+};
+
+struct monitor_neighbour {
+	struct monitor_neighbour *prev, *next;
+	mac_addr addr;
+	struct rssi_sample *samples;
 };
 
 /******************************************************************************
