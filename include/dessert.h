@@ -237,7 +237,12 @@ typedef struct dessert_meshif {
     char                pcap_err[PCAP_ERRBUF_SIZE];
     /** pthread running the request loop */
     pthread_t           worker;
-
+    /** rwlock for accessing this meshif's neighbour list */
+    pthread_rwlock_t    monitor_neighbour_lock;
+    /** list of neighbours being monitored */
+    struct monitor_neighbour *neighbours;
+    /** non-zero if interface is being monitored */
+    uint8_t             monitor_active;
     /** pointer to prev interface */
     struct dessert_meshif    *prev;
 } dessert_meshif_t;
