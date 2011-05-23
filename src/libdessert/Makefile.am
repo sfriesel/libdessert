@@ -23,7 +23,7 @@ if ANDROID
     ## libdessert_la_LIBADD += pthreadex.a ## TODO: check why this is here
 endif
 
-libdessert_la_LDFLAGS = -version-number @LIBDESSERT_LIBRARY_VERSION@
+libdessert_la_LDFLAGS = -version-number @LIBDESSERT_LIBRARY_VERSION@ -Wl,--no-undefined
 
 if WITH_NET_SNMP
     AM_CPPFLAGS += -I../snmp \

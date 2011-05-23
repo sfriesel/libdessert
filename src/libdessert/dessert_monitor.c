@@ -775,40 +775,22 @@ void* dessert_monitoring(void* device) {
 
 int _dessert_set_mon2(dessert_meshif_t *iface)
 {
+    char cmdBuf[100];
+    sprintf(cmdBuf, "iw dev %s interface add mon_%s type monitor", iface->if_name, iface->if_name);
 
-	char** cmdString;
-	char** argString;
-	char* ifconfigString;
-	int i,j;
-	j=0;
-	char buffer [50];
-  
-	cmdString = (char**)malloc(10*sizeof(char*));
-	ifconfigString = (char*)malloc(32*sizeof(char));	
-	
-	for (i=0;i<10;i++){ 
-		cmdString[i] = (char*)malloc(32*sizeof(char));
-	}
+    if(system(cmdBuf) < 0) {
+        //The value returned is -1 on error, and the return status of the command otherwise.
+        dessert_crit("Couldn't create device: iw dev %s interface add mon_%s type monitor", iface->if_name, iface->if_name);
+        return -1;
+    }
+    sprintf(devString[mon_ifs_counter++],"mon_%s",iface->if_name); // saves the names of the monitor_interfaces
+    dessert_info("monitor interface %s has been created",devString[mon_ifs_counter-1]);
 
-	cmdString[0]="iw";
-	cmdString[1]="dev";
-	cmdString[3]="interface";
-	cmdString[4]="add";
-	cmdString[6]="type";
-	cmdString[7]="monitor";
-  
-	cmdString[2]= iface->if_name;
-	sprintf(cmdString[5],"mon_%s",cmdString[2]);
-	
-	sprintf(devString[mon_ifs_counter++],"%s",cmdString[5]); // saves the names of the monitor_interfaces
-	configure(8,cmdString);
-	dessert_info("monitor interface %s has been created",devString[mon_ifs_counter-1]);
-	sprintf(ifconfigString,"ifconfig %s up",devString[mon_ifs_counter-1]);
-	int r = system(ifconfigString);
-    if(r < 0) {
+    sprintf(cmdBuf, "ifconfig %s up", devString[mon_ifs_counter-1]);
+    if(system(cmdBuf) < 0) {
         dessert_warning("\"ifconfig %s up\" failed!", devString[mon_ifs_counter-1]);
     }
-	return 0;
+    return 0;
 }
 
 
@@ -844,4 +826,21 @@ int dessert_monitoring_start(char array_size2, char time_range){
     }
     pthread_create(&thread_maintenance, NULL, maintenance_start, NULL);
 }
+
+/*deletes the monitor devs*/
+int _dessert_del_mon() {
+    int i;
+    char buffer[50];
+
+    for(i = 0;i < mon_ifs_counter; i++) {
+        snprintf(buffer, sizeof(buffer), "iw dev %s del", devString[i]);
+
+        if(system(buffer) < 0) {
+            return -1;
+        }
+    }
+    dessert_info("all monitor interfaces closed");
+    return 0;
+}
+
 #endif /* ANDROID */
