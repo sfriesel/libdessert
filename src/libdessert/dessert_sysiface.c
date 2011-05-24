@@ -25,19 +25,7 @@
 
 #include "dessert_internal.h"
 #include "dessert.h"
-
-#ifdef __DARWIN__
-#define TUNSIFHEAD  _IOW('t', 96, int)
-#define TUNGIFHEAD  _IOR('t', 97, int)
-#endif
-
-#ifdef __FreeBSD__
-#include <net/if_tun.h>
-#endif
-
-#ifdef __linux__
 #include <linux/if_tun.h>
-#endif
 
 uint8_t dessert_sysif_hwaddr[ETHER_ADDR_LEN]; /** \todo unused! to be removed ??!? */
 
@@ -64,7 +52,6 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
  *
  ******************************************************************************/
 
-
 /** Initializes the tun/tap Interface dev for des-sert.
  * @arg *device interface name
  * @arg flags  @see DESSERT_TUN @see DESSERT_TAP @see DESSERT_MAKE_DEFSRC
@@ -73,13 +60,6 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
  * @return EFAULT  -- if interface not specified and not guessed
  **/
 int dessert_sysif_init(char* device, uint8_t flags) {
-
-	char *buf;
-
-#ifdef __linux__
-	struct ifreq ifr;
-#endif
-
 	/* initialize _dessert_sysif */
 	_dessert_sysif = malloc(sizeof(dessert_sysif_t));
 	if (_dessert_sysif == NULL)
@@ -90,38 +70,15 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 	_dessert_sysif->if_name[IF_NAMESIZE - 1] = '\0';
 	pthread_mutex_init(&(_dessert_sysif->cnt_mutex), NULL);
 
-#ifdef __FreeBSD__
-
-	/* open device */
-	buf = malloc(IF_NAMESIZE+6);
-	snprintf(buf, IF_NAMESIZE+6, "/dev/%s", device);
-	_dessert_sysif->fd = open(buf, O_RDWR);
-	if(_dessert_sysif->fd < 0) {
-		dessert_err("could not open interface %s using %s: %s", device, buf, strerror(errno));
-		free(buf);
-		return (-errno);
-	}
-	free(buf);
-
-	/* set header mode on for mode tun */
-	if(flags & DESSERT_TUN) {
-		const int one = 1;
-		if(ioctl(_dessert_sysif->fd, TUNSIFHEAD, &one, sizeof one) == -1) {
-			dessert_err("setting TUNSIFHEAD failed: %s",strerror(errno));
-			goto dessert_sysif_init_err;
-			return (-errno);
-		}
-	}
-
-#elif __linux__
-
-	/* open device */
-#ifdef ANDROID	
-	buf = "/dev/tun";
+	
+#ifdef ANDROID
+	char *buf = "/dev/tun";
 #else
-	buf = "/dev/net/tun";
-#endif	
+	char *buf = "/dev/net/tun";
+#endif
+	/* open device */
 	_dessert_sysif->fd = open(buf, O_RDWR);
+	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
 	if (flags & DESSERT_TUN) {
 		ifr.ifr_flags = IFF_TUN | IFF_NO_PI; /* we want the service flag and IFF_NO_PI */
@@ -134,28 +91,20 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 		goto dessert_sysif_init_err;
 		return (-errno);
 	}
-    /**
-    * Derive TAP MAC address from eth0 MAC address
-    * \todo: provide this features for other OSs
-    */
-    int eth0_index = if_nametoindex("eth0");
-    if(eth0_index) {
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      if(_dessert_getHWAddr("eth0", ifr.ifr_hwaddr.sa_data) == DESSERT_OK) {
-        ifr.ifr_hwaddr.sa_data[0] = 0xFE;
-        if(ioctl(_dessert_sysif->fd, SIOCSIFHWADDR, &ifr) < 0) {
-          dessert_warn("ioctl(SIOCSIFHWADDR) failed: %s", strerror(errno));
-        }
-      }
-    }
-    /****************************************************/
+	/**
+	 * Derive TAP MAC address from eth0 MAC address
+	 */
+	if(if_nametoindex("eth0")) {
+		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+		if(_dessert_getHWAddr("eth0", ifr.ifr_hwaddr.sa_data) == DESSERT_OK) {
+			ifr.ifr_hwaddr.sa_data[0] = 0xFE;
+			if(ioctl(_dessert_sysif->fd, SIOCSIFHWADDR, &ifr) < 0) {
+				dessert_warn("ioctl(SIOCSIFHWADDR) failed: %s", strerror(errno));
+			}
+		}
+	}
+	/****************************************************/
 	strcpy(_dessert_sysif->if_name, ifr.ifr_name);
-
-#else
-
-	goto not_implemented;
-
-#endif
 
 	/* check interface - abusing dessert_meshif methods */
 	_dessert_sysif->if_index = if_nametoindex(device);
@@ -164,14 +113,13 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 		goto dessert_sysif_init_err;
 	}
 
-	/* do ifconfig to set the interface up - strange things happen otherwise */
-	buf = malloc(IF_NAMESIZE + 16);
-	snprintf(buf, IF_NAMESIZE + 15, "ifconfig %s up", _dessert_sysif->if_name);
-	int i = system(buf);
-    if(i < 0) {
-        dessert_warning("\"ifconfig %s up\" failed!", _dessert_sysif->if_name);
-    }
-	free(buf);
+	/* do "ip link set dev %s up" to set the interface up - strange things happen otherwise */
+	char system_call[64];
+	snprintf(system_call, sizeof(system_call), "ip link set dev %s up", _dessert_sysif->if_name);
+	int status = system(system_call);
+	if(status < 0) {
+		dessert_warning("\"ip link set dev %s up\" failed!", _dessert_sysif->if_name);
+	}
 
 	/* get hardware address in tap mode if possible */
 	if (flags & DESSERT_TAP) {
@@ -211,12 +159,10 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 				_dessert_sysif->if_name, _dessert_sysif->if_index);
 		goto dessert_sysif_init_err;
 	}
+	return DESSERT_OK;
 
-	/* done */
-	return (DESSERT_OK);
-
-	dessert_sysif_init_err: close(_dessert_sysif->fd);
-
+dessert_sysif_init_err: 
+	close(_dessert_sysif->fd);
 	return (-errno);
 }
 
@@ -324,9 +270,7 @@ int dessert_sysrxcb_del(dessert_sysrxcb_t* c) {
  **/
 int dessert_syssend_msg(dessert_msg_t *msg) {
     void *pkt;
-    size_t len;
-
-    len = dessert_msg_ethdecap(msg, (struct ether_header**) &pkt);
+    int len = dessert_msg_ethdecap(msg, (struct ether_header**) &pkt);
     // lets see if the message contains an Ethernet frame
     if (len == -1) {
         // might only be an ip datagram due to TUN usage
@@ -350,13 +294,11 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
  * @return -EIO         if message failed to be sent
  **/
 int dessert_syssend(const void* pkt, size_t len) {
-	ssize_t res = 0;
 
 	if (_dessert_sysif == NULL)
 		return (-EIO);
 
-	res = write(_dessert_sysif->fd, (const void *) pkt, len);
-
+	size_t res = write(_dessert_sysif->fd, (const void *) pkt, len);
 	if (res == len) {
 		pthread_mutex_lock(&(_dessert_sysif->cnt_mutex));
 		_dessert_sysif->opkts++;
@@ -377,121 +319,23 @@ int dessert_syssend(const void* pkt, size_t len) {
  ******************************************************************************/
 
 int _dessert_getHWAddr(char* device, char* hwaddr) {
-#ifdef __DARWIN__
-{
-    /* the Apple way... */
+	/* we need some socket to do that */
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-    int mib[6];
-    size_t len;
-    uint8_t *buf, *next;
-    struct if_msghdr *ifm;
-    struct sockaddr_dl *sdl;
-    int ret = DESSERT_ERR;
+	struct ifreq ifr;
+	/* set interface options and get hardware address */
+	strncpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
 
-    mib[0] = CTL_NET;
-    mib[1] = AF_ROUTE;
-    mib[2] = 0;
-    mib[3] = AF_LINK;
-    mib[4] = NET_RT_IFLIST;
-    mib[5] = 0;
-
-    if (sysctl(mib, 6, NULL, &len, NULL, 0) < 0) {
-        dessert_err("Acquiring hwaddr failed: sysctl 1 error");
-        return(DESSERT_ERR);
-    }
-
-    if ((buf = malloc(len)) == NULL) {
-        dessert_err("acquiring hwaddr failed: malloc error");
-        return(DESSERT_ERR);
-    }
-
-    if (sysctl(mib, 6, buf, &len, NULL, 0) < 0) {
-        dessert_err("acquiring hwaddr failed: sysctl 2 error");
-        return(DESSERT_ERR);
-    }
-
-    for (next = buf; next < buf+len; next += ifm->ifm_msglen) {
-        ifm = (struct if_msghdr *)next;
-        if (ifm->ifm_type == RTM_IFINFO) {
-            sdl = (struct sockaddr_dl *)(ifm + 1);
-            if (strncmp(&sdl->sdl_data[0], device, sdl->sdl_len) == 0) {
-                memcpy(hwaddr, LLADDR(sdl), ETHER_ADDR_LEN);
-                ret = DESSERT_OK;
-                break;
-            }
-        }
-    }
-
-    free(buf);
-    return ret;
+	if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0) {
+		memcpy(hwaddr, &ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+		close(sockfd);
+		return (DESSERT_OK);
+	} else {
+		dessert_err("acquiring hwaddr failed");
+		close(sockfd);
+		return (DESSERT_ERR);
+	}
 }
-#elif __FreeBSD__
-{
-    struct ifaddrs *ifaphead;
-    struct ifaddrs *ifap;
-    struct sockaddr_dl *sdl = NULL;
-
-    if (getifaddrs(&ifaphead) != 0)
-    {
-        dessert_err("getifaddrs() failed");
-        return(DESSERT_ERR);
-    }
-
-    for (ifap = ifaphead; ifap; ifap = ifap->ifa_next)
-    {
-        if ((ifap->ifa_addr->sa_family == AF_LINK))
-        {
-            if (strcmp(ifap->ifa_name, device) == 0)
-            {
-                sdl = (struct sockaddr_dl *)ifap->ifa_addr;
-                if (sdl)
-                {
-                    memcpy(hwaddr, LLADDR(sdl), ETHER_ADDR_LEN);
-                    return(DESSERT_OK);
-                }
-            }
-        }
-    }
-    return(DESSERT_ERR);
-}
-#elif __linux__
-{
-    /* the linux and solaris way */
-    int sockfd;
-    struct ifreq ifr;
-
-    /* we need some socket to do that */
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-    /* set interface options and get hardware address */
-    strncpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
-
-#ifdef SIOCGIFHWADDR
-    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0) {
-        memcpy(hwaddr, &ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
-        /* } */
-#elif defined SIOCGENADDR
-        if ( ioctl(sd, SIOCGENADDR, &ifr_work) >= 0 ) {
-            memcpy(hwaddr, &ifr.ifr_enaddr, ETHER_ADDR_LEN );
-            /* } */
-#else
-            if (false) {
-#endif
-        close(sockfd);
-        return (DESSERT_OK);
-    } else {
-        dessert_err("acquiring hwaddr failed");
-        close(sockfd);
-        return (DESSERT_ERR);
-    }
-}
-}
-#else
-{
-    dessert_err("acquiring hwaddr failed - platform not supported");
-    return(DESSERT_ERR);
-}
-#endif
 
 /******************************************************************************
  *
@@ -534,35 +378,26 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
 
 /** internal packet processing thread body */
 static void *_dessert_sysif_init_thread(void* arg) {
-
 	dessert_sysif_t *sysif = (dessert_sysif_t *) arg;
-	size_t len;
-	size_t buflen = ETHER_MAX_LEN;
-	char buf[buflen];
-	dessert_msg_proc_t proc;
-	dessert_frameid_t id;
 	dessert_sysrxcbe_t *cb;
-	int res;
-	int ex = 0;
 	dessert_sysrxcb_t **cbl = NULL;
-	int cbllen = 0;
-	int cblcur = -1;
+
 	int cblver = -1;
-
-	while (!ex) {
-
-		memset(buf, 0, buflen);
+	int cbllen = 0;
+	for(;;) {
+		char buf[ETHER_MAX_LEN];
+		memset(buf, 0, ETHER_MAX_LEN);
+		int len;
 		if (sysif->flags & DESSERT_TUN) { // read IP datagram from TUN interface
-			len = read((sysif->fd), buf + ETHER_HDR_LEN, buflen - ETHER_HDR_LEN);
+			len = read((sysif->fd), buf + ETHER_HDR_LEN, ETHER_MAX_LEN - ETHER_HDR_LEN);
 		} else { // read Ethernet frame from TAP interface
-			len = read((sysif->fd), buf, buflen);
+			len = read((sysif->fd), buf, sizeof(buf));
 		}
 		/* Right now the packet has been written to the buffer. The packet is aligned so that
-         * the first layer 3 byte is always at the same position independent whether a TUN or
-         * a TAP interface has been used:
-         * buf: [Ethernet Header Space][Layer 3 Header]
-         */
-
+		 * the first layer 3 byte is always at the same position independent whether a TUN or
+		 * a TAP interface has been used:
+		 * buf: [Ethernet Header Space][Layer 3 Header]
+		 */
 		if (len == -1) {
 			dessert_debug("got %s while reading on %s (fd %d) - is the sys (tun/tap) interface up?", strerror(errno), sysif->if_name, sysif->fd);
 			sleep(1);
@@ -573,7 +408,6 @@ static void *_dessert_sysif_init_thread(void* arg) {
 		pthread_rwlock_rdlock(&dessert_cfglock);
 		if (cblver < _dessert_sysrxcblistver) {
 			/* callback list changed - rebuild it */
-			cbllen = 0;
 			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next)
 				cbllen++;
 			cbl = realloc(cbl, cbllen * sizeof(dessert_sysrxcb_t *));
@@ -583,16 +417,16 @@ static void *_dessert_sysif_init_thread(void* arg) {
 				return (NULL);
 			}
 
-			cblcur = 0;
+			int iter = 0;
 			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next)
-				cbl[cblcur++] = cb->c;
+				cbl[iter++] = cb->c;
 
 			cblver = _dessert_sysrxcblistver;
 		}
 		pthread_rwlock_unlock(&dessert_cfglock);
 
 		/* generate frame id */
-		id = _dessert_newframeid();
+		dessert_frameid_t id = _dessert_newframeid();
 
 		/* count packet */
 		pthread_mutex_lock(&(sysif->cnt_mutex));
@@ -600,26 +434,25 @@ static void *_dessert_sysif_init_thread(void* arg) {
 		sysif->ibytes += len;
 		pthread_mutex_unlock(&(sysif->cnt_mutex));
 
-		/* call the interested */
-		res = 0;
-		cblcur = 0;
+		dessert_msg_proc_t proc;
 		memset(&proc, 0, DESSERT_MSGPROCLEN);
 		dessert_msg_t *msg = NULL;
-        if (sysif->flags & DESSERT_TUN) {
-            if (dessert_msg_ipencap((uint8_t*) (buf + ETHER_HDR_LEN), len, &msg) < 0) {
-              dessert_err("failed to encapsulate ip datagram on host-to-network-pipeline: %s", errno);
-            }
-        }
-        else {
-            if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg) < 0) {
-              dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
-            }
-        }
-		while (res > DESSERT_MSG_DROP && cblcur < cbllen) {
-			res = cbl[cblcur++](msg, len, &proc, sysif, id);
+		if (sysif->flags & DESSERT_TUN) {
+			if (dessert_msg_ipencap((uint8_t*) (buf + ETHER_HDR_LEN), len, &msg) < 0) {
+				dessert_err("failed to encapsulate ip datagram on host-to-network-pipeline: %s", errno);
+			}
+		} else {
+			if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg) < 0) {
+				dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
+			}
 		}
-		if (msg != NULL) dessert_msg_destroy(msg);
-
+		int res = 0;
+		int iter = 0;
+		while (res > DESSERT_MSG_DROP && iter < cbllen) {
+			res = cbl[iter++](msg, len, &proc, sysif, id);
+		}
+		if (msg != NULL)
+			dessert_msg_destroy(msg);
 	}
 	dessert_info("stopped reading on %s (fd %d): %s", sysif->if_name, sysif->fd, strerror(errno));
 

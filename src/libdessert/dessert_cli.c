@@ -64,7 +64,7 @@ static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char
 static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc);
 static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc);
 #ifndef ANDROID
-static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, char *argv[], int argc);
 #endif
 static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif);
 /******************************************************************************
@@ -230,7 +230,7 @@ int _dessert_cli_init() {
 			"create or configure interfaces");
 #ifndef ANDROID
     cli_register_command(dessert_cli, dessert_cli_cfg_iface,
-                        "monitor", _dessert_cli_cmd_monitor_all, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                        "monitor", _dessert_cli_monitoring_start, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
                         "Creates a monitor interface for a IEEE 802.11 interface");
 #endif
     dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
@@ -316,29 +316,31 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
 * @param[in] timer_range The second parameter defines how long collectes RSSI-Values are guilty
 */
 #ifndef ANDROID
-static int _dessert_cli_cmd_monitor_all(struct cli_def *cli, char *command,
-    char *argv[], int argc) {
-  
-    if(status!=0) {
-    	return -1;
+static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, char *argv[], int argc) {
+    int max_rssi_vals = 0;
+    int max_age = 0;
+    if(argc >= 1) {
+        max_rssi_vals = atoi(argv[0]);
+        if(!(0 < max_rssi_vals && max_rssi_vals < INT16_MAX)) {
+            max_rssi_vals = 0;
+            dessert_info("max_rssi_values is not in range [1, INT16_MAX], using default instead");
+        }
     }
-    if(argc>=1 && 32000 > atoi(argv[0]) && atoi(argv[0]) > 0) {
-        array_size_node=atoi(argv[0]);
-        dessert_info("%d RSSI values per mac-adress will be recorded - default is 10",atoi(argv[0]));
-    }
-    if(argc>=2 && 32000 > atoi(argv[1]) && atoi(argv[1]) > 0) {
-        timer_range=atoi(argv[1]);
-        dessert_info("RSSI values are valid for %d seconds - default is 3",atoi(argv[1]));
+    if(argc >= 2) {
+        max_age = atoi(argv[1]);
+        if(max_age <= 0) {
+            max_age = 0;
+            dessert_info("max age is not positive, using default %d",max_age);
+        }
     }
 
-	dessert_monitoring_start(0, 0); // starts capt. RSSI values
+    dessert_monitoring_start(max_rssi_vals, max_age); // starts capt. RSSI values
 
-	return CLI_OK;
+    return CLI_OK;
 }
 #endif
 /**command "show meshifs" */
-static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
-    char *argv[], int argc) {
+static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command, char *argv[], int argc) {
     dessert_meshif_t *meshif = dessert_meshiflist_get();
     if (meshif == NULL) {
         cli_print(dessert_cli, "No mesh interfaces registered!");
@@ -352,23 +354,19 @@ static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command,
     }
 }
 
-/**command "show showmonifs" */
-static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command,
-    char *argv[], int argc) {
-    char k,i;
-    
-    for(i=0;i<mon_ifs_counter;i++){ 
-      
-	cli_print(cli, "\n Monitor device: [%s]", devString[i]);    
-    }
-    
-    return CLI_OK;
+/**command "show monifs" */
+static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command, char *argv[], int argc) {
+	dessert_meshif_t *meshif;
+	MESHIFLIST_ITERATOR_START(meshif)
+		if(meshif->monitor_active)
+			cli_print(cli, "Monitor device: [mon.%s]", meshif->if_name);
+	MESHIFLIST_ITERATOR_STOP;
+	return CLI_OK;
 }
 
-/**command "show showmondb" */
-static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command,
-    char *argv[], int argc) {
-    print_database();
+/**command "show mondb" */
+static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command, char *argv[], int argc) {
+    dessert_print_monitored_database();
     return CLI_OK;
 }
 
@@ -394,8 +392,7 @@ static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *
 }
 
 /** command "show dessert-info" */
-static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command,
-    char *argv[], int argc) {
+static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char *argv[], int argc) {
     cli_print(cli, "\nprotocol running:   %s v %d", dessert_proto, dessert_ver);
     cli_print(cli, "libdessert version: %s", VERSION);
     cli_print(

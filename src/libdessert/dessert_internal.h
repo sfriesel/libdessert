@@ -164,31 +164,6 @@ typedef struct dessert_sysrxcbe {
 
 extern dessert_sysif_t *_dessert_sysif;
 
-
-/******************************************************************************
- *
- * INTERNAL / PRIVATE
- *
- * M O N I T O R - I N T E R F A C E S
- *
- ******************************************************************************/
-#define add_matrix_size 10
-
-int print_database(void);
-
-struct addr_matrix{
-  u_char addr[6];
-  u_char dev_name[16];
-  u_char dev_mon_name[16];
-};
-
-extern struct addr_matrix addr_matrix[];
-extern char matrix_counter;
-extern int array_size_node;
-extern int timer_range;
-
-
-
 /******************************************************************************
  *
  * INTERNAL / PRIVATE

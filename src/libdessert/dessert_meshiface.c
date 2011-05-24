@@ -25,10 +25,6 @@
 
 #include "dessert_internal.h"
 #include "dessert.h"
-#ifdef __FreeBSD__
-#include <ifaddrs.h>
-#include <net/if_dl.h>
-#endif
 
 /* global data storage // P U B L I C */
 /* nothing here - yet */
@@ -49,8 +45,7 @@ dessert_meshrxcbe_t *_dessert_meshrxcblist;
 int _dessert_meshrxcblistver = 0;
 
 /* internal functions forward declarations*/
-static void _dessert_packet_process(u_char *args,
-		const struct pcap_pkthdr *header, const u_char *packet);
+static void _dessert_packet_process(u_int8_t *args, const struct pcap_pkthdr *header, const u_int8_t *packet);
 static void *_dessert_meshif_add_thread(void* arg);
 static inline int _dessert_meshsend_if2(dessert_msg_t* msg,
 		dessert_meshif_t *iface);
@@ -89,7 +84,7 @@ static inline void permutation(int k, int len, dessert_meshif_t **a);
  * %DESCRIPTION:
  *
  **/
-int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface) {
+int dessert_meshsend(const dessert_msg_t* msgin, dessert_meshif_t *iface) {
 	dessert_msg_t* msg;
 	int res;
 
@@ -122,8 +117,7 @@ int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface) 
  * %DESCRIPTION:
  *
  **/
-int dessert_meshsend_allbutone(const dessert_msg_t* msgin,
-		const dessert_meshif_t *iface) {
+int dessert_meshsend_allbutone(const dessert_msg_t* msgin, dessert_meshif_t *iface) {
 	dessert_msg_t* msg;
 	int res;
 
@@ -223,7 +217,7 @@ int dessert_meshsend_randomized(const dessert_msg_t* msgin) {
  * %DESCRIPTION:
  *
  **/
-int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface) {
+int dessert_meshsend_fast(dessert_msg_t* msg, dessert_meshif_t *iface) {
 	int res = 0;
 
 	/* we have no iface - send on all! */
@@ -265,8 +259,7 @@ int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface) {
  * %DESCRIPTION:
  *
  **/
-int dessert_meshsend_fast_allbutone(dessert_msg_t* msg,
-		const dessert_meshif_t *iface) {
+int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, dessert_meshif_t *iface) {
 	dessert_meshif_t *curr_iface;
 	int res = 0;
 
@@ -399,7 +392,7 @@ int dessert_meshsend_fast_randomized(dessert_msg_t* msgin) {
  * %DESCRIPTION:
  *
  **/
-int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface) {
+int dessert_meshsend_raw(dessert_msg_t* msg, dessert_meshif_t *iface) {
 	int res = 0;
 
 	if (iface == NULL) {
@@ -555,7 +548,7 @@ dessert_meshif_t* dessert_meshiflist_get() {
  * %DESCRIPTION:
  *
  **/
-dessert_meshif_t* dessert_meshif_get_name(const char* dev) {
+dessert_meshif_t* dessert_meshif_get_name(const char *dev) {
 	dessert_meshif_t *meshif = NULL;
 
 	/* search dev name in iflist */
@@ -604,7 +597,7 @@ dessert_meshif_t* dessert_meshif_get_hwaddr(const uint8_t hwaddr[ETHER_ADDR_LEN]
  * %DESCRIPTION:
  *
  */
-int dessert_meshif_del(const char* dev) {
+int dessert_meshif_del(const char *dev) {
 	dessert_meshif_t *meshif;
 	//    dessert_meshif_t *meshif_prev; TODO MESHIF_HASH
 
@@ -649,7 +642,7 @@ int dessert_meshif_del(const char* dev) {
  * %DESCRIPTION:
  *
  */
-int dessert_meshif_add(const char* dev, uint8_t flags) {
+int dessert_meshif_add(const char *dev, uint8_t flags) {
 	dessert_meshif_t *meshif;
 
 	uint8_t promisc = (flags & DESSERT_IF_NOPROMISC) ? 0 : 1;
@@ -711,15 +704,11 @@ int dessert_meshif_add(const char* dev, uint8_t flags) {
 	/* check whether we need to set defsrc (default source) */
 	if (memcmp(dessert_l25_defsrc, ether_null, ETHER_ADDR_LEN) == 0) {
 		memcpy(dessert_l25_defsrc, meshif->hwaddr, ETHER_ADDR_LEN);
-		dessert_info("set dessert_l25_defsrc to hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
-				dessert_l25_defsrc[0], dessert_l25_defsrc[1],dessert_l25_defsrc[2],
-				dessert_l25_defsrc[3], dessert_l25_defsrc[4], dessert_l25_defsrc[5]);
+		dessert_info("set dessert_l25_defsrc to hwaddr" MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
 	}
 
-	dessert_info("starting worker thread for interface %s(%d) hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
-			meshif->if_name, meshif->if_index,
-			meshif->hwaddr[0], meshif->hwaddr[1], meshif->hwaddr[2],
-			meshif->hwaddr[3], meshif->hwaddr[4], meshif->hwaddr[5]);
+	dessert_info("starting worker thread for interface %s(%d) hwaddr" MAC,
+			meshif->if_name, meshif->if_index, EXPLODE_ARRAY6(meshif->hwaddr));
 
 	/* start worker thread */
 	if (pthread_create(&(meshif->worker), NULL, _dessert_meshif_add_thread,
@@ -737,7 +726,7 @@ int dessert_meshif_add(const char* dev, uint8_t flags) {
 
 	return (DESSERT_OK);
 
-	dessert_meshif_add_err:
+dessert_meshif_add_err:
 
 	if (meshif->pcap != NULL) {
 		pcap_close(meshif->pcap);
@@ -817,15 +806,12 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len,
 		} else if (res == DESSERT_MSG_NEEDMSGPROC && proc != NULL) {
 			dessert_warn("bogus DESSERT_MSG_NEEDMSGPROC returned from callback!");
 		}
-
 		cblcur++;
 	}
-
 	free(cbl);
 
 	if (msg != msg_in)
 		dessert_msg_destroy(msg);
-
 	if (proc != proc_in)
 		free(proc);
 
@@ -845,107 +831,16 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len,
  * %DESCRIPTION:
  *
  **/
-int _dessert_meshif_gethwaddr(dessert_meshif_t *meshif)
-#ifdef __DARWIN__
-{
-	/* the Apple way... */
-
-	int mib[6];
-	size_t len;
-	uint8_t *buf, *next;
-	struct if_msghdr *ifm;
-	struct sockaddr_dl *sdl;
-	int ret = DESSERT_ERR;
-
-	mib[0] = CTL_NET;
-	mib[1] = AF_ROUTE;
-	mib[2] = 0;
-	mib[3] = AF_LINK;
-	mib[4] = NET_RT_IFLIST;
-	mib[5] = 0;
-
-	if (sysctl(mib, 6, NULL, &len, NULL, 0) < 0) {
-		dessert_err("Acquiring hwaddr failed: sysctl 1 error");
-		return(DESSERT_ERR);
-	}
-
-	if ((buf = malloc(len)) == NULL) {
-		dessert_err("acquiring hwaddr failed: malloc error");
-		return(DESSERT_ERR);
-	}
-
-	if (sysctl(mib, 6, buf, &len, NULL, 0) < 0) {
-		dessert_err("acquiring hwaddr failed: sysctl 2 error");
-		return(DESSERT_ERR);
-	}
-
-	for (next = buf; next < buf+len; next += ifm->ifm_msglen) {
-		ifm = (struct if_msghdr *)next;
-		if (ifm->ifm_type == RTM_IFINFO) {
-			sdl = (struct sockaddr_dl *)(ifm + 1);
-			if (strncmp(&sdl->sdl_data[0], meshif->if_name, sdl->sdl_len) == 0) {
-				memcpy(meshif->hwaddr, LLADDR(sdl), ETHER_ADDR_LEN);
-				ret = DESSERT_OK;
-				break;
-			}
-		}
-	}
-
-	free(buf);
-	return ret;
-}
-#elif __FreeBSD__
-{
-	struct ifaddrs *ifaphead;
-	struct ifaddrs *ifap;
-	struct sockaddr_dl *sdl = NULL;
-
-	if (getifaddrs(&ifaphead) != 0)
-	{
-		dessert_err("getifaddrs() failed");
-		return(DESSERT_ERR);
-	}
-
-	for (ifap = ifaphead; ifap; ifap = ifap->ifa_next)
-	{
-		if ((ifap->ifa_addr->sa_family == AF_LINK))
-		{
-			if (strcmp(ifap->ifa_name,meshif->if_name) == 0)
-			{
-				sdl = (struct sockaddr_dl *)ifap->ifa_addr;
-				if (sdl)
-				{
-					memcpy(meshif->hwaddr, LLADDR(sdl), ETHER_ADDR_LEN);
-					return(DESSERT_OK);
-				}
-			}
-		}
-	}
-	return(DESSERT_ERR);
-}
-#elif __linux__
-{
-	/* the linux and solaris way */
-	int sockfd;
-	struct ifreq ifr;
-
+int _dessert_meshif_gethwaddr(dessert_meshif_t *meshif) {
 	/* we need some socket to do that */
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
+	struct ifreq ifr;
 	/* set interface options and get hardware address */
 	strncpy(ifr.ifr_name, meshif->if_name, sizeof(ifr.ifr_name));
 
-#ifdef SIOCGIFHWADDR
-	if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0) {
+	if(ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0) {
 		memcpy(meshif->hwaddr, &ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
-		/* } */
-#elif defined SIOCGENADDR
-		if ( ioctl(sd, SIOCGENADDR, &ifr_work) >= 0 ) {
-			memcpy( meshif->hwaddr, &ifr.ifr_enaddr, ETHER_ADDR_LEN );
-			/* } */
-#else
-			if (false) {
-#endif
 		close(sockfd);
 		return (DESSERT_OK);
 	} else {
@@ -954,12 +849,6 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t *meshif)
 		return (DESSERT_ERR);
 	}
 }
-#else
-{
-	dessert_err("acquiring hwaddr failed - platform not supported");
-	return(DESSERT_ERR);
-}
-#endif
 
 /******************************************************************************
  *
@@ -983,11 +872,8 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t *meshif)
  * %DESCRIPTION:
  *
  */
-static inline int _dessert_meshsend_if2(dessert_msg_t* msg,
-		dessert_meshif_t *iface) {
-	int res;
-	uint8_t oldflags;
-	size_t msglen = ntohs(msg->hlen) + ntohs(msg->plen);
+static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *iface) {
+	int msglen = ntohs(msg->hlen) + ntohs(msg->plen);
 
 	/* check for null meshInterface */
 	if (iface == NULL) {
@@ -996,9 +882,9 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg,
 	}
 
 	/* send packet - temporally setting DESSERT_FLAG_SPARSE */
-	oldflags = msg->flags;
+	uint8_t oldflags = msg->flags;
 	msg->flags &= ~DESSERT_FLAG_SPARSE;
-	res = pcap_inject(iface->pcap, (u_char *) msg, msglen);
+	int res = pcap_inject(iface->pcap, (u_int8_t *) msg, msglen);
 	msg->flags = oldflags;
 
 	if (res != msglen) {
@@ -1031,8 +917,8 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg,
  * %DESCRIPTION:
  *
  */
-static void _dessert_packet_process(u_char *args,
-		const struct pcap_pkthdr *header, const u_char *packet) {
+static void _dessert_packet_process(u_int8_t *args, const struct pcap_pkthdr *header, const u_int8_t *packet) {
+
 	dessert_meshif_t *meshif = (dessert_meshif_t *) args;
 	dessert_msg_t *msg = (dessert_msg_t *) packet;
 	size_t len = header->caplen;
@@ -1092,13 +978,9 @@ static void _dessert_meshif_cleanup(dessert_meshif_t *meshif) {
  * %DESCRIPTION:
  */
 static void *_dessert_meshif_add_thread(void* arg) {
-
 	dessert_meshif_t *meshif = (dessert_meshif_t *) arg;
-
-	pcap_loop(meshif->pcap, -1, _dessert_packet_process, (u_char *) meshif);
-
+	pcap_loop(meshif->pcap, -1, _dessert_packet_process, (u_int8_t *) meshif);
 	_dessert_meshif_cleanup(meshif);
-
 	return (NULL);
 
 }
@@ -1112,10 +994,11 @@ static void *_dessert_meshif_add_thread(void* arg) {
 static void _dessert_meshiflist_update_permutations() {
 	int i, r;
 
-    pthread_mutex_lock(&_dessert_meshiflist_mutex);
+	pthread_mutex_lock(&_dessert_meshiflist_mutex);
+	dessert_meshif_t *tmp;
 	_dessert_meshiflist_len = DL_LENGTH(_dessert_meshiflist);
 
-	dessert_meshif_t **a =  calloc(sizeof(a) * _dessert_meshiflist_len, 1);
+	dessert_meshif_t **a =  calloc(sizeof(a), _dessert_meshiflist_len);
 	list2array(_dessert_meshiflist, a, _dessert_meshiflist_len);
 
 	_dessert_meshiflist_perm_count = fact(_dessert_meshiflist_len);
@@ -1142,7 +1025,7 @@ static void _dessert_meshiflist_update_permutations() {
 		permutation(r, _dessert_meshiflist_len, _dessert_meshiflist_perms[r]);
 	}
 
-    pthread_mutex_unlock(&_dessert_meshiflist_mutex);
+	pthread_mutex_unlock(&_dessert_meshiflist_mutex);
 }
 
 /** Internal function to get the length of a double-linked utlist.

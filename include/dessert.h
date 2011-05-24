@@ -545,11 +545,6 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
  * structs
  ******************************************************************************/
 
-struct d_int{
-  uint8_t value;
-  uint8_t number;
-};
-
 struct rssi_sample {
 	time_t time;
 	int8_t rssi;
@@ -573,30 +568,17 @@ struct monitor_neighbour {
 };
 
 /******************************************************************************
- * static variables
- ******************************************************************************/
-
-/** the root of the linked matrix - relevant for monitorfunctions */
-struct d_list_node* node;
-
-/** shows if the matrix has been intialized- relevant for monitorfunctions */
-u_short status;
-
-/** contains the names of the monitor interfaces - relevant for monitorfunctions */
-char devString[10][10];
-
-/** contains the names of the monitor interfaces - relevant for monitorfunctions */
-int mon_ifs_counter;
-
-/******************************************************************************
  * functions
  ******************************************************************************/
+
 /* monitoring frames*/
-int dessert_monitoring_start(char array_size2,char time_range);
-int dessert_search_con( u_char sa[6], u_char da[6], struct d_int* avg_val);
-int _dessert_set_mon(void);
-int _dessert_del_mon(void);
-void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(void * mem_ptr, struct d_list_node* node_temp), void * memo_ptr );
+int dessert_monitoring_start(int max_rssi_vals, int max_age);
+int dessert_monitoring_stop();
+struct avg_node_result dessert_rssi_avg(const mac_addr hwaddr, const char *dest_dev);
+char **dessert_monitored_interface_names(void);
+void   dessert_monitored_interface_names_free(char **p);
+int dessert_print_monitored_database();
+int dessert_log_monitored_neighbour(const mac_addr hwaddr);
 
 /***************************************************************************//**
  * @}
@@ -636,28 +618,25 @@ void dessert_search_func( u_char sa[6], u_char *dest_dev, void (*function_ptr)(v
 /** flag for dessert_meshif_add - do not filter out non-des-sert frames in libpcap */
 #define DESSERT_IF_NOFILTER 0x2
 
-/** max. amount of monitor interfaces - relevant for monitorfunctions */
-#define NUMBER_OF_WIRELESSDEVICES 10
-
 /******************************************************************************
-* structs
-******************************************************************************/
+ * structs
+ ******************************************************************************/
 
 /******************************************************************************
  * functions
  ******************************************************************************/
 
 /* sending messages */
-int dessert_meshsend(const dessert_msg_t* msgin, const dessert_meshif_t *iface);
-int dessert_meshsend_allbutone(const dessert_msg_t* msgin, const dessert_meshif_t *iface);
+int dessert_meshsend(const dessert_msg_t* msgin, dessert_meshif_t *iface);
+int dessert_meshsend_allbutone(const dessert_msg_t* msgin, dessert_meshif_t *iface);
 int dessert_meshsend_hwaddr(const dessert_msg_t* msgin, const uint8_t hwaddr[ETHER_ADDR_LEN]);
 int dessert_meshsend_randomized(const dessert_msg_t* msgin);
 
-int dessert_meshsend_fast(dessert_msg_t* msg, const dessert_meshif_t *iface);
-int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, const dessert_meshif_t *iface);
+int dessert_meshsend_fast(dessert_msg_t* msg, dessert_meshif_t *iface);
+int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, dessert_meshif_t *iface);
 int dessert_meshsend_fast_hwaddr(dessert_msg_t* msg, const uint8_t hwaddr[ETHER_ADDR_LEN]);
 int dessert_meshsend_fast_randomized(dessert_msg_t* msgin);
-int dessert_meshsend_raw(dessert_msg_t* msg, const dessert_meshif_t *iface);
+int dessert_meshsend_raw(dessert_msg_t* msg, dessert_meshif_t *iface);
 
 /* meshrx-callback handling */
 int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio);
@@ -973,7 +952,7 @@ typedef struct dessert_agentx_appstats {
 		 * @see For valid values please refer to: \n DESSERT_APPSTATS_BOOL_TRUE
 		 * @see DESSERT_APPSTATS_BOOL_FALSE
 		 */
-		uint8_t  bool;
+		uint8_t bool;
 		/** A 32bit signed integer. */
 		int32_t  int32;
 		/** A 32bit unsigned integer. */

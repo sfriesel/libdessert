@@ -330,8 +330,8 @@ int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], 
         dessert_notice("log flush interval set to %d seconds", i);
     }
     else {
-        cli_print(cli, "log flushing disabled\n", i);
-        dessert_notice("log flushing disabled", i);
+        cli_print(cli, "log flushing disabled\n");
+        dessert_notice("log flushing disabled");
     }
     return CLI_OK;
 }

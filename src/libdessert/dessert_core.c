@@ -200,7 +200,7 @@ void _dessert_cleanup(void) {
         unlink(dessert_pidfile_name);
     }
 #ifndef ANDROID
-    _dessert_del_mon();
+    dessert_monitoring_stop();
 #endif
     _dessert_closeLogFile();
 #ifdef WITH_NET_SNMP

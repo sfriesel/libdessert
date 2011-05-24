@@ -1,4 +1,3 @@
-
 AM_CPPFLAGS = -I$(top_srcdir)/include \
               @PCAP_CFLAGS@ \
               @PTHREAD_CFLAGS@
@@ -13,12 +12,15 @@ libdessert_la_SOURCES = dessert_core.c \
                         dessert_log.c \
                         dessert_msg.c \
                         dessert_sysiface.c \
-                        dessert_internal.h\
-                        dessert_monitor.c
-libdessert_la_LIBADD = @PCAP_LIBS@ \
-                       @CLI_LIBS@\
-                       @PTHREAD_LIBS@
-if ANDROID
+                        dessert_internal.h
+
+libdessert_la_LIBADD =  @PCAP_LIBS@ \
+                        @CLI_LIBS@ \
+                        @PTHREAD_LIBS@
+
+if !ANDROID
+    libdessert_la_SOURCES += dessert_monitor.c
+else
     AM_CPPFLAGS += -DANDROID
     ## libdessert_la_LIBADD += pthreadex.a ## TODO: check why this is here
 endif

@@ -43,8 +43,8 @@ typedef struct sig_handler {
 sig_handler_t* _sig_handlers_map = NULL;
 
 uint8_t _signal_supported(int signal) {
-    int i;
-    for(i=0; i<sizeof(dessert_supported_signals)/sizeof(int); i++) {
+    size_t i;
+    for(i = 0; i < sizeof(dessert_supported_signals)/sizeof(int); i++) {
         if(dessert_supported_signals[i] == signal)
             return 1;
     }
@@ -149,19 +149,18 @@ int dessert_signalcb_del(int signal, dessert_signalcb_t* callback) {
 }
 
 void* dessert_signal_thread(void* param) {
-    int sig_caught;
-    int rc;
-    int i;
     sigset_t signal_mask_catch;
     sigemptyset(&signal_mask_catch);
 
-    for(i=0; i<sizeof(dessert_supported_signals)/sizeof(int); i++) {
+    size_t i;
+    for(i = 0; i < sizeof(dessert_supported_signals)/sizeof(int); i++) {
         sigaddset(&signal_mask_catch, dessert_supported_signals[i]);
     }
 
     dessert_info("signal thread started");
+    int sig_caught;
     while(1) {
-        rc = sigwait(&signal_mask_catch, &sig_caught);
+        int rc = sigwait(&signal_mask_catch, &sig_caught);
         if (rc != 0) {
             dessert_crit("sigwait returned = %d", rc);
             continue;

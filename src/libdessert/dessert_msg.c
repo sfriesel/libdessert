@@ -294,8 +294,6 @@ int dessert_msg_ethdecap(const dessert_msg_t* msg, struct ether_header** ethout)
  * @return len of datagram on success, -1 otherwise
  **/
 int dessert_msg_ipdecap(const dessert_msg_t* msg, uint8_t** ip) {
-    int res;
-
     /* create message */
     size_t len = ntohs(msg->plen);
     *ip = malloc(len);
@@ -367,18 +365,14 @@ int dessert_msg_proc_clone(dessert_msg_proc_t **procnew,
 void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_msg_proc_t *proc, char *buf, size_t blen) {
 	dessert_ext_t *ext;
 	int extidx = 0;
-	int i;
+
 	struct ether_header *l25h;
 
 #define _dessert_msg_check_append(...) snprintf(buf+strlen(buf), blen-strlen(buf), __VA_ARGS__)
 	memset((void *) buf, 0, blen);
 
-	_dessert_msg_check_append("\tl2_dhost:  %02x:%02x:%02x:%02x:%02x:%02x\n",
-			msg->l2h.ether_dhost[0], msg->l2h.ether_dhost[1], msg->l2h.ether_dhost[2],
-			msg->l2h.ether_dhost[3], msg->l2h.ether_dhost[4], msg->l2h.ether_dhost[5]);
-	_dessert_msg_check_append("\tl2_shost:  %02x:%02x:%02x:%02x:%02x:%02x\n",
-			msg->l2h.ether_shost[0], msg->l2h.ether_shost[1], msg->l2h.ether_shost[2],
-			msg->l2h.ether_shost[3], msg->l2h.ether_shost[4], msg->l2h.ether_shost[5]);
+	_dessert_msg_check_append("\tl2_dhost: " MAC "\n",EXPLODE_ARRAY6(msg->l2h.ether_dhost));
+	_dessert_msg_check_append("\tl2_shost: " MAC "\n",EXPLODE_ARRAY6(msg->l2h.ether_shost));
 	_dessert_msg_check_append("\tl2_type:   %x\n\n", ntohs(msg->l2h.ether_type));
 
 	_dessert_msg_check_append("\tproto:     ");
@@ -399,12 +393,8 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 	if ((l25h = dessert_msg_getl25ether(msg)) != NULL) {
 		_dessert_msg_check_append("\tl25 proto: ethernet\n");
 
-		_dessert_msg_check_append("\tl25_dhost: %02x:%02x:%02x:%02x:%02x:%02x\n",
-				l25h->ether_dhost[0], l25h->ether_dhost[1], l25h->ether_dhost[2],
-				l25h->ether_dhost[3], l25h->ether_dhost[4], l25h->ether_dhost[5]);
-		_dessert_msg_check_append("\tl25_shost: %02x:%02x:%02x:%02x:%02x:%02x\n",
-				l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
-				l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5]);
+		_dessert_msg_check_append("\tl25_dhost: " MAC "\n", EXPLODE_ARRAY6(l25h->ether_dhost));
+		_dessert_msg_check_append("\tl25_shost: " MAC "\n", EXPLODE_ARRAY6(l25h->ether_shost));
 		_dessert_msg_check_append("\tl25_type:  %x\n\n", ntohs(l25h->ether_type));
 
 	}
@@ -432,6 +422,7 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 
 		if (ext->type != DESSERT_EXT_ETH && ext->type != DESSERT_EXT_TRACE_REQ) {
 			_dessert_msg_check_append("\t\tdata:      ");
+			unsigned int i;
 			for (i = 0; i < dessert_ext_getdatalen(ext); i++) {
 				_dessert_msg_check_append("0x%x ", ext->data[i]);
 				if (i % 12 == 1 && i != 1)
@@ -463,7 +454,6 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 		if (proc->lflags & DESSERT_LFLAG_NEXTHOP_BROADCAST)
 			_dessert_msg_check_append(" NEXTHOP_BROADCAST");
 	}
-
 }
 
 /** free a dessert_prc_msg
@@ -481,7 +471,7 @@ void dessert_msg_proc_destroy(dessert_msg_proc_t* proc) {
  **/
 int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len) {
 	/* check payload */
-	if (len > dessert_maxlen - ntohs(msg->hlen)) {
+	if ((unsigned int) len > dessert_maxlen - ntohs(msg->hlen)) {
 		return DESSERT_ERR; /* too big */
 	}
 
@@ -849,33 +839,22 @@ int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, in
     if (x < 1)
         return 0;
 
-    _dessert_msg_trace_dump_append("\tpacket trace:\n");
-    _dessert_msg_trace_dump_append("\t\tfrom %02x:%02x:%02x:%02x:%02x:%02x\n",
-            ext->data[0], ext->data[1], ext->data[2],
-            ext->data[3], ext->data[4], ext->data[5]);
+    _dessert_msg_trace_dump_append("\tpacket trace:\n"
+                                   "\t\tfrom " MAC "\n", EXPLODE_ARRAY6(ext->data));
 
     if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-        _dessert_msg_trace_dump_append("\t\t  received on   %02x:%02x:%02x:%02x:%02x:%02x\n",
-                ext->data[6], ext->data[7], ext->data[8],
-                ext->data[9], ext->data[10], ext->data[11]);
-        _dessert_msg_trace_dump_append("\t\t  l2.5 src     %02x:%02x:%02x:%02x:%02x:%02x\n",
-                ext->data[12], ext->data[13], ext->data[14],
-                ext->data[15], ext->data[16], ext->data[17]);
+        _dessert_msg_trace_dump_append("\t\t  received on   " MAC "\n", EXPLODE_ARRAY6(ext->data));
+        _dessert_msg_trace_dump_append("\t\t  l2.5 src      " MAC "\n", EXPLODE_ARRAY6(ext->data + 12));
     }
 
     for (i = 1; i < x; i++) {
         dessert_msg_getext(msg, &ext, type, i);
-        _dessert_msg_trace_dump_append("\t\t#%3d %02x:%02x:%02x:%02x:%02x:%02x\n", i,
-                ext->data[0], ext->data[1], ext->data[2],
-                ext->data[3], ext->data[4], ext->data[5]);
+        _dessert_msg_trace_dump_append("\t\t#%3d " MAC "\n", i,
+                EXPLODE_ARRAY6(ext->data));
 
         if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-            _dessert_msg_trace_dump_append("\t\t  received from  %02x:%02x:%02x:%02x:%02x:%02x\n",
-                    ext->data[12], ext->data[13], ext->data[14],
-                    ext->data[15], ext->data[16], ext->data[17]);
-            _dessert_msg_trace_dump_append("\t\t  receiving meshif  %02x:%02x:%02x:%02x:%02x:%02x\n",
-                    ext->data[6], ext->data[7], ext->data[8],
-                    ext->data[9], ext->data[10], ext->data[11]);
+            _dessert_msg_trace_dump_append("\t\t  received from  " MAC "\n", EXPLODE_ARRAY6(ext->data + 12));
+            _dessert_msg_trace_dump_append("\t\t  receiving meshif  " MAC "\n", EXPLODE_ARRAY6(ext->data + 6));
         }
     }
 

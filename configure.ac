@@ -19,9 +19,7 @@ AC_PROG_LN_S
 
 # Checks for libtool
 
-# Debian Stable has no libtool2 yet so use old invocation
-#LT_INIT
-AM_PROG_LIBTOOL
+LT_INIT
 
 # Checks for net-snmp-config
 AS_IF([test "x$with_net_snmp" != xno],
@@ -159,4 +157,3 @@ AS_IF([test $do_android_build -eq 1],
 )
 
 AC_OUTPUT
-
