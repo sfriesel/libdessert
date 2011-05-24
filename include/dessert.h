@@ -504,7 +504,7 @@ int dessert_set_cli_port(uint16_t port);
 /** flag for dessert_logcfg - disable log file compression */
 #define DESSERT_LOG_NOGZ      0x0200
 
-#define EXPLODE_ARRAY6( ARRAY ) ARRAY[0], ARRAY[1], ARRAY[2], ARRAY[3], ARRAY[4], ARRAY[5]
+#define EXPLODE_ARRAY6( ARRAY ) (ARRAY)[0], (ARRAY)[1], (ARRAY)[2], (ARRAY)[3], (ARRAY)[4], (ARRAY)[5]
 #define MAC "%02x:%02x:%02x:%02x:%02x:%02x"
 
 /******************************************************************************
