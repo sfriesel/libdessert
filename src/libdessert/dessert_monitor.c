@@ -87,10 +87,15 @@ struct wifi_header {
 	u_int16_t sequence_number;
 } __attribute__((__packed__));
 
+/* maximum age of rssi samples in seconds; may be overwritten
+ * when calling dessert_monitoring start. */
 int MAX_AGE = 1;
+/* maximum number of rssi samples to store per neighbour */
 int MAX_RSSI_VALS = 100;
+/* interval in seconds to clean outdated neighbour entries */
 int MAINTENANCE_INTERVAL = 10;
-int skfd = 0; /* socket for ioctl channel requests */
+/* socket for ioctl channel requests */
+int skfd = 0;
 
 int32_t iw_freq2long(const iwfreq *in) {
 	int i;
