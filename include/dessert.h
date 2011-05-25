@@ -83,10 +83,7 @@
 
 #ifndef DESSERT_H
 #define DESSERT_H
-
-#ifdef __linux__
 #define TUN_LINUX
-#endif
 
 #include <stdint.h>
 #include <stdlib.h>
