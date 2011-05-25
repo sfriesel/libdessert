@@ -378,8 +378,8 @@ int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], 
       && newlogfdgz == NULL
 #endif
       ) {
-        dessert_err("failed to open %s as logfile\n", argv[0]);
-        cli_print(cli, "failed to open %s as logfile\n", argv[0]);
+        dessert_err("failed to open %s as logfile", argv[0]);
+        cli_print(cli, "failed to open %s as logfile", argv[0]);
         return CLI_ERROR;
     }
 

@@ -458,6 +458,5 @@ static void *_dessert_sysif_init_thread(void* arg) {
 
 	free(cbl);
 	close(sysif->fd);
-
 	return (NULL);
 }
