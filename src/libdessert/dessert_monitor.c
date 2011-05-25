@@ -29,6 +29,9 @@
 #include <pcap/pcap.h>
 #include <iwlib.h>
 #include <utlist.h>
+#ifndef DL_FOREACH_SAFE
+#error "your version of utlist.h does not support DL_FOREACH_SAFE, please install the latest version from http://uthash.sourceforge.net/"
+#endif
 
 /* default snap length (maximum bytes per packet to capture) */
 #define SNAP_LEN 1518
