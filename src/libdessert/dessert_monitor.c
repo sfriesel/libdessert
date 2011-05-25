@@ -106,10 +106,6 @@ int32_t iw_freq2long(const iwfreq *in) {
 	return res/1000000; //convert to MHz
 }
 
-int interface_cmp(const dessert_meshif_t *left, const dessert_meshif_t *right) {
-	return strcmp(left->if_name, right->if_name);
-}
-
 int neighbour_cmp(const struct monitor_neighbour *left, const struct monitor_neighbour *right) {
 	return memcmp(left->addr, right->addr, sizeof(left->addr));
 }
