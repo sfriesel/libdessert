@@ -46,6 +46,8 @@ char dessert_logprefix[12];
 #define _DESSERT_LOGFLAG_RBUF     0x08
 #define _DESSERT_LOGFLAG_GZ       0x10
 
+#define LOG_STYLE_OLD 1
+
 int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
 int _dessert_loglevel = LOG_INFO;
 dessert_periodic_t* _dessert_log_flush_periodic = NULL;
@@ -179,90 +181,91 @@ char* _dessert_log_rbuf_nextline(void) {
  * @param[in] ... (var-arg) printf like variables
  **/
 void _dessert_log(int level, const char* func, const char* file, int line, const char *fmt, ...) {
-    va_list args;
-    char *rbuf_line = NULL;
-    char buf[DESSERT_LOGLINE_MAX];
-    char lf[80];
-    char *lt;
-    char lds[27];
-    struct tm ldd;
-    time_t ldi;
-    int lf_slen, buf_slen;
-
-    if(_dessert_loglevel < level) {
+    if(_dessert_logflags == 0 || _dessert_loglevel < level) {
         return;
     }
 
-    snprintf(lf, 80, " (%s@%s:%d)", func, file, line);
-    lf_slen = strlen(lf);
+    char pos[80];
+    snprintf(pos, sizeof(pos), "(%s@%s:%d)", func, file, line);
 
+    va_list args;
     va_start(args, fmt);
-    vsnprintf(buf, DESSERT_LOGLINE_MAX, fmt, args);
+
+    char msg[DESSERT_LOGLINE_MAX];
+    vsnprintf(msg, sizeof(msg), fmt, args);
     va_end(args);
-    buf_slen = strlen(buf);
 
     if(_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) {
-        syslog(level, "%s%s", buf, lf);
-    }
-
-    if(_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
-        pthread_rwlock_rdlock(&_dessert_logrbuf_len_lock);
-        rbuf_line = _dessert_log_rbuf_nextline();
+        syslog(level, "%s %s", msg, pos);
     }
 
     if(_dessert_logflags & (_DESSERT_LOGFLAG_LOGFILE | _DESSERT_LOGFLAG_STDERR | _DESSERT_LOGFLAG_RBUF)) {
-        time(&ldi);
-        localtime_r(&ldi, &ldd);
-        snprintf(lds, 26, "%04d-%02d-%02d %02d:%02d:%02d%+05.1f ", ldd.tm_year
-                + 1900, ldd.tm_mon + 1, ldd.tm_mday, ldd.tm_hour, ldd.tm_min,
-                ldd.tm_sec, (double) ldd.tm_gmtoff / 3600);
+        char timestamp[64];
+        struct timeval current_time;
+        struct tm current_time_members;
+        gettimeofday(&current_time, NULL);
+        localtime_r(&current_time.tv_sec, &current_time_members);
+        snprintf(timestamp,
+                 sizeof(timestamp),
+                 "%04d-%02d-%02d %02d:%02d:%02d.%03d%+05.1f",
+                 current_time_members.tm_year + 1900,
+                 current_time_members.tm_mon + 1,
+                 current_time_members.tm_mday,
+                 current_time_members.tm_hour,
+                 current_time_members.tm_min,
+                 current_time_members.tm_sec,
+                 (int) current_time.tv_usec / 1000,
+                 (double) current_time_members.tm_gmtoff / (60*60));
 
+        const char *log_type;
         switch (level) {
-          case LOG_EMERG:
-              lt = "EMERG: ";
-              break;
-          case LOG_ALERT:
-              lt = "ALERT: ";
-              break;
-          case LOG_CRIT:
-              lt = "CRIT:  ";
-              break;
-          case LOG_ERR:
-              lt = "ERR:   ";
-              break;
-          case LOG_WARNING:
-              lt = "WARN:  ";
-              break;
-          case LOG_NOTICE:
-              lt = "NOTICE:";
-              break;
-          case LOG_INFO:
-              lt = "INFO:  ";
-              break;
-          default:
-              lt = "DEBUG: ";
-              break;
+            case LOG_EMERG:   log_type = "EMERG: "; break;
+            case LOG_ALERT:   log_type = "ALERT: "; break;
+            case LOG_CRIT:    log_type = "CRIT:  "; break;
+            case LOG_ERR:     log_type = "ERR:   "; break;
+            case LOG_WARNING: log_type = "WARN:  "; break;
+            case LOG_NOTICE:  log_type = "NOTICE:"; break;
+            case LOG_INFO:    log_type = "INFO:  "; break;
+            default:          log_type = "DEBUG: "; break;
         }
 
         if(_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
             pthread_mutex_lock(&_dessert_logfile_mutex);
             if(dessert_logfd != NULL) {
-                fprintf(dessert_logfd, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+                #ifdef LOG_STYLE_OLD
+                fprintf(dessert_logfd, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
+                #else
+                fprintf(dessert_logfd, "%s %s %s %s\n", timestamp, log_type, msg, pos);
+                #endif
             }
 #ifdef HAVE_LIBZ
             else if(dessert_logfdgz != NULL) {
-                gzprintf(dessert_logfdgz, "%s%s%s\n%80s\n", lds, lt, buf, lf);
+                #ifdef LOG_STYLE_OLD
+                gzprintf(dessert_logfdgz, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
+                #else
+                gzprintf(dessert_logfdgz, "%s %s %s %s\n", timestamp, log_type, msg, pos);
+                #endif
             }
 #endif
             pthread_mutex_unlock(&_dessert_logfile_mutex);
         }
         if(_dessert_logflags & _DESSERT_LOGFLAG_STDERR) {
-            fprintf(stderr, "%s%s%s\n%80s\n", lds, lt, buf, lf);
-        }
-        if(_dessert_logflags & _DESSERT_LOGFLAG_RBUF && rbuf_line != NULL) {
-            snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s%s%s\n%80s", lds, lt, buf, lf);
+            #ifdef LOG_STYLE_OLD
+            fprintf(stderr, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
+            #else
+            fprintf(stderr, "%s %s %s %s\n", timestamp, log_type, msg, pos);
+            #endif
         }
         if(_dessert_logflags & _DESSERT_LOGFLAG_RBUF) {
+            pthread_rwlock_rdlock(&_dessert_logrbuf_len_lock);
+            char *rbuf_line = _dessert_log_rbuf_nextline();
+            if(rbuf_line != NULL) {
+                #ifdef LOG_STYLE_OLD
+                snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
+                #else
+                snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s %s %s %s\n", timestamp, log_type, msg, pos);
+                #endif
+            }
             pthread_rwlock_unlock(&_dessert_logrbuf_len_lock);
         }
     }
