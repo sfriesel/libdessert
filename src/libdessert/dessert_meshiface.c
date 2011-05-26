@@ -51,7 +51,6 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg,
 		dessert_meshif_t *iface);
 static void _dessert_meshif_cleanup(dessert_meshif_t *meshif);
 static void _dessert_meshiflist_update_permutations(void);
-static inline int DL_LENGTH(dessert_meshif_t *l);
 static inline void list2array(dessert_meshif_t *l, dessert_meshif_t **a,
 		int len);
 static inline int fact(int i);
@@ -996,7 +995,7 @@ static void _dessert_meshiflist_update_permutations() {
 
 	pthread_mutex_lock(&_dessert_meshiflist_mutex);
 	dessert_meshif_t *tmp;
-	_dessert_meshiflist_len = DL_LENGTH(_dessert_meshiflist);
+	DL_LENGTH(_dessert_meshiflist, _dessert_meshiflist_len, tmp);
 
 	dessert_meshif_t **a =  calloc(sizeof(a), _dessert_meshiflist_len);
 	list2array(_dessert_meshiflist, a, _dessert_meshiflist_len);
@@ -1026,24 +1025,6 @@ static void _dessert_meshiflist_update_permutations() {
 	}
 
 	pthread_mutex_unlock(&_dessert_meshiflist_mutex);
-}
-
-/** Internal function to get the length of a double-linked utlist.
- *
- * @internal
- *
- * @param[in] *l a pointer to the list head
- *
- * @return the number of elements in the list
- *
- * %DESCRIPTION: \n
- */
-static inline int DL_LENGTH(dessert_meshif_t *l) {
-	int len = 0;
-	dessert_meshif_t *temp;
-	DL_FOREACH(l, temp)
-		len++;
-	return len;
 }
 
 /** Internal function to copy the element pointers of the _dessert_meshiflist to an array.

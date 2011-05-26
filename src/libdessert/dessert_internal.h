@@ -78,6 +78,16 @@ dessert_frameid_t _dessert_newframeid(void);
 
 int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[], int argc);
 
+//this should be in utlist.h in the future
+#ifndef DL_LENGTH
+#define DL_LENGTH(head,len,tmp)                                                                \
+do {                                                                                           \
+  len=0;                                                                                       \
+  DL_FOREACH(head,tmp)                                                                         \
+    len++;                                                                                     \
+} while (0)
+#endif
+
 /******************************************************************************
  *
  * INTERNAL / PRIVATE
