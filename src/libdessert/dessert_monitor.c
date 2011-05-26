@@ -476,7 +476,7 @@ void *monitoring(void *node) {
  *  If amount is not NULL, it will contain the number of samples used to
  *  calculate the average after calling this function
  */
-struct avg_node_result dessert_rssi_avg(const mac_addr hwaddr, const char *dest_dev) {
+avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, const char *dest_dev) {
 	dessert_meshif_t *interface;
 	struct monitor_neighbour neighbour_needle, *neighbour_result;
 	memcpy(neighbour_needle.addr, hwaddr, sizeof(mac_addr));

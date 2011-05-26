@@ -550,13 +550,13 @@ struct rssi_sample {
 	u_int8_t retry;
 };
 
-struct avg_node_result {
+typedef struct avg_node_result {
 	int8_t avg_rssi;
 	int8_t avg_noise;
 	u_int8_t avg_rate;
 	u_int8_t amount;
 	u_int8_t sum_retries;
-};
+} avg_node_result_t;
 
 struct monitor_neighbour {
 	struct monitor_neighbour *prev, *next;
@@ -571,7 +571,7 @@ struct monitor_neighbour {
 /* monitoring frames*/
 int dessert_monitoring_start(int max_rssi_vals, int max_age);
 int dessert_monitoring_stop();
-struct avg_node_result dessert_rssi_avg(const mac_addr hwaddr, const char *dest_dev);
+avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, const char *dest_dev);
 char **dessert_monitored_interface_names(void);
 void   dessert_monitored_interface_names_free(char **p);
 int dessert_print_monitored_database();
