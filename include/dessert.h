@@ -580,6 +580,22 @@ int dessert_log_monitored_neighbour(const mac_addr hwaddr);
 /***************************************************************************//**
  * @}
  * @ingroup libdessert
+ * @defgroup utils
+ *
+ * @brief EXTERNAL / PUBLIC
+ *
+ * @{
+ ******************************************************************************/
+
+/******************************************************************************
+ * functions
+ ******************************************************************************/
+
+int dessert_parse_mac(const char *input_mac, mac_addr *hwaddr);
+
+/***************************************************************************//**
+ * @}
+ * @ingroup libdessert
  * @defgroup mesh mesh Interfaces
  *
  * @brief EXTERNAL / PUBLIC
