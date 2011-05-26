@@ -1,10 +1,12 @@
 XXXXXXXX - 1.01
     - Re-written monitor code
     - More monitor interface information availabe to routing protocols
+    - add dessert_utils.c with dessert_parse_mac
     - Milisecond resolution for log messages
     - add alternative log output format (disabled by default)
     - General code cleanup
     - use MAC-Macro & EXPLODE_ARRAY6-Macro
+    - add DL_LENGTH macro
     - remove %M printf pattern
     - Configure includes checks for more dependencies
     - libtool version = X.X.X
