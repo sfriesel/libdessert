@@ -1,4 +1,4 @@
-XXXXXXXX - 1.01
+20110530 - 1.01
     - Re-written monitor code
     - More monitor interface information availabe to routing protocols
     - add dessert_utils.c with dessert_parse_mac
@@ -9,7 +9,8 @@ XXXXXXXX - 1.01
     - add DL_LENGTH macro
     - remove %M printf pattern
     - Configure includes checks for more dependencies
-    - libtool version = X.X.X
+    - Replaced mkinstalldirs with MKDIR_P
+    - libtool version = 1.7.1
 
 20110330 - 1.00
     - Merged RSSI branch / monitor interface support

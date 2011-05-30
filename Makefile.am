@@ -28,7 +28,7 @@ uninstall-mibs:
 
 installdirs-mibs:
 	if [ $(install_mibs) -eq 1 ]; then \
-		$(SHELL) $(top_srcdir)/mkinstalldirs $(DESTDIR)/$(with_mibsdir) ; \
+		$(MKDIR_P) $(DESTDIR)/$(with_mibsdir) ; \
 	fi
 	
 install-dissectors: installdirs-dissectors
@@ -45,5 +45,5 @@ uninstall-dissectors:
 
 installdirs-dissectors:
 	if [ $(install_dissectors) -eq 1 ]; then \
-		$(SHELL) $(top_srcdir)/mkinstalldirs $(DESTDIR)/$(with_dissectorsdir) ; \
+		$(MKDIR_P) $(DESTDIR)/$(with_dissectorsdir) ; \
 	fi
