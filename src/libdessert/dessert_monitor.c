@@ -39,55 +39,55 @@
 #define ALIGN(x,a) (((x)+(a)-1)&~((a)-1))
 
 struct ieee80211_radiotap_header {
-	u_int8_t it_version;
-	u_int8_t it_pad;
-	u_int16_t it_len;
-	u_int32_t it_present;
+    u_int8_t it_version;
+    u_int8_t it_pad;
+    u_int16_t it_len;
+    u_int32_t it_present;
 } __attribute__((__packed__));
 
 struct radiotap_header_opt_fields {
-	u_int64_t wr_tsft; //timestamp in microseconds when the first bit of the packet arrived
-	u_int8_t wr_flags;
-	u_int8_t wr_rate;
-	struct {
-		u_int16_t frequency;
-		u_int16_t flags;
-	} wr_channel;
-	struct {
-		u_int8_t hop_set;
-		u_int8_t hop_pattern;
-	} wr_fhss;
-	int8_t wr_ant_signal;
-	int8_t wr_ant_noise;
-	u_int16_t wr_lockquality;
-	u_int16_t wr_tx_attenuation;
-	u_int16_t wr_db_tx_attenuation;
-	int8_t wr_dbm_tx_power;
-	u_int8_t wr_antenna;
-	u_int8_t wr_db_antsignal;
-	u_int8_t wr_db_antnoise;
-	u_int16_t wr_rx_flags;
+    u_int64_t wr_tsft; //timestamp in microseconds when the first bit of the packet arrived
+    u_int8_t wr_flags;
+    u_int8_t wr_rate;
+    struct {
+        u_int16_t frequency;
+        u_int16_t flags;
+    } wr_channel;
+    struct {
+        u_int8_t hop_set;
+        u_int8_t hop_pattern;
+    } wr_fhss;
+    int8_t wr_ant_signal;
+    int8_t wr_ant_noise;
+    u_int16_t wr_lockquality;
+    u_int16_t wr_tx_attenuation;
+    u_int16_t wr_db_tx_attenuation;
+    int8_t wr_dbm_tx_power;
+    u_int8_t wr_antenna;
+    u_int8_t wr_db_antsignal;
+    u_int8_t wr_db_antnoise;
+    u_int16_t wr_rx_flags;
 };
 
 struct wifi_header {
-	struct {
-		int8_t version_and_type : 8;
-		struct {
-			int8_t ds : 2;
-			int8_t more_fragments : 1;
-			int8_t retry : 1;
-			int8_t power_management : 1;
-			int8_t moredata : 1;
-			int8_t protected : 1;
-			int8_t order : 1;
-		} flags;
-	} frame_control;
-	u_int16_t duration;
-	mac_addr destination_address;
-	mac_addr source_address;
-	mac_addr bssid;
-	u_int16_t fragment_number;
-	u_int16_t sequence_number;
+    struct {
+        int8_t version_and_type : 8;
+        struct {
+            int8_t ds : 2;
+            int8_t more_fragments : 1;
+            int8_t retry : 1;
+            int8_t power_management : 1;
+            int8_t moredata : 1;
+            int8_t protected : 1;
+            int8_t order : 1;
+        } flags;
+    } frame_control;
+    u_int16_t duration;
+    mac_addr destination_address;
+    mac_addr source_address;
+    mac_addr bssid;
+    u_int16_t fragment_number;
+    u_int16_t sequence_number;
 } __attribute__((__packed__));
 
 /* maximum age of rssi samples in seconds; may be overwritten
@@ -100,223 +100,223 @@ int MAINTENANCE_INTERVAL = 10;
 /* socket for ioctl channel requests */
 int skfd = 0;
 
-int32_t iw_freq2long(const iwfreq *in) {
-	int i;
-	int64_t res = in->m;
-	for(i = 0; i < in->e; i++) {
-		res *= 10;
-	}
-	return res/1000000; //convert to MHz
+static int32_t iw_freq2long(const iwfreq *in) {
+    int i;
+    int64_t res = in->m;
+    for(i = 0; i < in->e; i++) {
+        res *= 10;
+    }
+    return res/1000000; //convert to MHz
 }
 
-int neighbour_cmp(const struct monitor_neighbour *left, const struct monitor_neighbour *right) {
-	return memcmp(left->addr, right->addr, sizeof(left->addr));
+static int neighbour_cmp(const struct monitor_neighbour *left, const struct monitor_neighbour *right) {
+    return memcmp(left->addr, right->addr, sizeof(left->addr));
 }
 
-struct radiotap_header_opt_fields parse(const u_int8_t *packet) {
-	struct radiotap_header_opt_fields out;
-	struct ieee80211_radiotap_header *radiotap = (struct ieee80211_radiotap_header*) packet;
+static struct radiotap_header_opt_fields parse(const u_int8_t *packet) {
+    struct radiotap_header_opt_fields out;
+    struct ieee80211_radiotap_header *radiotap = (struct ieee80211_radiotap_header*) packet;
 
-	memset(&out, 0, sizeof(out));
-	/* The radio tap header may contain multiple it_present words
-	   if bit 31 is set. If it is set, then more it_present words follow 
-	   and the radiotap data follows after the it_present word 
-	   that has bit 31 unset. */
+    memset(&out, 0, sizeof(out));
+    /* The radio tap header may contain multiple it_present words
+    if bit 31 is set. If it is set, then more it_present words follow
+    and the radiotap data follows after the it_present word
+    that has bit 31 unset. */
 
-	u_int32_t *last_present_field;
-	for(last_present_field = &radiotap->it_present;
-	    *last_present_field >> 31;
-	    ++last_present_field) {
-		continue;
-	}
-	
-	u_int8_t *radiotap_data = (u_int8_t*) ++last_present_field;
+    u_int32_t *last_present_field;
+    for(last_present_field = &radiotap->it_present;
+        *last_present_field >> 31;
+        ++last_present_field) {
+        continue;
+    }
 
-	int i, offset = 0;
+    u_int8_t *radiotap_data = (u_int8_t*) ++last_present_field;
 
-	for(i = 0; i < 15; i++) {
-		if(((radiotap->it_present >> i) & 1) == 0)
-			continue;
-		switch(i) {
+    int i, offset = 0;
+
+    for(i = 0; i < 15; i++) {
+        if(((radiotap->it_present >> i) & 1) == 0)
+            continue;
+        switch(i) {
 #define PARSE_FIELD_NOBREAK(field) \
-			offset = ALIGN(offset, sizeof(out.field)); \
-			out.field = * (typeof(out.field) *) (radiotap_data + offset); \
-			offset += sizeof(out.field);
+            offset = ALIGN(offset, sizeof(out.field)); \
+            out.field = * (typeof(out.field) *) (radiotap_data + offset); \
+            offset += sizeof(out.field);
 #define PARSE_FIELD(field) PARSE_FIELD_NOBREAK(field); break
-		case  0: PARSE_FIELD(wr_tsft);
-		case  1: PARSE_FIELD(wr_flags);
-		case  2: PARSE_FIELD(wr_rate);
-		case  3: PARSE_FIELD_NOBREAK(wr_channel.frequency);
-		         PARSE_FIELD(wr_channel.flags);
-		case  4: PARSE_FIELD_NOBREAK(wr_fhss.hop_set);
-		         PARSE_FIELD(wr_fhss.hop_pattern);
-		case  5: PARSE_FIELD(wr_ant_signal);
-		case  6: PARSE_FIELD(wr_ant_noise);
-		case  7: PARSE_FIELD(wr_lockquality);
-		case  8: PARSE_FIELD(wr_tx_attenuation);
-		case  9: PARSE_FIELD(wr_db_tx_attenuation);
-		case 10: PARSE_FIELD(wr_dbm_tx_power);
-		case 11: PARSE_FIELD(wr_antenna);
-		case 12: PARSE_FIELD(wr_db_antsignal);
-		case 13: PARSE_FIELD(wr_db_antnoise);
-		case 14: PARSE_FIELD(wr_rx_flags);
+        case  0: PARSE_FIELD(wr_tsft);
+        case  1: PARSE_FIELD(wr_flags);
+        case  2: PARSE_FIELD(wr_rate);
+        case  3: PARSE_FIELD_NOBREAK(wr_channel.frequency);
+                PARSE_FIELD(wr_channel.flags);
+        case  4: PARSE_FIELD_NOBREAK(wr_fhss.hop_set);
+                PARSE_FIELD(wr_fhss.hop_pattern);
+        case  5: PARSE_FIELD(wr_ant_signal);
+        case  6: PARSE_FIELD(wr_ant_noise);
+        case  7: PARSE_FIELD(wr_lockquality);
+        case  8: PARSE_FIELD(wr_tx_attenuation);
+        case  9: PARSE_FIELD(wr_db_tx_attenuation);
+        case 10: PARSE_FIELD(wr_dbm_tx_power);
+        case 11: PARSE_FIELD(wr_antenna);
+        case 12: PARSE_FIELD(wr_db_antsignal);
+        case 13: PARSE_FIELD(wr_db_antnoise);
+        case 14: PARSE_FIELD(wr_rx_flags);
 #undef PARSE_FIELD
-		}
-	}
-	return out;
+        }
+    }
+    return out;
 }
 
 struct avg_node_result avg_node(struct monitor_neighbour *n) {
-	int counter = 0;
-	int accu_rssi = 0;
-	int accu_noise = 0;
-	int accu_rate = 0;
-	int accu_retries = 0;
-	int j;
+    int counter = 0;
+    int accu_rssi = 0;
+    int accu_noise = 0;
+    int accu_rate = 0;
+    int accu_retries = 0;
+    int j;
 
-	time_t cur_time = time(NULL);
-	for(j = 0; j < MAX_RSSI_VALS; ++j) {
-		if(cur_time - n->samples[j].time > MAX_AGE){
-			//operate only if value is valid and not older than MAX_AGE
-			continue;
-		}
-		accu_rssi    += n->samples[j].rssi;
-		accu_noise   += n->samples[j].noise;
-		accu_rate    += n->samples[j].rate;
-		accu_retries += n->samples[j].retry ? 1 : 0;
-		++counter;
-	}
+    time_t cur_time = time(NULL);
+    for(j = 0; j < MAX_RSSI_VALS; ++j) {
+        if(cur_time - n->samples[j].time > MAX_AGE){
+            //operate only if value is valid and not older than MAX_AGE
+            continue;
+        }
+        accu_rssi    += n->samples[j].rssi;
+        accu_noise   += n->samples[j].noise;
+        accu_rate    += n->samples[j].rate;
+        accu_retries += n->samples[j].retry ? 1 : 0;
+        ++counter;
+    }
 
-	struct avg_node_result result;
-	if(counter > 0) {
-		result.avg_rssi    = accu_rssi/counter;
-		result.avg_noise   = accu_noise/counter;
-		result.avg_rate    = accu_rate/counter;
-		result.sum_retries = accu_retries;
-		result.amount      = counter;
-	} else {
-		memset(&result, 0, sizeof(result));
-	}
-	return result;
+    struct avg_node_result result;
+    if(counter > 0) {
+        result.avg_rssi    = accu_rssi/counter;
+        result.avg_noise   = accu_noise/counter;
+        result.avg_rate    = accu_rate/counter;
+        result.sum_retries = accu_retries;
+        result.amount      = counter;
+    } else {
+        memset(&result, 0, sizeof(result));
+    }
+    return result;
 }
 
-int32_t get_dev_freq(dessert_meshif_t *iface) {
-	/* skfd socket is a globally defined socket for the ioctl channel requests */
-	//FIXME: not thread-safe
-	struct iwreq wrq;
-	if(iw_get_ext(skfd, iface->if_name, SIOCGIWNAME, &wrq) < 0) {
-		/* If no wireless name : no wireless extensions */
-		dessert_crit("Could not open device %s", iface->if_name);
-		return -2;
-	}
+static int32_t get_dev_freq(dessert_meshif_t *iface) {
+    /* skfd socket is a globally defined socket for the ioctl channel requests */
+    //FIXME: not thread-safe
+    struct iwreq wrq;
+    if(iw_get_ext(skfd, iface->if_name, SIOCGIWNAME, &wrq) < 0) {
+        /* If no wireless name : no wireless extensions */
+        dessert_crit("Could not open device %s", iface->if_name);
+        return -2;
+    }
 
-	if(iw_get_ext(skfd, iface->if_name, SIOCGIWFREQ, &wrq) < 0) {
-		// TODO: may fail for first call
-		return -1;
-	}
+    if(iw_get_ext(skfd, iface->if_name, SIOCGIWFREQ, &wrq) < 0) {
+        // TODO: may fail for first call
+        return -1;
+    }
 
-	return iw_freq2long(&wrq.u.freq);
+    return iw_freq2long(&wrq.u.freq);
 }
 
-void maintenance(void) {
-	dessert_meshif_t *interface;
-	struct monitor_neighbour *neighbour, *tmp;
+static void maintenance(void) {
+    dessert_meshif_t *interface;
+    struct monitor_neighbour *neighbour, *tmp;
 
-	MESHIFLIST_ITERATOR_START(interface)
-		pthread_rwlock_wrlock(&interface->monitor_neighbour_lock);
-		DL_FOREACH_SAFE(interface->neighbours, neighbour, tmp) {
-			if(avg_node(neighbour).amount == 0) {
-				DL_DELETE(interface->neighbours, neighbour);
-				free(neighbour->samples);
-				free(neighbour);
-			}
-		}
-		pthread_rwlock_unlock(&interface->monitor_neighbour_lock);
-	MESHIFLIST_ITERATOR_STOP;
+    MESHIFLIST_ITERATOR_START(interface)
+        pthread_rwlock_wrlock(&interface->monitor_neighbour_lock);
+        DL_FOREACH_SAFE(interface->neighbours, neighbour, tmp) {
+            if(avg_node(neighbour).amount == 0) {
+                DL_DELETE(interface->neighbours, neighbour);
+                free(neighbour->samples);
+                free(neighbour);
+            }
+        }
+        pthread_rwlock_unlock(&interface->monitor_neighbour_lock);
+    MESHIFLIST_ITERATOR_STOP;
 }
 
 void *maintenance_start(void *nothing __attribute__((unused))) {
-	while(1) {
-		sleep(MAINTENANCE_INTERVAL);
-		maintenance();
-	}
-	return NULL;
+    while(1) {
+        sleep(MAINTENANCE_INTERVAL);
+        maintenance();
+    }
+    return NULL;
 }
 
-int print_neighbour(const mac_addr hwaddr,
+static int print_neighbour(const mac_addr hwaddr,
                     dessert_meshif_t *interface,
                     struct avg_node_result avg) {
 
-	cli_print(dessert_cli,
-		  "Neighbour: " MAC " | "
-		  "Device: %s | "
-		  "Freq: %04d MHz | "
-		  "avg. RSSI: %03d dBm | "
-		  "avg. noise: %03d dBm | "
-		  "avg. rate: %03d Mbps | "
-		  "Values: %03d | "
-		  "Retries: %03d",
-		  EXPLODE_ARRAY6(hwaddr),
-		  interface->if_name,
-		  get_dev_freq(interface),
-		  avg.avg_rssi,
-		  avg.avg_noise,
-		  avg.avg_rate*500/1000,
-		  avg.amount,
-		  avg.sum_retries);
-	return 0;
+    cli_print(dessert_cli,
+        "Neighbour: " MAC " | "
+        "Device: %s | "
+        "Freq: %04d MHz | "
+        "avg. RSSI: %03d dBm | "
+        "avg. noise: %03d dBm | "
+        "avg. rate: %03d Mbps | "
+        "Values: %03d | "
+        "Retries: %03d",
+        EXPLODE_ARRAY6(hwaddr),
+        interface->if_name,
+        get_dev_freq(interface),
+        avg.avg_rssi,
+        avg.avg_noise,
+        avg.avg_rate*500/1000,
+        avg.amount,
+        avg.sum_retries);
+    return 0;
 }
 
-int log_neighbour(const mac_addr hwaddr,
+static int log_neighbour(const mac_addr hwaddr,
                     dessert_meshif_t *interface,
                     struct avg_node_result avg) {
 
-	dessert_info(
-		  MAC ","
-		  "%s,"
-		  "%04d,"
-		  "%03d,"
-		  "%03d,"
-		  "%03d,"
-		  "%03d,"
-		  "%03d",
-		  EXPLODE_ARRAY6(hwaddr),
-		  interface->if_name,
-		  get_dev_freq(interface),
-		  avg.avg_rssi,
-		  avg.avg_noise,
-		  avg.avg_rate*500/1000,
-		  avg.amount,
-		  avg.sum_retries);
-	return 0;
+    dessert_info(
+        MAC ","
+        "%s,"
+        "%04d,"
+        "%03d,"
+        "%03d,"
+        "%03d,"
+        "%03d,"
+        "%03d",
+        EXPLODE_ARRAY6(hwaddr),
+        interface->if_name,
+        get_dev_freq(interface),
+        avg.avg_rssi,
+        avg.avg_noise,
+        avg.avg_rate*500/1000,
+        avg.amount,
+        avg.sum_retries);
+    return 0;
 }
 
 int dessert_print_monitored_database() {
-	maintenance();
+    maintenance();
 
-	dessert_meshif_t *interface;
-	struct monitor_neighbour* neighbour;
-	
-	struct avg_node_result avg;
-	MESHIFLIST_ITERATOR_START(interface)
-		pthread_rwlock_wrlock(&interface->monitor_neighbour_lock);
-		DL_FOREACH(interface->neighbours, neighbour) {
-			avg = avg_node(neighbour);
-			print_neighbour(neighbour->addr, interface, avg);
-		}
-		pthread_rwlock_unlock(&interface->monitor_neighbour_lock);
-	MESHIFLIST_ITERATOR_STOP;
-	return 0;
+    dessert_meshif_t *interface;
+    struct monitor_neighbour* neighbour;
+
+    struct avg_node_result avg;
+    MESHIFLIST_ITERATOR_START(interface)
+        pthread_rwlock_wrlock(&interface->monitor_neighbour_lock);
+        DL_FOREACH(interface->neighbours, neighbour) {
+            avg = avg_node(neighbour);
+            print_neighbour(neighbour->addr, interface, avg);
+        }
+        pthread_rwlock_unlock(&interface->monitor_neighbour_lock);
+    MESHIFLIST_ITERATOR_STOP;
+    return 0;
 }
 
 int dessert_log_monitored_neighbour(const mac_addr hwaddr) {
-	dessert_meshif_t *interface;
-	MESHIFLIST_ITERATOR_START(interface)
-		struct avg_node_result avg = dessert_rssi_avg(hwaddr, interface->if_name);
-		if(avg.amount != 0)
-			log_neighbour(hwaddr, interface, avg);
-	MESHIFLIST_ITERATOR_STOP;
-	return 0;
+    dessert_meshif_t *interface;
+    MESHIFLIST_ITERATOR_START(interface)
+        struct avg_node_result avg = dessert_rssi_avg(hwaddr, interface->if_name);
+        if(avg.amount != 0)
+            log_neighbour(hwaddr, interface, avg);
+    MESHIFLIST_ITERATOR_STOP;
+    return 0;
 }
 
 /*inserts a value in a node - in the first possible position*/
@@ -325,21 +325,21 @@ static inline void insert_value_node(struct monitor_neighbour *n,
                                      time_t delivery_time,
                                      u_int8_t is_retry) {
 
-	time_t min_time = time(NULL);
-	int min_index = 0;
+    time_t min_time = time(NULL);
+    int min_index = 0;
 
-	int i;
-	for(i = 0; i < MAX_RSSI_VALS; ++i) {
-		if(n->samples[i].time < min_time) {
-			min_time = n->samples[i].time;
-			min_index = i;
-		}
-	}
-	n->samples[min_index].rssi = opts->wr_ant_signal;
-	n->samples[min_index].noise = opts->wr_ant_noise;
-	n->samples[min_index].rate = opts->wr_rate;
-	n->samples[min_index].time = delivery_time;
-	n->samples[min_index].retry = is_retry;
+    int i;
+    for(i = 0; i < MAX_RSSI_VALS; ++i) {
+        if(n->samples[i].time < min_time) {
+            min_time = n->samples[i].time;
+            min_index = i;
+        }
+    }
+    n->samples[min_index].rssi = opts->wr_ant_signal;
+    n->samples[min_index].noise = opts->wr_ant_noise;
+    n->samples[min_index].rate = opts->wr_rate;
+    n->samples[min_index].time = delivery_time;
+    n->samples[min_index].retry = is_retry;
 }
 
 /*inserts a value in the matrix*/
@@ -348,128 +348,128 @@ static inline void insert_value(dessert_meshif_t *iface,
                                 time_t delivery_time,
                                 mac_addr source_address,
                                 u_int8_t is_retry) {
-	struct monitor_neighbour neighbour_needle, *neighbour_result;
-	memcpy(neighbour_needle.addr, source_address, sizeof(mac_addr));
+    struct monitor_neighbour neighbour_needle, *neighbour_result;
+    memcpy(neighbour_needle.addr, source_address, sizeof(mac_addr));
 
-	pthread_rwlock_rdlock(&iface->monitor_neighbour_lock);
-	DL_SEARCH(iface->neighbours, neighbour_result, &neighbour_needle, neighbour_cmp);
-	if(!neighbour_result) {
-		neighbour_result = calloc(1, sizeof(struct monitor_neighbour));
-		memcpy(neighbour_result->addr, source_address, sizeof(mac_addr));
-		neighbour_result->samples = calloc(MAX_RSSI_VALS, sizeof(struct rssi_sample));
-		DL_APPEND(iface->neighbours, neighbour_result);
-	}
-	insert_value_node(neighbour_result, opts, delivery_time, is_retry);
-	
-	pthread_rwlock_unlock(&iface->monitor_neighbour_lock);
+    pthread_rwlock_rdlock(&iface->monitor_neighbour_lock);
+    DL_SEARCH(iface->neighbours, neighbour_result, &neighbour_needle, neighbour_cmp);
+    if(!neighbour_result) {
+        neighbour_result = calloc(1, sizeof(struct monitor_neighbour));
+        memcpy(neighbour_result->addr, source_address, sizeof(mac_addr));
+        neighbour_result->samples = calloc(MAX_RSSI_VALS, sizeof(struct rssi_sample));
+        DL_APPEND(iface->neighbours, neighbour_result);
+    }
+    insert_value_node(neighbour_result, opts, delivery_time, is_retry);
+
+    pthread_rwlock_unlock(&iface->monitor_neighbour_lock);
 }
 
-void got_packet(u_int8_t *node,
+static void got_packet(u_int8_t *node,
                 const struct pcap_pkthdr *header,
                 const u_int8_t packet[]) {
-	dessert_meshif_t *iface = (dessert_meshif_t *) node;
-	int32_t real_freq = get_dev_freq(iface);
-	if(real_freq < 0)
-		return;
+    dessert_meshif_t *iface = (dessert_meshif_t *) node;
+    int32_t real_freq = get_dev_freq(iface);
+    if(real_freq < 0)
+        return;
 
-	struct radiotap_header_opt_fields opts = parse(packet);
+    struct radiotap_header_opt_fields opts = parse(packet);
 
-	if(real_freq != opts.wr_channel.frequency) {
-		/* this packet was not on the right frequency */
-		return;
-	}
+    if(real_freq != opts.wr_channel.frequency) {
+        /* this packet was not on the right frequency */
+        return;
+    }
 
-	struct ieee80211_radiotap_header* radiotap = (struct ieee80211_radiotap_header*) packet;
-	u_int input = radiotap->it_len;
-	struct wifi_header* wifi = (struct wifi_header*) &packet[input];
-	insert_value(iface, &opts, header->ts.tv_sec, wifi->source_address, wifi->frame_control.flags.retry);
+    struct ieee80211_radiotap_header* radiotap = (struct ieee80211_radiotap_header*) packet;
+    u_int input = radiotap->it_len;
+    struct wifi_header* wifi = (struct wifi_header*) &packet[input];
+    insert_value(iface, &opts, header->ts.tv_sec, wifi->source_address, wifi->frame_control.flags.retry);
 }
 
-int create_mon_iface(dessert_meshif_t *iface) {
-	char *mon = "mon.";
-	if(strlen(iface->if_name) + strlen(mon) + 1 > IFNAMSIZ) {
-		dessert_crit("Device for the monitor-device seems too long: %s > IFNAMSIZ", strlen(iface->if_name) + strlen(mon) + 1);
-		return -1;
-	}
+static int create_mon_iface(dessert_meshif_t *iface) {
+    char *mon = "mon.";
+    if(strlen(iface->if_name) + strlen(mon) + 1 > IFNAMSIZ) {
+        dessert_crit("Device for the monitor-device seems too long: %s > IFNAMSIZ", strlen(iface->if_name) + strlen(mon) + 1);
+        return -1;
+    }
 
-	char monitorName[IFNAMSIZ];
-	sprintf(monitorName, "%s%s", mon, iface->if_name);
+    char monitorName[IFNAMSIZ];
+    sprintf(monitorName, "%s%s", mon, iface->if_name);
 
-	char cmdBuf[100];
-	snprintf(cmdBuf, sizeof(cmdBuf), "iw dev %s interface add %s type monitor", iface->if_name, monitorName);
+    char cmdBuf[100];
+    snprintf(cmdBuf, sizeof(cmdBuf), "iw dev %s interface add %s type monitor", iface->if_name, monitorName);
 
-	if(system(cmdBuf) < 0) {
-		//The value returned is -1 on error, and the return status of the command otherwise.
-		dessert_crit("Couldn't create device: iw dev %s interface add %s type monitor", iface->if_name, monitorName);
-		return -1;
-	}
+    if(system(cmdBuf) < 0) {
+        //The value returned is -1 on error, and the return status of the command otherwise.
+        dessert_crit("Couldn't create device: iw dev %s interface add %s type monitor", iface->if_name, monitorName);
+        return -1;
+    }
 
-	dessert_info("monitor interface %s has been created", monitorName);
+    dessert_info("monitor interface %s has been created", monitorName);
 
-	snprintf(cmdBuf, sizeof(cmdBuf), "ip link set dev %s up", monitorName);
-	if(system(cmdBuf) < 0) {
-		//The value returned is -1 on error, and the return status of the command otherwise.
-		dessert_crit("Couldn't bring device up: ip link set dev %s up", monitorName);
-		return -1;
-	}
+    snprintf(cmdBuf, sizeof(cmdBuf), "ip link set dev %s up", monitorName);
+    if(system(cmdBuf) < 0) {
+        //The value returned is -1 on error, and the return status of the command otherwise.
+        dessert_crit("Couldn't bring device up: ip link set dev %s up", monitorName);
+        return -1;
+    }
 
-	iface->monitor_active = 1;
+    iface->monitor_active = 1;
 
-	return 0;
+    return 0;
 }
 
-void *monitoring(void *node) {
-	char dev_name[IFNAMSIZ];
-	snprintf(dev_name, sizeof(dev_name), "mon.%s", ((dessert_meshif_t *) node)->if_name);
-	dessert_info("starting worker thread for monitor interface %s", dev_name);
+static void *monitoring(void *node) {
+    char dev_name[IFNAMSIZ];
+    snprintf(dev_name, sizeof(dev_name), "mon.%s", ((dessert_meshif_t *) node)->if_name);
+    dessert_info("starting worker thread for monitor interface %s", dev_name);
 
-	static pthread_mutex_t pcap_mutex = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&pcap_mutex);
+    static pthread_mutex_t pcap_mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_lock(&pcap_mutex);
 
-	/* error buffer */
-	char errbuf[PCAP_ERRBUF_SIZE];
-	/* packet capture handle */
-	pcap_t *handle = pcap_open_live(dev_name, SNAP_LEN, 1, 1000, errbuf);
-	if (handle == NULL) {
-		dessert_crit("Couldn't open device %s: %s\n", dev_name, errbuf);
-		pthread_mutex_unlock(&pcap_mutex);
-		return NULL;
-	}
+    /* error buffer */
+    char errbuf[PCAP_ERRBUF_SIZE];
+    /* packet capture handle */
+    pcap_t *handle = pcap_open_live(dev_name, SNAP_LEN, 1, 1000, errbuf);
+    if (handle == NULL) {
+        dessert_crit("Couldn't open device %s: %s\n", dev_name, errbuf);
+        pthread_mutex_unlock(&pcap_mutex);
+        return NULL;
+    }
 
-	if (pcap_datalink(handle) != DLT_IEEE802_11_RADIO) {
-		dessert_crit("%s is not 802.11 device or device is not in monitor mode\n", dev_name);
-		pthread_mutex_unlock(&pcap_mutex);
-		return NULL;
-	}
+    if (pcap_datalink(handle) != DLT_IEEE802_11_RADIO) {
+        dessert_crit("%s is not 802.11 device or device is not in monitor mode\n", dev_name);
+        pthread_mutex_unlock(&pcap_mutex);
+        return NULL;
+    }
 
-	struct bpf_program fp; /* compiled filter program (expression) */
-	// ignore all ACKS / CTS / RTS allow only management frames and data frames
-	char filter_exp[] = "type mgt subtype beacon or type data"; /* filter expression [3] */
-	/* compile the filter expression */
-	if (pcap_compile(handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) {
-		dessert_crit("Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
-		pthread_mutex_unlock(&pcap_mutex);
-		return NULL;
-	}
+    struct bpf_program fp; /* compiled filter program (expression) */
+    // ignore all ACKS / CTS / RTS allow only management frames and data frames
+    char filter_exp[] = "type mgt subtype beacon or type data"; /* filter expression [3] */
+    /* compile the filter expression */
+    if (pcap_compile(handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) {
+        dessert_crit("Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+        pthread_mutex_unlock(&pcap_mutex);
+        return NULL;
+    }
 
-	/* apply the compiled filter */
-	if (pcap_setfilter(handle, &fp) == -1) {
-		dessert_crit("Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
-		pthread_mutex_unlock(&pcap_mutex);
-		return NULL;
-	}
+    /* apply the compiled filter */
+    if (pcap_setfilter(handle, &fp) == -1) {
+        dessert_crit("Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+        pthread_mutex_unlock(&pcap_mutex);
+        return NULL;
+    }
 
-	pthread_mutex_unlock(&pcap_mutex);
+    pthread_mutex_unlock(&pcap_mutex);
 
-	/* now we can set our callback function */
-	int num_packets = 0; /* number of packets to capture */
-	pcap_loop(handle, num_packets, got_packet, node);
+    /* now we can set our callback function */
+    int num_packets = 0; /* number of packets to capture */
+    pcap_loop(handle, num_packets, got_packet, node);
 
-	/* cleanup */
-	pcap_freecode(&fp);
-	pcap_close(handle);
+    /* cleanup */
+    pcap_freecode(&fp);
+    pcap_close(handle);
 
-	return 0;
+    return 0;
 }
 
 /** This function will return the average RSSI value of the given connection.
@@ -477,89 +477,88 @@ void *monitoring(void *node) {
  *  calculate the average after calling this function
  */
 avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, const char *dest_dev) {
-	dessert_meshif_t *interface;
-	struct monitor_neighbour neighbour_needle, *neighbour_result;
-	memcpy(neighbour_needle.addr, hwaddr, sizeof(mac_addr));
+    dessert_meshif_t *interface;
+    struct monitor_neighbour neighbour_needle, *neighbour_result;
+    memcpy(neighbour_needle.addr, hwaddr, sizeof(mac_addr));
 
-	interface = dessert_meshif_get_name(dest_dev);
-	if(interface) {
-		DL_SEARCH(interface->neighbours, neighbour_result, &neighbour_needle, neighbour_cmp);
-		if(neighbour_result) {
-			return avg_node(neighbour_result);
-		}
-	}
+    interface = dessert_meshif_get_name(dest_dev);
+    if(interface) {
+        DL_SEARCH(interface->neighbours, neighbour_result, &neighbour_needle, neighbour_cmp);
+        if(neighbour_result) {
+            return avg_node(neighbour_result);
+        }
+    }
 
-	struct avg_node_result invalid;
-	memset(&invalid, 0, sizeof(invalid));
-	return invalid;
+    struct avg_node_result invalid;
+    memset(&invalid, 0, sizeof(invalid));
+    return invalid;
 }
 
 /** This function is called for the startup of the monitoring and rssi reporting
  *  If the monitoring is already running -1 is returned, 0 represents succeed
  */
 int dessert_monitoring_start(int max_rssi_vals, int max_age) {
+    dessert_info("Monitoring started....");
 
-	dessert_info("Monitoring started....");
+    if(max_rssi_vals) {
+        MAX_RSSI_VALS = max_rssi_vals;
+    }
+    if(max_age) {
+        MAX_AGE = max_age;
+    }
 
-	if(max_rssi_vals) {
-		MAX_RSSI_VALS = max_rssi_vals;
-	}
-	if(max_age) {
-		MAX_AGE = max_age;
-	}
+    /* create the global skfd-socket for ioctl channel requests */
+    if(!skfd && (skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        dessert_crit("Error while opening socket for frequencefilter");
+        return -1;
+    }
 
-	/* create the global skfd-socket for ioctl channel requests */
-	if(!skfd && (skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		dessert_crit("Error while opening socket for frequencefilter");
-		return -1;
-	}
+    pthread_t thread;
+    dessert_meshif_t *iface;
+    MESHIFLIST_ITERATOR_START(iface)
+        if(!iface->monitor_active) {
+            create_mon_iface(iface);
+            pthread_create(&thread, NULL, monitoring, iface);
+            iface->monitor_active = 1;
+        }
+    MESHIFLIST_ITERATOR_STOP;
 
-	pthread_t thread;
-	dessert_meshif_t *iface;
-	MESHIFLIST_ITERATOR_START(iface)
-		if(!iface->monitor_active) {
-			create_mon_iface(iface);
-			pthread_create(&thread, NULL, monitoring, iface);
-			iface->monitor_active = 1;
-		}
-	MESHIFLIST_ITERATOR_STOP;
+    pthread_create(&thread, NULL, maintenance_start, NULL);
 
-	pthread_create(&thread, NULL, maintenance_start, NULL);
-
-	return 0;
+    return 0;
 }
 
 /** This function deletes all stuff created by dessert_monitor, eg. interfaces,
  * threads and frees all allocated memory
  */
 int dessert_monitoring_stop() {
-	// cleans up created interfaces:
+    // cleans up created interfaces:
 
-	char cmdBuf[100];
-	dessert_meshif_t *iface;
-	MESHIFLIST_ITERATOR_START(iface)
-		if(iface->monitor_active) {
-			const char *monitorName = iface->if_name;
-			snprintf(cmdBuf, sizeof(cmdBuf), "iw dev mon.%s del", monitorName);
+    char cmdBuf[100];
+    dessert_meshif_t *iface;
+    MESHIFLIST_ITERATOR_START(iface)
+        if(iface->monitor_active) {
+            const char *monitorName = iface->if_name;
+            snprintf(cmdBuf, sizeof(cmdBuf), "iw dev mon.%s del", monitorName);
 
-			if(system(cmdBuf) < 0) {
-				//The value returned is -1 on error, and the return status of the command otherwise.
-				dessert_warn("Couldn't remove device: iw dev %s del", monitorName);
-			}
-			iface->monitor_active = 0;
-			pthread_rwlock_wrlock(&iface->monitor_neighbour_lock);
-			struct monitor_neighbour *current;
-			for(current  = iface->neighbours; current; current = current->next) {
-				iface->neighbours = current->next;
-				iface->neighbours->prev = NULL;
-				free(current->samples);
-				free(current);
-			}
-			pthread_rwlock_unlock(&iface->monitor_neighbour_lock);
-		}
-	MESHIFLIST_ITERATOR_STOP;
+            if(system(cmdBuf) < 0) {
+                //The value returned is -1 on error, and the return status of the command otherwise.
+                dessert_warn("Couldn't remove device: iw dev %s del", monitorName);
+            }
+            iface->monitor_active = 0;
+            pthread_rwlock_wrlock(&iface->monitor_neighbour_lock);
+            struct monitor_neighbour *current;
+            for(current  = iface->neighbours; current; current = current->next) {
+                iface->neighbours = current->next;
+                iface->neighbours->prev = NULL;
+                free(current->samples);
+                free(current);
+            }
+            pthread_rwlock_unlock(&iface->monitor_neighbour_lock);
+        }
+    MESHIFLIST_ITERATOR_STOP;
 
-	return 0;
+    return 0;
 }
 
 #endif /* ANDROID */

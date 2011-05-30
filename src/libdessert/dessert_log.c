@@ -151,7 +151,7 @@ int dessert_logcfg(uint16_t opts) {
  *
  ******************************************************************************/
 
-char* _dessert_log_rbuf_nextline(void) {
+static char* _dessert_log_rbuf_nextline(void) {
     char* r = NULL;
     pthread_mutex_lock(&_dessert_logrbuf_mutex);
     if (_dessert_logrbuf_len > 0) {
@@ -513,7 +513,7 @@ int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command, char 
 }
 
 /** just a helper function */
-int _dessert_loglevel_to_string(uint8_t level, char* buffer, size_t len) {
+static int _dessert_loglevel_to_string(uint8_t level, char* buffer, size_t len) {
     switch(level) {
         case LOG_DEBUG:
             snprintf(buffer, len, "%s", "debug");
