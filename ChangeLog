@@ -1,3 +1,6 @@
+XXXXXXXX - 1.02
+    - configure will now fail when uthash or iw are missing
+
 20110530 - 1.01
     - Re-written monitor code
     - More monitor interface information availabe to routing protocols
