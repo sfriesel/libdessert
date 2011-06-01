@@ -196,7 +196,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
     vsnprintf(msg, sizeof(msg), fmt, args);
     va_end(args);
 
-    if(_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) {
+    if((_dessert_logflags & _DESSERT_LOGFLAG_SYSLOG) && (level <= LOG_DEBUG)) {
         syslog(level, "%s %s", msg, pos);
     }
 
@@ -227,7 +227,9 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
             case LOG_WARNING: log_type = "WARN:  "; break;
             case LOG_NOTICE:  log_type = "NOTICE:"; break;
             case LOG_INFO:    log_type = "INFO:  "; break;
-            default:          log_type = "DEBUG: "; break;
+            case LOG_DEBUG:   log_type = "DEBUG: "; break;
+            case LOG_TRACE:   log_type = "TRACE: "; break;
+            default:          log_type = "XXX:   "; break;
         }
 
         if(_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {

@@ -507,8 +507,12 @@ int dessert_set_cli_port(uint16_t port);
 /******************************************************************************
  * functions
  ******************************************************************************/
+#define LOG_TRACE (LOG_DEBUG+1)
+
 int dessert_logcfg(uint16_t opts);
 void _dessert_log(int level, const char* func, const char* file, int line, const char *fmt, ...);
+/** log at DEBUG level */
+#define dessert_trace(...) _dessert_log(LOG_TRACE, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 /** log at DEBUG level */
 #define dessert_debug(...) _dessert_log(LOG_DEBUG, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 /** log at INFO level */
