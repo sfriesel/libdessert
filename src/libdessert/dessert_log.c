@@ -232,7 +232,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
         if(_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
             pthread_mutex_lock(&_dessert_logfile_mutex);
             if(dessert_logfd != NULL) {
-                #ifdef LOG_STYLE_OLD
+                #if LOG_STYLE_OLD
                 fprintf(dessert_logfd, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
                 #else
                 fprintf(dessert_logfd, "%s %s %s %s\n", timestamp, log_type, msg, pos);
@@ -240,7 +240,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
             }
 #ifdef HAVE_LIBZ
             else if(dessert_logfdgz != NULL) {
-                #ifdef LOG_STYLE_OLD
+                #if LOG_STYLE_OLD
                 gzprintf(dessert_logfdgz, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
                 #else
                 gzprintf(dessert_logfdgz, "%s %s %s %s\n", timestamp, log_type, msg, pos);
@@ -250,7 +250,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
             pthread_mutex_unlock(&_dessert_logfile_mutex);
         }
         if(_dessert_logflags & _DESSERT_LOGFLAG_STDERR) {
-            #ifdef LOG_STYLE_OLD
+            #if LOG_STYLE_OLD
             fprintf(stderr, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
             #else
             fprintf(stderr, "%s %s %s %s\n", timestamp, log_type, msg, pos);
@@ -260,7 +260,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
             pthread_rwlock_rdlock(&_dessert_logrbuf_len_lock);
             char *rbuf_line = _dessert_log_rbuf_nextline();
             if(rbuf_line != NULL) {
-                #ifdef LOG_STYLE_OLD
+                #if LOG_STYLE_OLD
                 snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
                 #else
                 snprintf(rbuf_line, DESSERT_LOGLINE_MAX, "%s %s %s %s\n", timestamp, log_type, msg, pos);
