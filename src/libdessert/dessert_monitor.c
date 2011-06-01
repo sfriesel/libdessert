@@ -546,14 +546,19 @@ int dessert_monitoring_stop() {
                 dessert_warn("Couldn't remove device: iw dev %s del", monitorName);
             }
             iface->monitor_active = 0;
+
             pthread_rwlock_wrlock(&iface->monitor_neighbour_lock);
-            struct monitor_neighbour *current;
-            for(current  = iface->neighbours; current; current = current->next) {
-                iface->neighbours = current->next;
-                iface->neighbours->prev = NULL;
+            struct monitor_neighbour *current = iface->neighbours;
+
+            while(current) {
+                struct monitor_neighbour *next = current->next;
+                
                 free(current->samples);
                 free(current);
+                
+                current = next;
             }
+            iface->neighbours = NULL;
             pthread_rwlock_unlock(&iface->monitor_neighbour_lock);
         }
     MESHIFLIST_ITERATOR_STOP;
