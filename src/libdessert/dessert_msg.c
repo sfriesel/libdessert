@@ -47,19 +47,11 @@
  * @return 0 on success, -errno on error
  **/
 int dessert_msg_new(dessert_msg_t **msgout) {
-	dessert_msg_t *msg;
 
-    size_t len = dessert_maxlen;
-	msg = malloc(len);
+	dessert_msg_t *msg = calloc(dessert_maxlen, 1);
 
-	if (msg == NULL) {
-		dessert_err("failed to allocate buffer for new message!");
-		return (-ENOMEM);
-	}
-
-	memset(msg, 0, len);
 	msg->l2h.ether_type = htons(DESSERT_ETHPROTO);
-	memset(msg->l2h.ether_dhost, 255, ETHER_ADDR_LEN);
+	memset(msg->l2h.ether_dhost, 0xff, ETHER_ADDR_LEN);
 	memcpy(msg->proto, dessert_proto, DESSERT_PROTO_STRLEN);
 	msg->ver = dessert_ver;
 	msg->ttl = 0xff;
@@ -69,7 +61,7 @@ int dessert_msg_new(dessert_msg_t **msgout) {
 	msg->plen = htons(0);
 
 	*msgout = msg;
-	return (DESSERT_OK);
+	return DESSERT_OK;
 
 }
 
@@ -79,19 +71,18 @@ int dessert_msg_new(dessert_msg_t **msgout) {
  * @arg sparse whether to allocate DESSERT_MAXFRAMELEN or only hlen+plen
  * @return DESSERT_OK on success, -errno otherwise
  **/
-int dessert_msg_clone(dessert_msg_t **msgnew, const dessert_msg_t *msgold,
-		uint8_t sparse) {
+int dessert_msg_clone(dessert_msg_t **msgnew, const dessert_msg_t *msgold, uint8_t sparse) {
 	dessert_msg_t *msg;
 	size_t msglen = ntohs(msgold->hlen) + ntohs(msgold->plen);
 
 	if (sparse) {
 		msg = malloc(msglen);
 	} else {
-        size_t len = dessert_maxlen;
-        if(len < msglen) {
-            dessert_warn("msg has size %d but current dessert_maxlen is %d\n The msg will be fragmented.", msglen, dessert_maxlen);
-            len = msglen;
-        }
+		size_t len = dessert_maxlen;
+		if(len < msglen) {
+			dessert_warn("msg has size %d but current dessert_maxlen is %d\n The msg will be fragmented.", msglen, dessert_maxlen);
+			len = msglen;
+		}
 		msg = malloc(len);
 	}
 
@@ -104,7 +95,7 @@ int dessert_msg_clone(dessert_msg_t **msgnew, const dessert_msg_t *msgold,
 	if (sparse) {
 		msg->flags |= DESSERT_FLAG_SPARSE;
 	} else {
-		msg->flags &= DESSERT_FLAG_SPARSE ^ DESSERT_FLAG_SPARSE;
+		msg->flags &= ~DESSERT_FLAG_SPARSE;
 	}
 
 	*msgnew = msg;
@@ -122,8 +113,6 @@ int dessert_msg_clone(dessert_msg_t **msgnew, const dessert_msg_t *msgold,
  * %DESCRIPTION:
  ***********************************************************************/
 int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
-	dessert_ext_t *ext;
-
 	/* is the message large enough to at least carry the header */
 	if (len < DESSERT_MSGLEN) {
 		dessert_info("message too short - shorter than DESSERT_MSGLEN");
@@ -147,7 +136,7 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
 	}
 
 	/* now check extensions.... */
-	ext = (dessert_ext_t *) ((uint8_t *) msg + DESSERT_MSGLEN);
+	dessert_ext_t *ext = (dessert_ext_t *) ((uint8_t *) msg + DESSERT_MSGLEN);
 	while ((uint8_t *) ext < ((uint8_t *) msg + (size_t) ntohs(msg->hlen))) {
 		/* does current extension fit into the header? */
 		if (((uint8_t *) ext + (size_t) ext->len) > ((uint8_t *) msg
@@ -193,25 +182,22 @@ void dessert_msg_destroy(dessert_msg_t* msg) {
  * @return DESSERT_OK on success, -errno otherwise
  **/
 int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert_msg_t** msgout) {
-	int res;
-	dessert_ext_t *ext;
-	void *payload;
-    size_t maxlen = dessert_maxlen;
 
 	/* check len */
-	if (eth_len > maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
+	if (eth_len > dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
 		dessert_debug("failed to encapsulate ethernet frame of %d bytes (max=%d)",
-				eth_len, maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
+				eth_len, dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
 		return (-EMSGSIZE);
 	}
 
 	/* create message */
-	res = dessert_msg_new(msgout);
+	int res = dessert_msg_new(msgout);
 	if (res) {
 		return res;
 	}
 
 	/* add ether header */
+	dessert_ext_t *ext;
 	res = dessert_msg_addext(*msgout, &ext, DESSERT_EXT_ETH, ETHER_HDR_LEN);
 	if (res) {
 		return res;
@@ -219,6 +205,7 @@ int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert
 	memcpy(ext->data, eth, ETHER_HDR_LEN);
 
 	/* copy message */
+	void *payload;
 	dessert_msg_addpayload(*msgout, &payload, (eth_len - ETHER_HDR_LEN));
 	memcpy(payload, ((uint8_t *) eth) + ETHER_HDR_LEN,
 			(eth_len - ETHER_HDR_LEN));
