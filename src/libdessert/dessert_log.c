@@ -44,7 +44,9 @@ gzFile *dessert_logfdgz = NULL;
 #define _DESSERT_LOGFLAG_RBUF     0x08
 #define _DESSERT_LOGFLAG_GZ       0x10
 
-#define LOG_STYLE_OLD 1
+#ifndef LOG_STYLE_OLD
+#   define LOG_STYLE_OLD 0
+#endif
 
 int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
 int _dessert_loglevel = LOG_INFO;
