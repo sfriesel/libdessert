@@ -38,8 +38,6 @@ FILE *dessert_logfd = NULL;
 gzFile *dessert_logfdgz = NULL;
 #endif
 
-char dessert_logprefix[12];
-
 #define _DESSERT_LOGFLAG_SYSLOG   0x01
 #define _DESSERT_LOGFLAG_LOGFILE  0x02
 #define _DESSERT_LOGFLAG_STDERR   0x04
@@ -79,7 +77,8 @@ pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to preven
  *
  **/
 int dessert_logcfg(uint16_t opts) {
-    snprintf(dessert_logprefix, 12, "dessert/%s", dessert_proto);
+    char dessert_logprefix[32];
+    snprintf(dessert_logprefix, sizeof(dessert_logprefix), "dessert/%s", dessert_proto);
 
     pthread_rwlock_wrlock(&dessert_cfglock);
 
