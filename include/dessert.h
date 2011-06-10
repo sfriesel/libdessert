@@ -725,6 +725,18 @@ int dessert_syssend(const void *pkt, size_t len);
 
 /* *********************** */
 
+enum dessert_rx_flags {
+    DESSERT_RX_FLAG_L25_SRC         = 0x0002,   ///< receiver is source of the packet; either a looping packet or own transmission overhead on other interface
+    DESSERT_RX_FLAG_L25_MULTICAST   = 0x0004,   ///< the encapsulated packet is destined to a multicast group
+    DESSERT_RX_FLAG_L25_DST         = 0x0008,   ///< receiver is destination of the packet; can have been overheared!
+    DESSERT_RX_FLAG_L25_BROADCAST   = 0x0010,   ///< the encapsulated packet is a broadcast
+    DESSERT_RX_FLAG_L2_SRC          = 0x0020,   ///< receiver is source of the packet; either a looping packet or own transmission overhead on other interface
+    DESSERT_RX_FLAG_L2_DST          = 0x0040,   ///< receiver is destination of the L2 packet but not necessarily of the L25 packet
+    DESSERT_RX_FLAG_L2_BROADCAST    = 0x0080,   ///< broadcast on L2 but not necessarily on L25
+    DESSERT_RX_FLAG_L25_OVERHEARD   = 0x0100,   ///< receiver is destination of the packet on L25 but not on L2
+    DESSERT_RX_FLAG_L2_OVERHEARD    = 0x0200    ///< receiver is destination of the packet on L2 but it was received on the wrong interface, e.g., two interfaces on the same channel
+};
+
 /** flag for dessert_msg_proc.lflags - l25 src is one of our interfaces */
 #define DESSERT_LFLAG_SRC_SELF 0x0002
 
