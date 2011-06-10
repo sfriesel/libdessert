@@ -6,14 +6,14 @@
  *
  */
 /*
- * standard Net-SNMP includes 
+ * standard Net-SNMP includes
  */
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
 /*
- * include our parent header 
+ * include our parent header
  */
 #include "dessertAppParamsTable.h"
 #include "dessertAppParamsTable_enums.h"
@@ -24,7 +24,7 @@
  *
  * These routines are used to set the value for individual objects. The
  * row context is passed, along with the new value.
- * 
+ *
  * @{
  */
 /**********************************************************************
@@ -309,7 +309,7 @@ dessertAppParamsTable_commit(dessertAppParamsTable_rowreq_ctx * rowreq_ctx)
          * commit column appParamsTruthValue.
          */
 
-        appparam->bool = rowreq_ctx->data.appParamsTruthValue;
+        appparam->boolean = rowreq_ctx->data.appParamsTruthValue;
 
         rc = set(appparam);
         if (DESSERT_ERR == rc) {
@@ -500,12 +500,12 @@ A parameter with TruthValue semantics.
  * You should check that the requested change between the undo value and the
  * new value is legal (ie, the transistion from one value to another
  * is legal).
- *      
+ *
  *@note
  * This check is only to determine if the new value
  * is \b potentially valid. This is the first check of many, and
  * is one of the simplest ones.
- * 
+ *
  *@note
  * this is not the place to do any checks for values
  * which depend on some other value in the mib. Those
@@ -702,12 +702,12 @@ A parameter with Integer32 semantics.
  * You should check that the requested change between the undo value and the
  * new value is legal (ie, the transistion from one value to another
  * is legal).
- *      
+ *
  *@note
  * This check is only to determine if the new value
  * is \b potentially valid. This is the first check of many, and
  * is one of the simplest ones.
- * 
+ *
  *@note
  * this is not the place to do any checks for values
  * which depend on some other value in the mib. Those
@@ -885,12 +885,12 @@ A parameter with Unsigned32 semantics.
  * You should check that the requested change between the undo value and the
  * new value is legal (ie, the transistion from one value to another
  * is legal).
- *      
+ *
  *@note
  * This check is only to determine if the new value
  * is \b potentially valid. This is the first check of many, and
  * is one of the simplest ones.
- * 
+ *
  *@note
  * this is not the place to do any checks for values
  * which depend on some other value in the mib. Those
@@ -1071,12 +1071,12 @@ A parameter containing of up to 1024 octets.
  * You should check that the requested change between the undo value and the
  * new value is legal (ie, the transistion from one value to another
  * is legal).
- *      
+ *
  *@note
  * This check is only to determine if the new value
  * is \b potentially valid. This is the first check of many, and
  * is one of the simplest ones.
- * 
+ *
  *@note
  * this is not the place to do any checks for values
  * which depend on some other value in the mib. Those

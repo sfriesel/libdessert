@@ -92,6 +92,7 @@
 #include <syslog.h>
 #include <pcap.h>
 #include <libcli.h>
+#include <stdbool.h>
 
 #ifdef ANDROID
 #include <pthread.h>
@@ -981,7 +982,7 @@ typedef struct dessert_agentx_appstats {
 		 * @see For valid values please refer to: \n DESSERT_APPSTATS_BOOL_TRUE
 		 * @see DESSERT_APPSTATS_BOOL_FALSE
 		 */
-		uint8_t bool;
+		uint8_t boolean;
 		/** A 32bit signed integer. */
 		int32_t  int32;
 		/** A 32bit unsigned integer. */
@@ -1030,7 +1031,7 @@ typedef struct dessert_agentx_appparams {
 		 * @see For valid values please refer to: \n DESSERT_APPPARAMS_BOOL_TRUE
 		 * @see DESSERT_APPPARAMS_BOOL_FALSE
 		 */
-		uint8_t  bool;
+		uint8_t  boolean;
 		/** A 32bit signed integer. */
 		int32_t  int32;
 		/** A 32bit unsigned integer. */
