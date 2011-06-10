@@ -30,10 +30,9 @@ AS_IF([test "x$with_net_snmp" != xno],
 )
 AS_IF([test "x$with_net_snmp" != xno],
       [AC_CHECK_HEADERS([net-snmp-config.h],,
-                        [AC_MSG_ERROR([net-snmp-config.h not found, please install libsnmp-dev])])],
+                        [AC_MSG_ERROR([net-snmp-config.h not found, please install libsnmp development package])])],
 )
 
-#AC_CHECK_HEADERS([net-snmp-config.h],,[AC_MSG_ERROR([net-snmp-config.h not found, please install libsnmp-dev])])
 # Checks for zlib support
 CHECK_ZLIB
 
