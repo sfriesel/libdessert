@@ -42,11 +42,12 @@ typedef struct sig_handler {
 
 sig_handler_t* _sig_handlers_map = NULL;
 
-uint8_t _signal_supported(int signal) {
+static uint8_t _signal_supported(int signal) {
     size_t i;
     for(i = 0; i < sizeof(dessert_supported_signals)/sizeof(int); i++) {
-        if(dessert_supported_signals[i] == signal)
+        if(dessert_supported_signals[i] == signal) {
             return 1;
+        }
     }
     return 0;
 }
@@ -126,13 +127,15 @@ int dessert_signalcb_del(int signal, dessert_signalcb_t* callback) {
     sig_handlercb_t* del_cb = NULL;
     sig_handlercb_t* iter = NULL;
     LL_FOREACH(sig_handlers->list, iter) {
-            if(del_cb->callback == callback)
-                del_cb = iter;
-                break;
+        if(iter->callback == callback) {
+            del_cb = iter;
+            break;
+        }
     }
 
-    if(iter) {
-        LL_DELETE(sig_handlers->list, iter);
+    if(del_cb) {
+        LL_DELETE(sig_handlers->list, del_cb);
+        free(del_cb);
     }
     else {
         dessert_warn("cannot remove signal callback, callback not found");

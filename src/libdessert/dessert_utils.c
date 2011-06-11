@@ -51,13 +51,15 @@ static inline unsigned int hextoi(const char *input, const char **next) {
 	unsigned int result = 0;
 	for(; *input; input ++) {
 		signed char member = hexchartoi(*input);
-		if(member < 0)
+		if(member < 0) {
 			break;
+        }
 		result *= 16;
 		result += member;
 	}
-	if(next)
+	if(next) {
 		*next = input;
+    }
 	return result;
 }
 
@@ -66,8 +68,9 @@ int dessert_parse_mac(const char *input_mac, mac_addr *hwaddr) {
 	for(i = 0; i < ETHER_ADDR_LEN; ++i) {
 		const char *end = 0;
 		unsigned int val = hextoi(&input_mac[i*3], &end);
-		if(end != &input_mac[i*3 + 2] || *end != (i < ETHER_ADDR_LEN-1 ? ':' : 0))
+		if(end != &input_mac[i*3 + 2] || *end != (i < ETHER_ADDR_LEN-1 ? ':' : 0)) {
 			return -1;
+        }
 		(*hwaddr)[i] = (uint8_t) val;
 	}
 	return 0;

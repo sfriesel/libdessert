@@ -257,23 +257,20 @@ static void *_dessert_periodic_thread(void* arg) {
     pthread_mutex_lock(&_dessert_periodic_mutex);
 
     while (1) {
-
         gettimeofday(&now, NULL);
 
         if (_tasklist == NULL) {
-            if (pthread_cond_wait(&_dessert_periodic_changed,
-                    &_dessert_periodic_mutex) == EINVAL) {
+            if (pthread_cond_wait(&_dessert_periodic_changed, &_dessert_periodic_mutex) == EINVAL) {
                 dessert_err("sleeping failed in periodic scheduler - scheduler died");
                 break;
             }
             continue;
-        } else if (now.tv_sec < _tasklist->scheduled.tv_sec || (now.tv_sec
-                == _tasklist->scheduled.tv_sec && now.tv_usec
-                < _tasklist->scheduled.tv_usec)) {
+        } else if (now.tv_sec < _tasklist->scheduled.tv_sec
+            || (now.tv_sec == _tasklist->scheduled.tv_sec
+            && now.tv_usec < _tasklist->scheduled.tv_usec)) {
             ts.tv_sec = _tasklist->scheduled.tv_sec;
             ts.tv_nsec = _tasklist->scheduled.tv_usec * 1000;
-            if (pthread_cond_timedwait(&_dessert_periodic_changed,
-                    &_dessert_periodic_mutex, &ts) == EINVAL) {
+            if (pthread_cond_timedwait(&_dessert_periodic_changed, &_dessert_periodic_mutex, &ts) == EINVAL) {
                 dessert_err("sleeping failed in periodic scheduler - scheduler died");
                 break;
             }
