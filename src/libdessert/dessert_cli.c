@@ -46,15 +46,13 @@ struct cli_command *dessert_cli_cfg_no_logging;
 
 /* local data storage*/
 int _dessert_cli_sock;
-/// TODO _dessert_cli_addr* is not used anywhere but in a single function; global vars should be removed
+/// \todo _dessert_cli_addr* is not used anywhere but in a single function; global vars should be removed
 struct sockaddr_in6 _dessert_cli_addr6;
 struct sockaddr_in _dessert_cli_addr4;
 char _dessert_cli_hostname[HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1];
 pthread_t _dessert_cli_worker;
 int _dessert_cli_running = 0;
 uint16_t _cli_port = 4519; // should be default port number
-
-
 
 /* internal functions forward declarations*/
 static void *_dessert_cli_accept_thread(void* arg);
@@ -140,8 +138,9 @@ int dessert_set_cli_port(uint16_t port) {
       return DESSERT_ERR;
   }
 
-  if (port >= 1024 && port <= 49151)
+  if (port >= 1024 && port <= 49151) {
       _cli_port = port;
+  }
   else {
       port = 0;
       dessert_err("Port number has to be in [1024, 49151]");
@@ -206,8 +205,7 @@ int _dessert_cli_init() {
     memset(_dessert_cli_hostname, 0x0, HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1);
     gethostname(_dessert_cli_hostname, HOST_NAME_MAX);
     strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), ":", 1);
-    strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname),
-            dessert_proto, DESSERT_PROTO_STRLEN);
+    strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), dessert_proto, DESSERT_PROTO_STRLEN);
     cli_set_hostname(dessert_cli, _dessert_cli_hostname);
 
     /* initialize show commands */
@@ -317,8 +315,9 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
         return CLI_ERROR;
     }
 
-    if(dessert_pid(argv[0]) == DESSERT_OK)
+    if(dessert_pid(argv[0]) == DESSERT_OK) {
         return CLI_OK;
+    }
 
     cli_print(cli, "could not read/write/close file or pid already written: %s", argv[0]);
     return CLI_ERROR;
@@ -348,7 +347,6 @@ static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, cha
     }
 
     dessert_monitoring_start(max_rssi_vals, max_age); // starts capt. RSSI values
-
     return CLI_OK;
 }
 #endif
@@ -371,8 +369,9 @@ static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command, char
 static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command, char *argv[], int argc) {
 	dessert_meshif_t *meshif;
 	MESHIFLIST_ITERATOR_START(meshif)
-		if(meshif->monitor_active)
+		if(meshif->monitor_active) {
 			cli_print(cli, "Monitor device: [mon.%s]", meshif->if_name);
+        }
 	MESHIFLIST_ITERATOR_STOP;
 	return CLI_OK;
 }
