@@ -47,7 +47,6 @@
  * @return 0 on success, -errno on error
  **/
 int dessert_msg_new(dessert_msg_t **msgout) {
-
 	dessert_msg_t *msg = calloc(dessert_maxlen, 1);
 
 	msg->l2h.ether_type = htons(DESSERT_ETHPROTO);
@@ -62,7 +61,6 @@ int dessert_msg_new(dessert_msg_t **msgout) {
 
 	*msgout = msg;
 	return DESSERT_OK;
-
 }
 
 /** generates a copy of a dessert_msg
@@ -124,6 +122,7 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
 	}
 
 	/* right protocol and version */
+    /// \todo use memcmp
 	if (msg->proto[0] != dessert_proto[0] || msg->proto[1] != dessert_proto[1]
 			|| msg->proto[2] != dessert_proto[2] || msg->proto[3]
 			!= dessert_proto[3]) {
@@ -182,11 +181,9 @@ void dessert_msg_destroy(dessert_msg_t* msg) {
  * @return DESSERT_OK on success, -errno otherwise
  **/
 int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert_msg_t** msgout) {
-
 	/* check len */
 	if (eth_len > dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
-		dessert_debug("failed to encapsulate ethernet frame of %d bytes (max=%d)",
-				eth_len, dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
+		dessert_debug("failed to encapsulate ethernet frame of %d bytes (max=%d)", eth_len, dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
 		return (-EMSGSIZE);
 	}
 
@@ -207,9 +204,8 @@ int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert
 	/* copy message */
 	void *payload;
 	dessert_msg_addpayload(*msgout, &payload, (eth_len - ETHER_HDR_LEN));
-	memcpy(payload, ((uint8_t *) eth) + ETHER_HDR_LEN,
-			(eth_len - ETHER_HDR_LEN));
-
+	memcpy(payload, ((uint8_t *) eth) + ETHER_HDR_LEN, (eth_len - ETHER_HDR_LEN));
+    
 	return (DESSERT_OK);
 }
 
@@ -226,8 +222,7 @@ int dessert_msg_ipencap(const uint8_t* ip, size_t len, dessert_msg_t** msgout) {
 
     /* check len */
     if (len > maxlen - DESSERT_MSGLEN) {
-        dessert_debug("failed to encapsulate ip datagram of %d bytes (max=%d)",
-                len, maxlen - DESSERT_MSGLEN);
+        dessert_debug("failed to encapsulate ip datagram of %d bytes (max=%d)", len, maxlen - DESSERT_MSGLEN);
         return (-EMSGSIZE);
     }
 
@@ -269,8 +264,7 @@ int dessert_msg_ethdecap(const dessert_msg_t* msg, struct ether_header** ethout)
 	memcpy(*ethout, ext->data, ETHER_HDR_LEN);
 
 	/* copy message */
-	memcpy(((uint8_t *) (*ethout)) + ETHER_HDR_LEN, (((uint8_t *) msg)
-			+ntohs(msg->hlen)), ntohs(msg->plen));
+	memcpy(((uint8_t *) (*ethout)) + ETHER_HDR_LEN, (((uint8_t *) msg) + ntohs(msg->hlen)), ntohs(msg->plen));
 
 	return (eth_len);
 }
@@ -337,7 +331,6 @@ int dessert_msg_proc_clone(dessert_msg_proc_t **procnew,
 
 	*procnew = proc;
 	return (DESSERT_OK);
-
 }
 
 /** dump a dessert_msg_t to a string
@@ -387,10 +380,12 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 	}
 
 	/* we have a trace */
-	if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_REQ, buf, blen - strlen(buf)) > 1)
+	if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_REQ, buf, blen - strlen(buf)) > 1) {
 		_dessert_msg_check_append("\n");
-    if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_RPL, buf, blen - strlen(buf)) > 1)
+    }
+    if (dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_RPL, buf, blen - strlen(buf)) > 1) {
         _dessert_msg_check_append("\n");
+    }
 
 	/* now other extensions.... */
 	ext = (dessert_ext_t *) ((uint8_t *) msg + DESSERT_MSGLEN);
@@ -398,8 +393,8 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 		_dessert_msg_check_append("\textension %d:\n", extidx);
 
 		/* does current extension fit into the header? */
-		if ((((uint8_t *) ext + (size_t) ext->len) > ((uint8_t *) msg
-				+ (size_t) ntohs(msg->hlen))) || (ext->len < 2)) {
+		if ((((uint8_t *) ext + (size_t) ext->len) > ((uint8_t *) msg + (size_t) ntohs(msg->hlen)))
+            || (ext->len < 2)) {
 			_dessert_msg_check_append("\t\tbroken extension - giving up!\n");
 			break;
 		}
@@ -426,20 +421,27 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 		_dessert_msg_check_append("\tlocal processing header:\n");
 		_dessert_msg_check_append("\tlflags:    ");
 
-		if (proc->lflags & DESSERT_LFLAG_SRC_SELF)
+		if (proc->lflags & DESSERT_LFLAG_SRC_SELF) {
 			_dessert_msg_check_append(" DESSERT_FLAG_SRC_SELF");
-		if (proc->lflags & DESSERT_LFLAG_DST_SELF)
+        }
+		if (proc->lflags & DESSERT_LFLAG_DST_SELF) {
 			_dessert_msg_check_append(" DESSERT_FLAG_DST_MULTICAST");
-		if (proc->lflags & DESSERT_LFLAG_DST_MULTICAST)
+        }
+		if (proc->lflags & DESSERT_LFLAG_DST_MULTICAST) {
 			_dessert_msg_check_append(" DESSERT_FLAG_DST_SELF");
-		if (proc->lflags & DESSERT_LFLAG_DST_BROADCAST)
+        }
+		if (proc->lflags & DESSERT_LFLAG_DST_BROADCAST) {
 			_dessert_msg_check_append(" DESSERT_FLAG_DST_BROADCAST");
-		if (proc->lflags & DESSERT_LFLAG_PREVHOP_SELF)
+        }
+		if (proc->lflags & DESSERT_LFLAG_PREVHOP_SELF) {
 			_dessert_msg_check_append(" DESSERT_FLAG_PREVHOP_SELF");
-		if (proc->lflags & DESSERT_LFLAG_NEXTHOP_SELF)
+        }
+		if (proc->lflags & DESSERT_LFLAG_NEXTHOP_SELF) {
 			_dessert_msg_check_append(" NEXTHOP_SELF");
-		if (proc->lflags & DESSERT_LFLAG_NEXTHOP_BROADCAST)
+        }
+		if (proc->lflags & DESSERT_LFLAG_NEXTHOP_BROADCAST) {
 			_dessert_msg_check_append(" NEXTHOP_BROADCAST");
+        }
 	}
 }
 
@@ -496,9 +498,10 @@ int dessert_msg_getpayload(dessert_msg_t *msg, void** payload) {
  * @arg type the type of the extension
  * @arg len  the length of the ext data (without 2 byte extension header)
  * @return DESSERT_OK on success,
+ *
+ * @todo Remove magic numbers or at least document them!
  **/
-int dessert_msg_addext(dessert_msg_t *msg, dessert_ext_t **ext, uint8_t type,
-		size_t len) {
+int dessert_msg_addext(dessert_msg_t *msg, dessert_ext_t **ext, uint8_t type, size_t len) {
 
 	/* check if sparse message */
 	if ((msg->flags & DESSERT_FLAG_SPARSE) > 0) {
@@ -548,16 +551,15 @@ int dessert_msg_addext(dessert_msg_t *msg, dessert_ext_t **ext, uint8_t type,
 int dessert_msg_delext(dessert_msg_t *msg, dessert_ext_t *ext) {
 
 	/* check ext */
-	if ((((uint8_t *) ext) < ((uint8_t *) msg)) || (((uint8_t *) ext)
-			> (((uint8_t *) msg) + ntohs(msg->hlen)))) {
+	if ((((uint8_t *) ext) < ((uint8_t *) msg))
+        || (((uint8_t *) ext) > (((uint8_t *) msg) + ntohs(msg->hlen)))) {
 		dessert_debug("extension not within packet header - won't remove");
 		return DESSERT_ERR;
 	}
 
 	msg->hlen = htons(ntohs(msg->hlen) - ext->len);
 
-	memmove(ext, ((uint8_t *) ext) + ext->len, (ntohs(msg->hlen)
-			+ ntohs(msg->plen)) - (((uint8_t *) ext) - ((uint8_t *) msg)));
+	memmove(ext, ((uint8_t *) ext) + ext->len, (ntohs(msg->hlen) + ntohs(msg->plen)) - (((uint8_t *) ext) - ((uint8_t *) msg)));
 
 	return DESSERT_OK;
 }
@@ -573,9 +575,9 @@ int dessert_msg_delext(dessert_msg_t *msg, dessert_ext_t *ext) {
  *
  * %DESCRIPTION:
  *
+ * @todo Remove magic numbers or at least document them!
  **/
 int dessert_msg_resizeext(dessert_msg_t *msg, dessert_ext_t *ext, size_t new_len) {
-
 	int old_len = ext->len;
 
 	/* check ext */
@@ -590,8 +592,7 @@ int dessert_msg_resizeext(dessert_msg_t *msg, dessert_ext_t *ext, size_t new_len
 		return -2; /* too big */
 	}
 
-	memmove(((uint8_t *)ext) + new_len,((uint8_t *)ext) + ext->len, ntohs(msg->hlen)
-			+ ntohs(msg->plen) - (((uint8_t *) ext) - ((uint8_t *) msg)) - ext->len);
+	memmove(((uint8_t *)ext) + new_len,((uint8_t *)ext) + ext->len, ntohs(msg->hlen) + ntohs(msg->plen) - (((uint8_t *) ext) - ((uint8_t *) msg)) - ext->len);
 
 	msg->hlen = htons(ntohs(msg->hlen) - (ext->len - new_len));
 	ext->len = new_len;
@@ -611,13 +612,13 @@ int dessert_msg_resizeext(dessert_msg_t *msg, dessert_ext_t *ext, size_t new_len
  * @return count of extensions of that type if count > index
  * @return -count of extensions of that type if count <= index
  **/
-int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext,
-		uint8_t type, int index) {
+int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index) {
 	int i = 0;
 	dessert_ext_t *exti;
 
-	if (ext != NULL)
+	if (ext != NULL) {
 		*ext = NULL;
+    }
 
 	exti = (dessert_ext_t *) ((uint8_t *) msg + DESSERT_MSGLEN);
 	while ((uint8_t *) exti < ((uint8_t *) msg + (size_t) ntohs(msg->hlen))) {
@@ -635,7 +636,6 @@ int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext,
 		i = -i;
 	}
 	return (i);
-
 }
 
 /** get an specific or all extensions
@@ -655,9 +655,7 @@ int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type) {
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP if message is valid, DESSERT_MSG_DROP otherwise
  **/
-int dessert_msg_check_cb(dessert_msg_t* msg, size_t len,
-		dessert_msg_proc_t *proc, const dessert_meshif_t *iface,
-		dessert_frameid_t id) {
+int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
 	if (dessert_msg_check(msg, len)) {
 		dessert_debug("invalid package - discarding");
 		return DESSERT_MSG_DROP;
@@ -671,9 +669,7 @@ int dessert_msg_check_cb(dessert_msg_t* msg, size_t len,
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP always
  **/
-int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len,
-		dessert_msg_proc_t *proc, const dessert_meshif_t *iface,
-		dessert_frameid_t id) {
+int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
 	char buf[1024];
 
 	dessert_msg_proc_dump(msg, len, proc, buf, 1024);
@@ -693,16 +689,19 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *pro
 	dessert_ext_t *ext;
 
 	/* abort if message has no trace extension */
-	if (dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE_REQ, 0) == 0)
+	if (dessert_msg_getext(msg, &ext, DESSERT_EXT_TRACE_REQ, 0) == 0) {
 		return DESSERT_MSG_KEEP;
+    }
 
 	/* abort if iface is NULL */
-	if (iface == NULL)
+	if (iface == NULL) {
 		return DESSERT_MSG_KEEP;
+    }
 
 	/* we cannot add header to sparse messages */
-	if (msg->flags & DESSERT_FLAG_SPARSE)
+	if (msg->flags & DESSERT_FLAG_SPARSE) {
 		return DESSERT_MSG_NEEDNOSPARSE;
+    }
 
 	/* get the trace mode (hop vs interface) */
 	if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_HOST) {
@@ -727,41 +726,38 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *pro
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP or DESSERT_MSG_NEEDMSGPROC
  **/
-int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len,
-		dessert_msg_proc_t *proc, const dessert_meshif_t *riface,
-		dessert_frameid_t id) {
-
+int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *riface, dessert_frameid_t id) {
 	dessert_meshif_t *iface;
 	struct ether_header *l25h;
 
 	/* check if we have an processing header */
-	if (proc == NULL)
+	if (proc == NULL) {
 		return DESSERT_MSG_NEEDMSGPROC;
+    }
 
 	/* get l2.5 header if possible */
 	l25h = dessert_msg_getl25ether(msg);
 
 	/* clear flags */
-	proc->lflags &= ~(DESSERT_LFLAG_DST_SELF | DESSERT_LFLAG_SRC_SELF
-			| DESSERT_LFLAG_NEXTHOP_SELF | DESSERT_LFLAG_PREVHOP_SELF
-			| DESSERT_LFLAG_NEXTHOP_BROADCAST
-			| DESSERT_LFLAG_DST_SELF_OVERHEARD
-			| DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD);
+	proc->lflags &= ~(DESSERT_LFLAG_DST_SELF
+        | DESSERT_LFLAG_SRC_SELF
+        | DESSERT_LFLAG_NEXTHOP_SELF
+        | DESSERT_LFLAG_PREVHOP_SELF
+        | DESSERT_LFLAG_NEXTHOP_BROADCAST
+        | DESSERT_LFLAG_DST_SELF_OVERHEARD
+        | DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD);
 
 	/* checks against defaults */
-	if (l25h != NULL && memcmp(l25h->ether_dhost, ether_broadcast,
-			ETHER_ADDR_LEN) == 0) {
+	if (l25h != NULL && memcmp(l25h->ether_dhost, ether_broadcast, ETHER_ADDR_LEN) == 0) {
 		proc->lflags |= DESSERT_LFLAG_DST_BROADCAST;
 	} else if (l25h != NULL && l25h->ether_dhost[0] & 0x01) { /* broadcast also has this bit set */
 		proc->lflags |= DESSERT_LFLAG_DST_MULTICAST;
 	}
 
-	if (l25h != NULL && memcmp(l25h->ether_dhost, dessert_l25_defsrc,
-			ETHER_ADDR_LEN) == 0) {
+	if (l25h != NULL && memcmp(l25h->ether_dhost, dessert_l25_defsrc, ETHER_ADDR_LEN) == 0) {
 		proc->lflags |= DESSERT_LFLAG_DST_SELF;
 	}
-	if (l25h != NULL && memcmp(l25h->ether_shost, dessert_l25_defsrc,
-			ETHER_ADDR_LEN) == 0) {
+	if (l25h != NULL && memcmp(l25h->ether_shost, dessert_l25_defsrc, ETHER_ADDR_LEN) == 0) {
 		proc->lflags |= DESSERT_LFLAG_SRC_SELF;
 	}
 	if (memcmp(msg->l2h.ether_dhost, dessert_l25_defsrc, ETHER_ADDR_LEN) == 0) {
@@ -777,21 +773,18 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len,
 	/* checks against interfaces in list */
 	pthread_rwlock_rdlock(&dessert_cfglock);
 	DL_FOREACH(dessert_meshiflist_get(), iface) {
-		if (l25h != NULL && memcmp(l25h->ether_dhost, iface->hwaddr,
-				ETHER_ADDR_LEN) == 0) {
+		if (l25h != NULL && memcmp(l25h->ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
 			proc->lflags |= DESSERT_LFLAG_DST_SELF;
 			if (memcmp(l25h->ether_dhost, riface->hwaddr, ETHER_ADDR_LEN) != 0) {
 				proc->lflags |= DESSERT_LFLAG_DST_SELF_OVERHEARD;
 			}
 		}
-		if (l25h != NULL && memcmp(l25h->ether_shost, iface->hwaddr,
-				ETHER_ADDR_LEN) == 0) {
+		if (l25h != NULL && memcmp(l25h->ether_shost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
 			proc->lflags |= DESSERT_LFLAG_SRC_SELF;
 		}
 		if (memcmp(msg->l2h.ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
 			proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF;
-			if (memcmp(msg->l2h.ether_dhost, riface->hwaddr, ETHER_ADDR_LEN)
-					!= 0) {
+			if (memcmp(msg->l2h.ether_dhost, riface->hwaddr, ETHER_ADDR_LEN) != 0) {
 				proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD;
 			}
 		}
@@ -813,18 +806,19 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len,
  * @return length of the string - 0 if msg has no trace header, -1 if wrong type
  **/
 int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen) {
-
     dessert_ext_t *ext;
     int x, i = 0;
     if(type != DESSERT_EXT_TRACE_REQ
-      || type != DESSERT_EXT_TRACE_RPL)
+      || type != DESSERT_EXT_TRACE_RPL) {
       return -1;
+    }
 
 #define _dessert_msg_trace_dump_append(...) snprintf(buf+strlen(buf), blen-strlen(buf), __VA_ARGS__)
 
     x = dessert_msg_getext(msg, &ext, type, 0);
-    if (x < 1)
+    if (x < 1) {
         return 0;
+    }
 
     _dessert_msg_trace_dump_append("\tpacket trace:\n"
                                    "\t\tfrom " MAC "\n", EXPLODE_ARRAY6(ext->data));
@@ -836,8 +830,7 @@ int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, in
 
     for (i = 1; i < x; i++) {
         dessert_msg_getext(msg, &ext, type, i);
-        _dessert_msg_trace_dump_append("\t\t#%3d " MAC "\n", i,
-                EXPLODE_ARRAY6(ext->data));
+        _dessert_msg_trace_dump_append("\t\t#%3d " MAC "\n", i, EXPLODE_ARRAY6(ext->data));
 
         if (dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
             _dessert_msg_trace_dump_append("\t\t  received from  " MAC "\n", EXPLODE_ARRAY6(ext->data + 12));
