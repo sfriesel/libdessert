@@ -46,7 +46,9 @@ struct cli_command *dessert_cli_cfg_no_logging;
 
 /* local data storage*/
 int _dessert_cli_sock;
-struct sockaddr_in6 _dessert_cli_addr;
+/// TODO _dessert_cli_addr* is not used anywhere but in a single function; global vars should be removed
+struct sockaddr_in6 _dessert_cli_addr6;
+struct sockaddr_in _dessert_cli_addr4;
 char _dessert_cli_hostname[HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1];
 pthread_t _dessert_cli_worker;
 int _dessert_cli_running = 0;
@@ -163,13 +165,24 @@ int dessert_cli_run() {
   /* listen for connections */
   _dessert_cli_sock = socket(AF_INET6, SOCK_STREAM, 0);
   setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-  memset(&_dessert_cli_addr, 0, sizeof(_dessert_cli_addr));
-  _dessert_cli_addr.sin6_family = AF_INET6;
-  _dessert_cli_addr.sin6_addr = in6addr_any;
-  _dessert_cli_addr.sin6_port = htons(_cli_port);
-  if(bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr, sizeof(_dessert_cli_addr))) {
-      dessert_err("cli socket bind to port %d failed - %s", _cli_port, strerror(errno));
-      return -errno;
+  memset(&_dessert_cli_addr6, 0, sizeof(_dessert_cli_addr6));
+  _dessert_cli_addr6.sin6_family = AF_INET6;
+  _dessert_cli_addr6.sin6_addr = in6addr_any;
+  _dessert_cli_addr6.sin6_port = htons(_cli_port);
+  if(bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr6, sizeof(_dessert_cli_addr6))) {
+      dessert_err("cli IPv6 socket bind to port %d failed - %s", _cli_port, strerror(errno));
+      dessert_notice("trying IPv4 socket");
+      
+      _dessert_cli_sock = socket(AF_INET, SOCK_STREAM, 0);
+      setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+      memset(&_dessert_cli_addr4, 0, sizeof(_dessert_cli_addr4));
+      _dessert_cli_addr4.sin_family = AF_INET;
+      _dessert_cli_addr4.sin_addr.s_addr = INADDR_ANY;
+      _dessert_cli_addr4.sin_port = htons(_cli_port);
+      if(bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr4, sizeof(_dessert_cli_addr4))) {
+        dessert_err("cli IPv4 socket bind to port %d failed - %s", _cli_port, strerror(errno));
+        return -errno;
+      }
   }
   listen(_dessert_cli_sock, 8);
   dessert_debug("starting worker thread for CLI on port %d", _cli_port);

@@ -367,12 +367,10 @@ typedef int dessert_signalcb_t(int signal);
 /** type for local unique packet identification */
 #define DESSERT_FRAMEID_MAX ((uint64_t)-1)
 
-/** flag for dessert_init - daemonize when calling
- * disables logging to STDERR */
-#define DESSERT_OPT_DAEMONIZE    0x0100
-
-/** flag for dessert_init - do not daemonize when calling */
-#define DESSERT_OPT_NODAEMONIZE  0x0200
+enum dessert_init_flags {
+    DESSERT_OPT_DAEMONIZE   = 0x0100, ///< daemonize when calling disables logging to STDERR
+    DESSERT_OPT_NODAEMONIZE = 0x0200  ///< do not daemonize when calling
+};
 
 /******************************************************************************
  * globals
@@ -421,8 +419,6 @@ int dessert_init(const char* proto, int version, uint16_t opts);
 int dessert_pid(char* pidfile);
 int dessert_run(void);
 void dessert_exit(void);
-void wlanoff(void);
-
 
 /***************************************************************************//**
  * @}
@@ -470,37 +466,21 @@ int dessert_set_cli_port(uint16_t port);
  * #defines
  ******************************************************************************/
 
-/** flag for dessert_logcfg - enable syslog logging */
-#define DESSERT_LOG_SYSLOG    0x0001
-
-/** flag for dessert_logcfg - disable syslog logging */
-#define DESSERT_LOG_NOSYSLOG  0x0002
-
-/** flag for dessert_logcfg - enable logfile logging
- * @warning  before using this you MUST use fopen(dessert_logfd, ...) to open the logfile
- */
-#define DESSERT_LOG_FILE      0x0004
-
-/** flag for dessert_logcfg - disable logfile logging */
-#define DESSERT_LOG_NOFILE    0x0008
-
-/** flag for dessert_logcfg - enable logging to stderr */
-#define DESSERT_LOG_STDERR    0x0010
-
-/** flag for dessert_logcfg - disable logging to stderr */
-#define DESSERT_LOG_NOSTDERR  0x0020
-
-/** flag for dessert_logcfg - enable logging to ringbuffer */
-#define DESSERT_LOG_RBUF      0x0040
-
-/** flag for dessert_logcfg - disable logging to ringbuffer */
-#define DESSERT_LOG_NORBUF    0x0080
-
-/** flag for dessert_logcfg - enable log file compression */
-#define DESSERT_LOG_GZ        0x0100
-
-/** flag for dessert_logcfg - disable log file compression */
-#define DESSERT_LOG_NOGZ      0x0200
+enum dessert_logcfg_flags {
+    DESSERT_LOG_SYSLOG    = 0x0001, ///< enable syslog logging
+    DESSERT_LOG_NOSYSLOG  = 0x0002, ///< disable syslog logging
+    /** flag for dessert_logcfg - enable logfile logging
+     * @warning  before using this you MUST use fopen(dessert_logfd, ...) to open the logfile
+     */
+    DESSERT_LOG_FILE      = 0x0004,
+    DESSERT_LOG_NOFILE    = 0x0008, ///< disable logfile logging
+    DESSERT_LOG_STDERR    = 0x0010, ///< enable logging to stderr
+    DESSERT_LOG_NOSTDERR  = 0x0020, ///< disable logging to stderr 
+    DESSERT_LOG_RBUF      = 0x0040, ///< enable logging to ringbuffer
+    DESSERT_LOG_NORBUF    = 0x0080, ///< disable logging to ringbuffer
+    DESSERT_LOG_GZ        = 0x0100, ///< enable log file compression
+    DESSERT_LOG_NOGZ      = 0x0200  ///< disable log file compression
+};
 
 #define EXPLODE_ARRAY6( ARRAY ) (ARRAY)[0], (ARRAY)[1], (ARRAY)[2], (ARRAY)[3], (ARRAY)[4], (ARRAY)[5]
 #define MAC "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
@@ -512,7 +492,7 @@ int dessert_set_cli_port(uint16_t port);
 
 int dessert_logcfg(uint16_t opts);
 void _dessert_log(int level, const char* func, const char* file, int line, const char *fmt, ...);
-/** log at DEBUG level */
+/** log at TRACE level */
 #define dessert_trace(...) _dessert_log(LOG_TRACE, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 /** log at DEBUG level */
 #define dessert_debug(...) _dessert_log(LOG_DEBUG, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
@@ -548,25 +528,25 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
  ******************************************************************************/
 
 struct rssi_sample {
-	time_t time;
-	int8_t rssi;
-	int8_t noise;
-	u_int8_t rate;
-	u_int8_t retry;
+    time_t time;
+    int8_t rssi;
+    int8_t noise;
+    u_int8_t rate;
+    u_int8_t retry;
 };
 
 typedef struct avg_node_result {
-	int8_t avg_rssi;
-	int8_t avg_noise;
-	u_int8_t avg_rate;
-	u_int8_t amount;
-	u_int8_t sum_retries;
+    int8_t avg_rssi;
+    int8_t avg_noise;
+    u_int8_t avg_rate;
+    u_int8_t amount;
+    u_int8_t sum_retries;
 } avg_node_result_t;
 
 struct monitor_neighbour {
-	struct monitor_neighbour *prev, *next;
-	mac_addr addr;
-	struct rssi_sample *samples;
+    struct monitor_neighbour *prev, *next;
+    mac_addr addr;
+    struct rssi_sample *samples;
 };
 
 /******************************************************************************
@@ -720,13 +700,8 @@ int dessert_syssend(const void *pkt, size_t len);
  * #defines
  ******************************************************************************/
 
-/** flag for dessert_msg.flags - message len is hlen+plen
-  * if not set buffer len is assumed as DESSERT_MAXFRAMELEN + DESSERT_MSGPROCLEN */
-#define DESSERT_FLAG_SPARSE 0x1
-
-/* *********************** */
-
 enum dessert_rx_flags {
+    DESSERT_RX_FLAG_SPARSE          = 0x0001,   ///< message len is hlen+plen if set and otherwise DESSERT_MAXFRAMELEN + DESSERT_MSGPROCLEN
     DESSERT_RX_FLAG_L25_SRC         = 0x0002,   ///< receiver is source of the packet; either a looping packet or own transmission overhead on other interface
     DESSERT_RX_FLAG_L25_MULTICAST   = 0x0004,   ///< the encapsulated packet is destined to a multicast group
     DESSERT_RX_FLAG_L25_DST         = 0x0008,   ///< receiver is destination of the packet; can have been overheared!
@@ -737,6 +712,10 @@ enum dessert_rx_flags {
     DESSERT_RX_FLAG_L25_OVERHEARD   = 0x0100,   ///< receiver is destination of the packet on L25 but not on L2
     DESSERT_RX_FLAG_L2_OVERHEARD    = 0x0200    ///< receiver is destination of the packet on L2 but it was received on the wrong interface, e.g., two interfaces on the same channel
 };
+
+/** flag for dessert_msg.flags - message len is hlen+plen
+ * if not set buffer len is assumed as DESSERT_MAXFRAMELEN + DESSERT_MSGPROCLEN */
+#define DESSERT_FLAG_SPARSE 0x1
 
 /** flag for dessert_msg_proc.lflags - l25 src is one of our interfaces */
 #define DESSERT_LFLAG_SRC_SELF 0x0002

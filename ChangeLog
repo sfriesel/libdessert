@@ -1,3 +1,9 @@
+XXXXXXXX - 1.03
+    - When binding to the IPv6 socket for the CLI fails, IPv4 is tried
+    - Introduced loglevel LOG_TRACE > LOG_DEBUG for even more verbose output
+    - Severeal preprocessor macros in dessert.h are now contained in enums
+    - Renamed variable from bool to boolean to enable include of stdbool.h
+
 20110530 - 1.02
     - configure will now fail when uthash or iw are missing
     - Introduced alternative names for some flags in dessert.h
