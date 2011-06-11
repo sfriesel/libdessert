@@ -92,7 +92,7 @@ dessert_agentx_appstats_t *dessert_agentx_appstats_new() {
 	memset(appstat->macaddress1, 0, ETHER_ADDR_LEN);
 	memset(appstat->macaddress2, 0, ETHER_ADDR_LEN);
 
-	appstat->bool = DESSERT_APPSTATS_BOOL_FALSE;
+	appstat->boolean = DESSERT_APPSTATS_BOOL_FALSE;
 
 	return appstat;
 }
@@ -196,7 +196,7 @@ dessert_agentx_appparams_t *dessert_agentx_appparam_new() {
 
 	appparam->value_type = DESSERT_APPPARAMS_VALUETYPE_BOOL;
 
-	appparam->bool = DESSERT_APPSTATS_BOOL_FALSE;
+	appparam->boolean = DESSERT_APPSTATS_BOOL_FALSE;
 
 	return appparam;
 }
