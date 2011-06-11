@@ -41,8 +41,7 @@ int _dessert_sysrxcblistver = 0;
 
 /* internal functions forward declarations*/
 static void *_dessert_sysif_init_thread(void* arg);
-static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
-		dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id);
+static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id);
 
 /******************************************************************************
  *
@@ -62,14 +61,14 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
 int dessert_sysif_init(char* device, uint8_t flags) {
 	/* initialize _dessert_sysif */
 	_dessert_sysif = malloc(sizeof(dessert_sysif_t));
-	if (_dessert_sysif == NULL)
+	if (_dessert_sysif == NULL) {
 		return (-errno);
+    }
 	memset((void *) _dessert_sysif, 0, sizeof(dessert_sysif_t));
 	_dessert_sysif->flags = flags;
 	strncpy(_dessert_sysif->if_name, device, IF_NAMESIZE);
 	_dessert_sysif->if_name[IF_NAMESIZE - 1] = '\0';
 	pthread_mutex_init(&(_dessert_sysif->cnt_mutex), NULL);
-
 	
 #ifdef ANDROID
 	char *buf = "/dev/tun";
@@ -206,9 +205,9 @@ int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio) {
 	}
 
 	/* find right place for callback */
-	for (i = _dessert_sysrxcblist; i->next != NULL && i->next->prio <= cb->prio; i
-			= i->next)
+	for (i = _dessert_sysrxcblist; i->next != NULL && i->next->prio <= cb->prio; i = i->next) {
 		;
+    }
 
 	/* insert it */
 	cb->next = i->next;
@@ -273,8 +272,9 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
         len = dessert_msg_ipdecap(msg, (uint8_t**) &pkt);
         // if neither a Ethernet header nor ip datagram are available, something must be wrong
         // also make sure to forward ip datagrams only to a TUN interface
-        if (len == -1 || !_dessert_sysif|| !(_dessert_sysif->flags & DESSERT_TUN))
-          return (-EIO);
+        if (len == -1 || !_dessert_sysif|| !(_dessert_sysif->flags & DESSERT_TUN)) {
+            return (-EIO);
+        }
     }
 
     dessert_syssend(pkt, len);
@@ -291,8 +291,9 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
  **/
 int dessert_syssend(const void* pkt, size_t len) {
 
-	if (_dessert_sysif == NULL)
+	if (_dessert_sysif == NULL) {
 		return (-EIO);
+    }
 
 	size_t res = write(_dessert_sysif->fd, (const void *) pkt, len);
 	if (res == len) {
@@ -342,9 +343,7 @@ int _dessert_getHWAddr(char* device, char* hwaddr) {
  ******************************************************************************/
 
 /** internal callback which gets registered if we can't find out mac address of tap interface */
-static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
-		dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id) {
-
+static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id) {
 	struct ether_header *eth;
 	dessert_msg_ethdecap(msg, &eth);
 
@@ -354,8 +353,8 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
 		memcpy(sysif->hwaddr, eth->ether_shost, ETHER_ADDR_LEN);
 		dessert_info("guessed hwaddr for %s: " MAC, sysif->if_name, EXPLODE_ARRAY6(sysif->hwaddr));
 		/* check whether we need to set defsrc */
-		if ((sysif->flags & DESSERT_MAKE_DEFSRC) || memcmp(dessert_l25_defsrc,
-				ether_null, ETHER_ADDR_LEN) == 0) {
+		if ((sysif->flags & DESSERT_MAKE_DEFSRC)
+            || memcmp(dessert_l25_defsrc, ether_null, ETHER_ADDR_LEN) == 0) {
 			memcpy(dessert_l25_defsrc, sysif->hwaddr, ETHER_ADDR_LEN);
 			dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
 		}
@@ -400,8 +399,9 @@ static void *_dessert_sysif_init_thread(void* arg) {
 		pthread_rwlock_rdlock(&dessert_cfglock);
 		if (cblver < _dessert_sysrxcblistver) {
 			/* callback list changed - rebuild it */
-			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next)
+			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next) {
 				cbllen++;
+            }
 			cbl = realloc(cbl, cbllen * sizeof(dessert_sysrxcb_t *));
 			if (cbl == NULL && cbllen > 0) {
 				dessert_err("failed to allocate memory for internal callback list");
@@ -410,8 +410,9 @@ static void *_dessert_sysif_init_thread(void* arg) {
 			}
 
 			int iter = 0;
-			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next)
+			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next) {
 				cbl[iter++] = cb->c;
+            }
 
 			cblver = _dessert_sysrxcblistver;
 		}
@@ -443,8 +444,9 @@ static void *_dessert_sysif_init_thread(void* arg) {
 		while (res > DESSERT_MSG_DROP && iter < cbllen) {
 			res = cbl[iter++](msg, len, &proc, sysif, id);
 		}
-		if (msg != NULL)
+		if (msg != NULL) {
 			dessert_msg_destroy(msg);
+        }
 	}
 	dessert_info("stopped reading on %s (fd %d): %s", sysif->if_name, sysif->fd, strerror(errno));
 
