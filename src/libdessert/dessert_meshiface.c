@@ -47,12 +47,10 @@ int _dessert_meshrxcblistver = 0;
 /* internal functions forward declarations*/
 static void _dessert_packet_process(u_int8_t *args, const struct pcap_pkthdr *header, const u_int8_t *packet);
 static void *_dessert_meshif_add_thread(void* arg);
-static inline int _dessert_meshsend_if2(dessert_msg_t* msg,
-		dessert_meshif_t *iface);
+static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *iface);
 static void _dessert_meshif_cleanup(dessert_meshif_t *meshif);
 static void _dessert_meshiflist_update_permutations(void);
-static inline void list2array(dessert_meshif_t *l, dessert_meshif_t **a,
-		int len);
+static inline void list2array(dessert_meshif_t *l, dessert_meshif_t **a, int len);
 static inline int fact(int i);
 static inline void permutation(int k, int len, dessert_meshif_t **a);
 
@@ -99,7 +97,6 @@ int dessert_meshsend(const dessert_msg_t* msgin, dessert_meshif_t *iface) {
 	dessert_msg_destroy(msg);
 
 	return res;
-
 }
 
 /** Sends a \b dessert \b message via all interfaces, except via the specified interface.
@@ -150,8 +147,7 @@ int dessert_meshsend_allbutone(const dessert_msg_t* msgin, dessert_meshif_t *ifa
  * %DESCRIPTION:
  *
  **/
-int dessert_meshsend_hwaddr(const dessert_msg_t* msgin,
-		const uint8_t hwaddr[ETHER_ADDR_LEN]) {
+int dessert_meshsend_hwaddr(const dessert_msg_t* msgin, const uint8_t hwaddr[ETHER_ADDR_LEN]) {
 	dessert_msg_t* msg;
 	int res;
 
@@ -280,8 +276,9 @@ int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, dessert_meshif_t *iface)
 		DL_FOREACH(_dessert_meshiflist, curr_iface) {
 
 			/* skip if it is the 'allbutone' interface */
-			if (curr_iface == iface)
+			if (curr_iface == iface) {
 				curr_iface = curr_iface->next;
+            }
 
 			/* set shost */
 			memcpy(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN);
@@ -314,15 +311,15 @@ int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, dessert_meshif_t *iface)
  * %DESCRIPTION:
  *
  **/
-int dessert_meshsend_fast_hwaddr(dessert_msg_t* msg,
-		const uint8_t hwaddr[ETHER_ADDR_LEN]) {
+int dessert_meshsend_fast_hwaddr(dessert_msg_t* msg, const uint8_t hwaddr[ETHER_ADDR_LEN]) {
 	int res;
 	dessert_meshif_t *meshif;
 
 	pthread_rwlock_rdlock(&dessert_cfglock);
 	DL_FOREACH(_dessert_meshiflist, meshif) {
-		if (memcmp(meshif->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0)
+		if (memcmp(meshif->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0) {
 			break;
+        }
 	}
 	pthread_rwlock_unlock(&dessert_cfglock);
 	if (likely(meshif != NULL)) {
@@ -480,8 +477,9 @@ int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio) {
 	dessert_meshrxcbe_t *cb, *i;
 
 	cb = (dessert_meshrxcbe_t *) malloc(sizeof(dessert_meshrxcbe_t));
-	if (cb == NULL)
+	if (cb == NULL) {
 		return (-errno);
+    }
 
 	pthread_rwlock_wrlock(&dessert_cfglock);
 
@@ -507,9 +505,9 @@ int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio) {
 	}
 
 	/* find right place for callback */
-	for (i = _dessert_meshrxcblist; i->next != NULL && i->next->prio
-			<= cb->prio; i = i->next)
-		;
+	for (i = _dessert_meshrxcblist; i->next != NULL && i->next->prio <= cb->prio; i = i->next) {
+        ;
+    }
 
 	/* insert it */
 	cb->next = i->next;
@@ -554,8 +552,9 @@ dessert_meshif_t* dessert_meshif_get_name(const char *dev) {
 	//meshif = _dessert_meshiflist;
 	pthread_rwlock_rdlock(&dessert_cfglock);
 	DL_FOREACH(_dessert_meshiflist, meshif) {
-		if (strncmp(meshif->if_name, dev, IF_NAMESIZE) == 0)
+		if (strncmp(meshif->if_name, dev, IF_NAMESIZE) == 0) {
 			break;
+        }
 	}
 	pthread_rwlock_unlock(&dessert_cfglock);
 
@@ -578,11 +577,11 @@ dessert_meshif_t* dessert_meshif_get_hwaddr(const uint8_t hwaddr[ETHER_ADDR_LEN]
 
 	pthread_rwlock_rdlock(&dessert_cfglock);
 	DL_FOREACH(_dessert_meshiflist, meshif) {
-		if (memcmp(meshif->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0)
+		if (memcmp(meshif->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0) {
 			break;
+        }
 	}
 	pthread_rwlock_unlock(&dessert_cfglock);
-
 	return meshif;
 }
 
@@ -625,7 +624,6 @@ int dessert_meshif_del(const char *dev) {
 	 * using _dessert_meshif_cleanup                              */
 
 	return DESSERT_OK;
-
 }
 
 /** Initializes given mesh interface, starts up the packet processor thread.
@@ -652,8 +650,9 @@ int dessert_meshif_add(const char *dev, uint8_t flags) {
 
 	/* init new interface entry */
 	meshif = (dessert_meshif_t*) malloc(sizeof(dessert_meshif_t));
-	if (meshif == NULL)
+	if (meshif == NULL) {
 		return (-errno);
+    }
 	memset((void *) meshif, 0, sizeof(dessert_meshif_t));
 	strncpy(meshif->if_name, dev, IF_NAMESIZE);
 	meshif->if_name[IF_NAMESIZE - 1] = '\0';
@@ -667,16 +666,13 @@ int dessert_meshif_add(const char *dev, uint8_t flags) {
 	}
 
 	/* initialize libpcap */
-	meshif->pcap = pcap_open_live(meshif->if_name, 2500,
-			promisc, 10, meshif->pcap_err); ///< \todo remove magic number
+	meshif->pcap = pcap_open_live(meshif->if_name, 2500, promisc, 10, meshif->pcap_err); ///< \todo remove magic number
 	if (meshif->pcap == NULL) {
-		dessert_err("pcap_open_live failed for interface %s(%d):\n%s",
-				meshif->if_name, meshif->if_index, meshif->pcap_err);
+		dessert_err("pcap_open_live failed for interface %s(%d):\n%s", meshif->if_name, meshif->if_index, meshif->pcap_err);
 		goto dessert_meshif_add_err;
 	}
 	if (pcap_datalink(meshif->pcap) != DLT_EN10MB) {
-		dessert_err("interface %s(%d) is not an ethernet interface!",
-				meshif->if_name, meshif->if_index);
+		dessert_err("interface %s(%d) is not an ethernet interface!", meshif->if_name, meshif->if_index);
 		goto dessert_meshif_add_err;
 	}
 
@@ -695,8 +691,7 @@ int dessert_meshif_add(const char *dev, uint8_t flags) {
 
 	/* get hardware address */
 	if (_dessert_meshif_gethwaddr(meshif) != 0) {
-		dessert_err("failed to get hwaddr of interface %s(%d)",
-				meshif->if_name, meshif->if_index);
+		dessert_err("failed to get hwaddr of interface %s(%d)", meshif->if_name, meshif->if_index);
 		goto dessert_meshif_add_err;
 	}
 
@@ -767,8 +762,9 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len,
 	/* copy callbacks to internal list to release dessert_cfglock before invoking callbacks*/
 	pthread_rwlock_rdlock(&dessert_cfglock);
 	cbllen = 0;
-	for (cb = _dessert_meshrxcblist; cb != NULL; cb = cb->next)
+	for (cb = _dessert_meshrxcblist; cb != NULL; cb = cb->next) {
 		cbllen++;
+    }
 	cbl = malloc(cbllen * sizeof(dessert_meshrxcb_t *));
 	if (cbl == NULL) {
 		dessert_err("failed to allocate memory for internal callback list");
@@ -777,8 +773,9 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len,
 	}
 
 	cblcur = 0;
-	for (cb = _dessert_meshrxcblist; cb != NULL; cb = cb->next)
+	for (cb = _dessert_meshrxcblist; cb != NULL; cb = cb->next) {
 		cbl[cblcur++] = cb->c;
+    }
 
 	pthread_rwlock_unlock(&dessert_cfglock);
 
@@ -786,9 +783,7 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len,
 	res = 0;
 	cblcur = 0;
 	while (res > DESSERT_MSG_DROP && cblcur < cbllen) {
-
-		_dessert_packet_process_cbagain: res = cbl[cblcur](msg, len, proc,
-				meshif, id);
+		_dessert_packet_process_cbagain: res = cbl[cblcur](msg, len, proc, meshif, id);
 
 		if (res == DESSERT_MSG_NEEDNOSPARSE && msg == msg_in) {
 			dessert_msg_clone(&msg, msg_in, 0);
@@ -809,12 +804,14 @@ int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len,
 	}
 	free(cbl);
 
-	if (msg != msg_in)
-		dessert_msg_destroy(msg);
-	if (proc != proc_in)
-		free(proc);
+    if (msg != msg_in) {
+        dessert_msg_destroy(msg);
+    }
+    if (proc != proc_in) {
+        free(proc);
+    }
 
-	return (res);
+    return (res);
 }
 
 /** Get the hardware address of the ethernet device behind meshif.
@@ -902,7 +899,6 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *if
 	pthread_mutex_unlock(&(iface->cnt_mutex));
 
 	return (DESSERT_OK);
-
 }
 
 /** Callback doing the main work for packets received through a dessert interface.
@@ -950,7 +946,6 @@ static void _dessert_packet_process(u_int8_t *args, const struct pcap_pkthdr *he
 	pthread_mutex_unlock(&(meshif->cnt_mutex));
 
 	_dessert_meshrxcb_runall(msg, len, &proc, meshif, id);
-
 }
 
 /** Internal routine called before interface thread finishes.
@@ -980,7 +975,6 @@ static void *_dessert_meshif_add_thread(void* arg) {
 	pcap_loop(meshif->pcap, -1, _dessert_packet_process, (u_int8_t *) meshif);
 	_dessert_meshif_cleanup(meshif);
 	return (NULL);
-
 }
 
 /** Internal function to update the lookup table of permutations of the current _dessert_meshiflist.
@@ -1014,8 +1008,7 @@ static void _dessert_meshiflist_update_permutations() {
 	}
 
 	for (r = 0; r < _dessert_meshiflist_perm_count; r++) {
-		memcpy(_dessert_meshiflist_perms[r], a, sizeof(dessert_meshif_t *)
-				* _dessert_meshiflist_len);
+		memcpy(_dessert_meshiflist_perms[r], a, sizeof(dessert_meshif_t *) * _dessert_meshiflist_len);
 	}
 	free(a);
 
@@ -1035,14 +1028,14 @@ static void _dessert_meshiflist_update_permutations() {
  *
  * %DESCRIPTION: \n
  */
-static inline void list2array(dessert_meshif_t *l, dessert_meshif_t **a,
-		int len) {
+static inline void list2array(dessert_meshif_t *l, dessert_meshif_t **a, int len) {
 	dessert_meshif_t *t;
 	int i = 0;
 	DL_FOREACH(l, t) {
 		a[i++] = t;
-		if (--len == 0)
+		if (--len == 0) {
 			break;
+        }
 	}
 }
 
@@ -1058,7 +1051,9 @@ static inline void list2array(dessert_meshif_t *l, dessert_meshif_t **a,
  */
 static inline int fact(int i){
     int fact = 1;
-    while (i > 0) fact *= i--;
+    while (i > 0) {
+        fact *= i--;
+    }
     return fact;
 }
 
