@@ -3,6 +3,7 @@ XXXXXXXX - 1.03
     - Introduced loglevel LOG_TRACE > LOG_DEBUG for even more verbose output
     - Severeal preprocessor macros in dessert.h are now contained in enums
     - Renamed variable from bool to boolean to enable include of stdbool.h
+    - All printing of MAC addresses realized by MAC and EXPLODE_ARRAY6 macro
 
 20110530 - 1.02
     - configure will now fail when uthash or iw are missing

@@ -392,10 +392,7 @@ static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *
     }
     else {
         cli_print(cli, "\nStatistics for system interface [%s]", sysif->if_name);
-        cli_print(cli,
-                "    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
-                sysif->hwaddr[0], sysif->hwaddr[1], sysif->hwaddr[2],
-                sysif->hwaddr[3], sysif->hwaddr[4], sysif->hwaddr[5]);
+        cli_print(cli, "    MAC address           : [" MAC "]", EXPLODE_ARRAY6(sysif->hwaddr));
         cli_print(cli, "    Packets received      : [%"PRIi64"]", sysif->ipkts);
         cli_print(cli, "    Packets send          : [%"PRIi64"]", sysif->opkts);
         cli_print(cli, "    Bytes received        : [%"PRIi64"]", sysif->ibytes);
@@ -525,16 +522,11 @@ static void *_dessert_cli_accept_thread(void* arg) {
 
 /** internal helper function to _dessert_cli_cmd_showmeshifs */
 static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif) {
-
-	cli_print(cli, "\nStatistics for mesh interface [%s]", meshif->if_name);
-	cli_print(cli,
-			"    MAC address           : [%02x:%02x:%02x:%02x:%02x:%02x]",
-			meshif->hwaddr[0], meshif->hwaddr[1], meshif->hwaddr[2],
-			meshif->hwaddr[3], meshif->hwaddr[4], meshif->hwaddr[5]);
-	cli_print(cli, "    Packets received      : [%"PRIi64"]", meshif->ipkts);
-	cli_print(cli, "    Packets send          : [%"PRIi64"]", meshif->opkts);
-	cli_print(cli, "    Bytes received        : [%"PRIi64"]", meshif->ibytes);
-	cli_print(cli, "    Bytes send            : [%"PRIi64"]", meshif->obytes);
-
-	return;
+    cli_print(cli, "\nStatistics for mesh interface [%s]", meshif->if_name);
+    cli_print(cli, "    MAC address           : [" MAC "]", EXPLODE_ARRAY6(meshif->hwaddr));
+    cli_print(cli, "    Packets received      : [%"PRIi64"]", meshif->ipkts);
+    cli_print(cli, "    Packets send          : [%"PRIi64"]", meshif->opkts);
+    cli_print(cli, "    Bytes received        : [%"PRIi64"]", meshif->ibytes);
+    cli_print(cli, "    Bytes send            : [%"PRIi64"]", meshif->obytes);
+    return;
 }

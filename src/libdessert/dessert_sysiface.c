@@ -134,22 +134,18 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 					ether_null, ETHER_ADDR_LEN) == 0) {
 				memcpy(dessert_l25_defsrc, _dessert_sysif->hwaddr,
 						ETHER_ADDR_LEN);
-				dessert_info("set dessert_l25_defsrc to hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
-						dessert_l25_defsrc[0], dessert_l25_defsrc[1],dessert_l25_defsrc[2],
-						dessert_l25_defsrc[3], dessert_l25_defsrc[4], dessert_l25_defsrc[5]);
+				dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
 			}
 		}
 	}
 
 	/* info message */
 	if (flags & DESSERT_TAP) {
-		dessert_info("starting worker thread for tap interface %s(%d) hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
-				_dessert_sysif->if_name, _dessert_sysif->if_index,
-				_dessert_sysif->hwaddr[0], _dessert_sysif->hwaddr[1], _dessert_sysif->hwaddr[2],
-				_dessert_sysif->hwaddr[3], _dessert_sysif->hwaddr[4], _dessert_sysif->hwaddr[5]);
+		dessert_info("starting worker thread for tap interface %s(%d) hwaddr " MAC,
+                     _dessert_sysif->if_name, _dessert_sysif->if_index, EXPLODE_ARRAY6(_dessert_sysif->hwaddr));
 	} else {
 		dessert_info("starting worker thread for tap interface %s(%d) fd %d",
-				_dessert_sysif->if_name, _dessert_sysif->if_index, _dessert_sysif->fd);
+                     _dessert_sysif->if_name, _dessert_sysif->if_index, _dessert_sysif->fd);
 	}
 
 	/* start worker thread */
@@ -356,16 +352,12 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len,
 	if (sysif->flags & _DESSERT_TAP_NOMAC) {
 		/* copy from first packet received */
 		memcpy(sysif->hwaddr, eth->ether_shost, ETHER_ADDR_LEN);
-		dessert_info("guessed hwaddr for %s: %02x:%02x:%02x:%02x:%02x:%02x", sysif->if_name,
-				sysif->hwaddr[0], sysif->hwaddr[1], sysif->hwaddr[2],
-				sysif->hwaddr[3], sysif->hwaddr[4], sysif->hwaddr[5]);
+		dessert_info("guessed hwaddr for %s: " MAC, sysif->if_name, EXPLODE_ARRAY6(sysif->hwaddr));
 		/* check whether we need to set defsrc */
 		if ((sysif->flags & DESSERT_MAKE_DEFSRC) || memcmp(dessert_l25_defsrc,
 				ether_null, ETHER_ADDR_LEN) == 0) {
 			memcpy(dessert_l25_defsrc, sysif->hwaddr, ETHER_ADDR_LEN);
-			dessert_info("set dessert_l25_defsrc to hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
-					dessert_l25_defsrc[0], dessert_l25_defsrc[1],dessert_l25_defsrc[2],
-					dessert_l25_defsrc[3], dessert_l25_defsrc[4], dessert_l25_defsrc[5]);
+			dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
 		}
 		sysif->flags &= ~_DESSERT_TAP_NOMAC;
 	}

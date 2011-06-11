@@ -917,7 +917,6 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t *if
  *
  */
 static void _dessert_packet_process(u_int8_t *args, const struct pcap_pkthdr *header, const u_int8_t *packet) {
-
 	dessert_meshif_t *meshif = (dessert_meshif_t *) args;
 	dessert_msg_t *msg = (dessert_msg_t *) packet;
 	size_t len = header->caplen;

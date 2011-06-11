@@ -469,7 +469,7 @@ int dessert_set_cli_port(uint16_t port);
 enum dessert_logcfg_flags {
     DESSERT_LOG_SYSLOG    = 0x0001, ///< enable syslog logging
     DESSERT_LOG_NOSYSLOG  = 0x0002, ///< disable syslog logging
-    /** flag for dessert_logcfg - enable logfile logging
+    /** enable logfile logging
      * @warning  before using this you MUST use fopen(dessert_logfd, ...) to open the logfile
      */
     DESSERT_LOG_FILE      = 0x0004,
@@ -592,17 +592,12 @@ int dessert_parse_mac(const char *input_mac, mac_addr *hwaddr);
  * #defines
  ******************************************************************************/
 
-/** return code for dessert_meshrxcb_t - forces to copy the message and call again*/
-#define DESSERT_MSG_NEEDNOSPARSE     1
-
-/** return code for dessert_meshrxcb_t - forces to generate processing info and call again*/
-#define DESSERT_MSG_NEEDMSGPROC      2
-
-/** return code for dessert_meshrxcb_t and dessert_sysrxcb_t */
-#define DESSERT_MSG_KEEP             0
-
-/** return code for dessert_meshrxcb_t and dessert_sysrxcb_t */
-#define DESSERT_MSG_DROP             -1
+enum dessert_return_codes {
+    DESSERT_MSG_DROP            = -1, ///< stop handling the packet and drop it
+    DESSERT_MSG_KEEP            =  0, ///< continue to handle the packet in the following callback
+    DESSERT_MSG_NEEDNOSPARSE    =  1, ///< forces to copy the message and call again
+    DESSERT_MSG_NEEDMSGPROC     =  2, ///< forces to generate processing info and call again
+};
 
 /** flag for dessert_meshif_add - set interface in promiscuous-mode (default) */
 #define DESSERT_IF_PROMISC 0x0
@@ -662,7 +657,9 @@ dessert_meshif_t * dessert_meshiflist_get(void);
  * #defines
  ******************************************************************************/
 
-/** flag for dessert_sysif_init - open tun (ip/ipv6) device */
+/** flag for dessert_sysif_init - open tun (ip/ipv6) device
+ * TODO why is this 0x00?? shouldn't it be a flag?
+ */
 #define DESSERT_TUN          0x00
 
 /** flag for dessert_sysif_init - open tap (ethernet) device */
