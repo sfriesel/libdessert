@@ -45,7 +45,7 @@ gzFile *dessert_logfdgz = NULL;
 #define _DESSERT_LOGFLAG_GZ       0x10
 
 #ifndef LOG_STYLE_OLD
-#   define LOG_STYLE_OLD 1
+#   define LOG_STYLE_OLD 0
 #endif
 
 int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
@@ -518,6 +518,9 @@ int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command, char 
 /** just a helper function */
 static int _dessert_loglevel_to_string(uint8_t level, char* buffer, size_t len) {
     switch(level) {
+        case LOG_TRACE:
+            snprintf(buffer, len, "%s", "trace");
+            break;
         case LOG_DEBUG:
             snprintf(buffer, len, "%s", "debug");
             break;
@@ -551,7 +554,9 @@ int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv
         return CLI_ERROR;
     }
 
-    if(strcmp(argv[0], "debug") == 0)
+    if(strcmp(argv[0], "trace") == 0)
+        _dessert_loglevel = LOG_TRACE;
+    else if(strcmp(argv[0], "debug") == 0)
         _dessert_loglevel = LOG_DEBUG;
     else if(strcmp(argv[0], "info") == 0)
         _dessert_loglevel = LOG_INFO;
@@ -570,8 +575,8 @@ int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv
         dessert_warn("invalid loglevel specified: %s", argv[0]);
     }
 
-    char buf[20];
-    _dessert_loglevel_to_string(_dessert_loglevel, buf, 20);
+    char buf[128];
+    _dessert_loglevel_to_string(_dessert_loglevel, buf, sizeof(buf));
     cli_print(cli, "loglevel is set to \"%s\"", buf);
     dessert_notice("loglevel is set to \"%s\"", buf);
 
@@ -579,8 +584,8 @@ int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv
 }
 
 int _dessert_cli_cmd_show_loglevel(struct cli_def *cli, char *command, char *argv[], int argc) {
-    char buf[20];
-    _dessert_loglevel_to_string(_dessert_loglevel, buf, 20);
+    char buf[128];
+    _dessert_loglevel_to_string(_dessert_loglevel, buf, sizeof(buf));
     cli_print(cli, "loglevel is set to \"%s\"", buf);
 
     return CLI_OK;
