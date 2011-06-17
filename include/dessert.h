@@ -300,7 +300,7 @@ typedef struct dessert_sysif {
  * providing the requested resource.
  *
  */
-typedef int dessert_meshrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
+typedef int dessert_meshrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
 
 /** Callback type to call if a packed should be injected into dessert via a tun/tap interface.
  *
@@ -803,10 +803,10 @@ int dessert_msg_resizeext(dessert_msg_t *msg, dessert_ext_t *ext, size_t new_len
 int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index);
 int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type);
 
-int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
-int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
-int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id);
-int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *riface, dessert_frameid_t id);
+int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *riface, dessert_frameid_t id);
 
 int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen);
 

@@ -655,7 +655,7 @@ int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type) {
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP if message is valid, DESSERT_MSG_DROP otherwise
  **/
-int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id) {
 	if (dessert_msg_check(msg, len)) {
 		dessert_debug("invalid package - discarding");
 		return DESSERT_MSG_DROP;
@@ -669,7 +669,7 @@ int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *pro
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP always
  **/
-int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id) {
 	char buf[1024];
 
 	dessert_msg_proc_dump(msg, len, proc, buf, 1024);
@@ -685,7 +685,7 @@ int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP always
  **/
-int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *iface, dessert_frameid_t id) {
+int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id) {
 	dessert_ext_t *ext;
 
 	/* abort if message has no trace extension */
@@ -726,7 +726,7 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *pro
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP or DESSERT_MSG_NEEDMSGPROC
  **/
-int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, const dessert_meshif_t *riface, dessert_frameid_t id) {
+int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *riface, dessert_frameid_t id) {
 	dessert_meshif_t *iface;
 	struct ether_header *l25h;
 
