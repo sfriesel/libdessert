@@ -4,6 +4,7 @@ XXXXXXXX - 1.03
     - Severeal preprocessor macros in dessert.h are now contained in enums
     - Renamed variable from bool to boolean to enable include of stdbool.h
     - All printing of MAC addresses realized by MAC and EXPLODE_ARRAY6 macro
+    - meshiface is not const -> remove const
 
 20110530 - 1.02
     - configure will now fail when uthash or iw are missing
