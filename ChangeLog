@@ -1,15 +1,16 @@
-XXXXXXXX - 1.03
+20110621 - 1.03
     - When binding to the IPv6 socket for the CLI fails, IPv4 is tried
     - Introduced loglevel LOG_TRACE > LOG_DEBUG for even more verbose output
-    - Severeal preprocessor macros in dessert.h are now contained in enums
+    - Several preprocessor macros in dessert.h are now contained in enums
     - Renamed variable from bool to boolean to enable include of stdbool.h
     - All printing of MAC addresses realized by MAC and EXPLODE_ARRAY6 macro
     - meshiface is not const -> remove const
+    - libtool version = 1.9.1
 
 20110530 - 1.02
     - configure will now fail when uthash or iw are missing
     - Introduced alternative names for some flags in dessert.h
-    - libtool version = 1.8.1, no API changes (yet)
+    - libtool version = 1.8.1
 
 20110530 - 1.01
     - Re-written monitor code
