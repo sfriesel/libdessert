@@ -65,6 +65,7 @@ static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *ar
 static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc);
 #ifndef ANDROID
 static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_monitor_conf(struct cli_def *cli, char *command, char *argv[], int argc);
 #endif
 static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif);
 /******************************************************************************
@@ -243,6 +244,9 @@ int _dessert_cli_init() {
     cli_register_command(dessert_cli, dessert_cli_cfg_iface,
                         "monitor", _dessert_cli_monitoring_start, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
                         "Creates a monitor interface for a IEEE 802.11 interface");
+    cli_register_command(dessert_cli, dessert_cli_show, "monitor_conf",
+                         _dessert_cli_monitor_conf, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "show loglevel");
 #endif
     dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
             PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
@@ -328,6 +332,12 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
 * @param[in] timer_range The second parameter defines how long collectes RSSI-Values are guilty
 */
 #ifndef ANDROID
+static int _dessert_cli_monitor_conf(struct cli_def *cli, char *command, char *argv[], int argc) {
+    extern int MAX_AGE;
+    extern int MAX_RSSI_VALS;
+    cli_print(cli, "max_values=%d, max_age=%d", MAX_RSSI_VALS, MAX_AGE);
+}
+
 static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, char *argv[], int argc) {
     int max_rssi_vals = 0;
     int max_age = 0;
@@ -335,14 +345,14 @@ static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, cha
         max_rssi_vals = atoi(argv[0]);
         if(!(0 < max_rssi_vals && max_rssi_vals < INT16_MAX)) {
             max_rssi_vals = 0;
-            dessert_info("max_rssi_values is not in range [1, INT16_MAX], using default instead");
+            dessert_warn("max_rssi_values is not in range [1, INT16_MAX], using default instead");
         }
     }
     if(argc >= 2) {
         max_age = atoi(argv[1]);
         if(max_age <= 0) {
             max_age = 0;
-            dessert_info("max age is not positive, using default %d",max_age);
+            dessert_warn("max age is not positive, using default %d",max_age);
         }
     }
 
