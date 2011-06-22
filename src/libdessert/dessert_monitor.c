@@ -399,7 +399,7 @@ static int create_mon_iface(dessert_meshif_t *iface) {
     snprintf(cmdBuf, sizeof(cmdBuf), "iw dev %s interface add %s type monitor", iface->if_name, monitorName);
 
     int status = system(cmdBuf);
-    if(status == 127) {
+    if(status > 0) {
         dessert_crit("iw isn't installed, but it's needed for monitoring....abording monitoring");
         return -1;
     }
