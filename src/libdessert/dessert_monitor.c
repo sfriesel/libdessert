@@ -398,7 +398,12 @@ static int create_mon_iface(dessert_meshif_t *iface) {
     char cmdBuf[100];
     snprintf(cmdBuf, sizeof(cmdBuf), "iw dev %s interface add %s type monitor", iface->if_name, monitorName);
 
-    if(system(cmdBuf) < 0) {
+    int status = system(cmdBuf);
+    if(status == 127) {
+        dessert_crit("iw isn't installed, but it's needed for monitoring....abording monitoring");
+        return -1;
+    }
+    if(status < 0) {
         //The value returned is -1 on error, and the return status of the command otherwise.
         dessert_crit("Couldn't create device: iw dev %s interface add %s type monitor", iface->if_name, monitorName);
         return -1;
@@ -407,7 +412,13 @@ static int create_mon_iface(dessert_meshif_t *iface) {
     dessert_info("monitor interface %s has been created", monitorName);
 
     snprintf(cmdBuf, sizeof(cmdBuf), "ip link set dev %s up", monitorName);
-    if(system(cmdBuf) < 0) {
+    
+    status = system(cmdBuf);
+    if(status == 127) {
+        dessert_crit("ip isn't installed, but it's needed for monitoring....abording monitoring");
+        return -1;
+    }
+    if(status < 0) {
         //The value returned is -1 on error, and the return status of the command otherwise.
         dessert_crit("Couldn't bring device up: ip link set dev %s up", monitorName);
         return -1;
