@@ -414,8 +414,8 @@ static int create_mon_iface(dessert_meshif_t *iface) {
     snprintf(cmdBuf, sizeof(cmdBuf), "ip link set dev %s up", monitorName);
     
     status = system(cmdBuf);
-    if(status == 127) {
-        dessert_crit("ip isn't installed, but it's needed for monitoring....abording monitoring");
+    if(status > 0) {
+        dessert_crit("ip isn't installed or used in the wrong way, but it's needed for monitoring....abording monitoring");
         return -1;
     }
     if(status < 0) {
