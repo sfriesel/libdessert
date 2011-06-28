@@ -701,7 +701,7 @@ int dessert_meshif_add(const char *dev, uint8_t flags) {
 		dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
 	}
 
-	dessert_info("starting worker thread for interface %s(%d) hwaddr" MAC,
+	dessert_info("starting worker thread for interface %s(%d) hwaddr " MAC,
 			meshif->if_name, meshif->if_index, EXPLODE_ARRAY6(meshif->hwaddr));
 
 	/* start worker thread */
