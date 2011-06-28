@@ -698,7 +698,7 @@ int dessert_meshif_add(const char *dev, uint8_t flags) {
 	/* check whether we need to set defsrc (default source) */
 	if (memcmp(dessert_l25_defsrc, ether_null, ETHER_ADDR_LEN) == 0) {
 		memcpy(dessert_l25_defsrc, meshif->hwaddr, ETHER_ADDR_LEN);
-		dessert_info("set dessert_l25_defsrc to hwaddr" MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
+		dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
 	}
 
 	dessert_info("starting worker thread for interface %s(%d) hwaddr" MAC,
