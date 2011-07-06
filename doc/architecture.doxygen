@@ -3,7 +3,7 @@
  * \addtogroup Architecture
  *
  * This module describes the general architecture of DES-SERT, the core concepts, and features that are provided. Here you can find the following parts:
- * 
+ *
  * - \ref arch_sec
  * - \ref messages_subsec
  * - \ref extensions_subsec
@@ -49,7 +49,7 @@
  *  } dessert_msg_t;
  * @endcode
  *
- * Every message sent over the underlay network has this structure. This stucture is not flexible in his length, which means that the DES-SERT message has a fixed length, too. The data in a ::dessert_msg_t is stored in network byte order. In most cases a developer only has to provide a value for the destination in the ethernet header (ether_dhost) in dessert_msg_t.l2h. Other values in the struct will be filled by DES-SERT, which in fact tries to take care of this structure as much as possible. 
+ * Every message sent over the underlay network has this structure. This stucture is not flexible in his length, which means that the DES-SERT message has a fixed length, too. The data in a ::dessert_msg_t is stored in network byte order. In most cases a developer only has to provide a value for the destination in the ethernet header (ether_dhost) in dessert_msg_t.l2h. Other values in the struct will be filled by DES-SERT, which in fact tries to take care of this structure as much as possible.
  *
  * If you have to send some management data with a packet, e.g., some kind of metric value your routing protocol uses, you should try to fit this data into the dessert_msg_t.u8 or dessert_msg_t.u16 field. These fields will never be modified by DES-SERT except on initialization via dessert_msg_new().
  *
@@ -154,7 +154,7 @@
  *
  * @code
  *  int dessert_msg_proc_clone(dessert_msg_proc_t **procnew, const dessert_msg_proc_t *procold);
- *  
+ *
  *  void dessert_msg_proc_destroy(dessert_msg_proc_t* proc);
  * @endcode
  *
@@ -165,10 +165,10 @@
  * @subsection sysif_subsec Interfacing with the Kernel and User Space
  *
  * When developing a daemon you have to choose whether you like to use a TUN or TAP device to receive packets from user space. Packets received or sent via a TUN interface are IPv4/IPv6 datagrams; packets received or sent via TAP devices are Ethernet frames. If you intend to implement a custom layer 2 to layer 3 mapping or to minimize the overhead, you should use a TUN interface. In our testbed we are use underlay routing, so it is recommanded to use TAP interfaces.
- * 
+ *
  * Currently, you can only use a single sys respectively TUN/TAP interface. The function dessert_sysif_init() enables to create the particular sys interface. You then have to set up the interface by calling "ifconfig".
  *
- * Please note that DES-SERT also provides a CLI callback in the libdessert-extra library for this task and that you do not have to implement this feature yourself.
+ * Please note that DES-SERT also provides a CLI callback for this task and that you do not have to implement this feature yourself.
  *
  * @code
  *  int dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
@@ -179,7 +179,7 @@
  * Packets received from the TUN/TAP interface will be passed along the callbacks added by dessert_sysrxcb_add to the sys pipeline. Each callack function will be called with a pointer to the DES-SERT message containing the received data from layer 3 upwards as payload. When using a TAP interface, the data from the Ethernet header is copied into a DES-SERT Ethernet extension (type: #DESSERT_EXT_ETH).
  *
  * Packets are sent to the user space via the kernel's network stack with dessert_syssend. Your lowest priority (highest value) callback in the mesh pipeline should always send packets to the user space if the DES-SERT message was not dropped by higher priority callbacks.
- * 
+ *
  * Even when you make a mistake and the packet is not for this host, the kernel will probably drop the packet if it cannot be delivered. A tip for your coding: You can just register a callback, which simply forwards the packet to the user space. Then you will not forget to do this later.
  *
  * @code
@@ -228,9 +228,9 @@
  * @section periodics_sec Periodics
  *
  * Periodics help you to perform maintenance or delayed tasks. A task consists of a callback, which will be called at the time you requested. In fact this mechanism is important for all of the routing protocols. Remember, when you want to send hello or tc packets in periodic time this feature will be helpful.
- * 
+ *
  * The callback will be passed a void pointer to data that you specified at  registration time. You can add tasks by calling dessert_periodic_add() or dessert_periodic_add_delayed() or delete registered callbacks with dessert_periodic_del().
- * 
+ *
  * The data pointer may be NULL and you can optionally specify when the callback should be called for the first time.
  *
  * @code
