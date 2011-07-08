@@ -1081,3 +1081,185 @@ static inline void permutation(int k, int len, dessert_meshif_t **a) {
         k = k / j;
     }
 }
+
+/** Add mesh mesh interface
+ *
+ * Adds an interface as mesh interface to the daemon. libpcap is
+ * used to receive packets in the promiscuous mode.
+ * The interface is put in the up state but you still have to configure the wlan parameters
+ * manually, e.g., the channel.
+ *
+ * COMMAND: interface mesh $iface
+ *
+ * @param cli the handle of the cli structure. This must be passed to all cli functions, including cli_print().
+ * @param command the entire command which was entered. This is after command expansion.
+ * @param argv the list of arguments entered
+ * @param argc the number of arguments entered
+ *
+ * @retval CLI_OK if interface added and in up state
+ * @retval CLI_ERROR on error
+ */
+int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc) {
+  uint8_t BUF_SIZE = 255;
+  char buf[BUF_SIZE];
+  int i;
+
+  if (argc != 1) {
+      cli_print(cli, "usage %s [mesh-interface]\n", command);
+      return CLI_ERROR;
+  }
+  dessert_info("initializing mesh interface %s", argv[0]);
+  snprintf(buf, BUF_SIZE, "ifconfig %s up", argv[0]);
+  i = system(buf);
+  if(i != 0) {
+    dessert_crit("running ifconfig on mesh interface %s returned %i",argv[0], i);
+    return CLI_ERROR;
+  }
+  i = dessert_meshif_add(argv[0], DESSERT_IF_PROMISC);
+  if(i == DESSERT_OK) {
+    return CLI_OK;
+  }
+  return CLI_ERROR;
+}
+
+/** Drop messages with Ethernet extension
+ *
+ * Drop all DES-SERT messages with an Ethernet extension.
+ *
+ * @param *msg dessert_msg_t frame received
+ * @param len length of the buffer pointed to from dessert_msg_t
+ * @param *proc local processing buffer passed along the callback pipeline - may be NULL
+ * @param *meshif interface received packet on - may be NULL
+ * @param id unique internal frame id of the packet
+ *
+ * @retval DESSERT_MSG_DROP if Ethernet extension is available
+ * @retval DESSERT_MSG_KEEP if Ethernet extension is missing
+ */
+int dessert_mesh_drop_ethernet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *meshif, dessert_frameid_t id) {
+    struct ether_header* eth = dessert_msg_getl25ether(msg);
+
+    if (eth != NULL) { // has Ethernet extension
+        dessert_debug("dropped DES-SERT message with Ethernet extension");
+        return DESSERT_MSG_DROP;
+    }
+
+    return DESSERT_MSG_KEEP;
+}
+
+/** Drop messages without Ethernet extension
+ *
+ * Drop all DES-SERT messages with an Ethernet extension.
+ *
+ * @param *msg dessert_msg_t frame received
+ * @param len length of the buffer pointed to from dessert_msg_t
+ * @param *proc local processing buffer passed along the callback pipeline - may be NULL
+ * @param *meshif interface received packet on - may be NULL
+ * @param id unique internal frame id of the packet
+ *
+ * @retval DESSERT_MSG_KEEP if Ethernet extension is available
+ * @retval DESSERT_MSG_DROP if Ethernet extension is missing
+ */
+int dessert_mesh_drop_ip(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *meshif, dessert_frameid_t id) {
+    struct ether_header* eth = dessert_msg_getl25ether(msg);
+
+    if (eth == NULL) { // has no Ethernet extension
+        dessert_debug("dropped DES-SERT message with Ethernet extension");
+        return DESSERT_MSG_DROP;
+    }
+
+    return DESSERT_MSG_KEEP;
+}
+
+/** Enable IP-based tracing
+ *
+ * This extension decrements the TTL in IPv4 or the Hop-Limit field in IPv6 datagrams. If the
+ * value drops to 1, the datagram in the DES-SERT message is decapsulated and handed to the
+ * IP implementation of the operating system. Depending on the configuration, the IP
+ * implementation will send an ICMP time-exceeded message. This enables tracing despite
+ * the transparent underlay routing applied in DES-SERT.
+ *
+ * @param *msg dessert_msg_t frame received
+ * @param len length of the buffer pointed to from dessert_msg_t
+ * @param *proc local processing buffer passed along the callback pipeline - may be NULL
+ * @param *meshif interface received packet on - may be NULL
+ * @param id unique internal frame id of the packet
+ *
+ * @retval DESSERT_MSG_KEEP if TTL or Hop Limit > 1
+ * @retval DESSERT_MSG_DROP if TTL or Hop Limit <= 1
+ */
+int dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *meshif, dessert_frameid_t id) {
+    void* payload;
+    struct ether_header* eth = dessert_msg_getl25ether(msg);
+
+    // TODO: works currently only with encapsulated Ethernet frames
+    if (eth == NULL)
+        return DESSERT_MSG_KEEP;
+
+    if (proc->lflags & DESSERT_LFLAG_DST_SELF) {
+        // the packet got here, so we can ignore the TTL value
+        return DESSERT_MSG_KEEP;
+    }
+
+    if (!(proc->lflags & DESSERT_LFLAG_NEXTHOP_SELF))
+      return DESSERT_MSG_KEEP;
+
+    // IPv4
+    if (eth->ether_type == htons(ETHERTYPE_IP) && dessert_msg_getpayload(msg, &payload)) {
+        struct iphdr* ip = (struct iphdr*) payload;
+        // decrement TTL each hop
+        if (ip->ttl > 1) {
+            ip->ttl--;
+            ip->check = (ip->check + 1);
+        }
+        /*
+        * TTL == 1, let the IP implementation handle the situation and send an
+        * ICMP time exceeded message
+        */
+        else {
+            struct ether_header *eth;
+            size_t eth_len;
+            eth_len = dessert_msg_ethdecap(msg, &eth);
+            /*
+            * Fake destination ether address or the host will not evaluate the packet.
+            * Multicast and broadcast frames can be ignored.
+            */
+            if (! (proc->lflags & DESSERT_LFLAG_DST_BROADCAST
+                    || proc->lflags & DESSERT_LFLAG_DST_MULTICAST)) {
+                memcpy(&(eth->ether_dhost), &(_dessert_sysif->hwaddr), ETHER_ADDR_LEN);
+            }
+            dessert_syssend(eth, eth_len);
+            free(eth);
+            return DESSERT_MSG_DROP;
+        }
+    }
+    // IPv6
+    else if (eth->ether_type == htons(ETHERTYPE_IPV6) && dessert_msg_getpayload(msg, &payload)) {
+        struct ip6_hdr* ip = (struct ip6_hdr*) payload;
+        // decrement Hop Limit each hop
+        if (ip->ip6_ctlun.ip6_un1.ip6_un1_hlim) {
+            ip->ip6_ctlun.ip6_un1.ip6_un1_hlim--;
+        }
+        /*
+        * Hop Limit == 1, let the IP implementation handle the situation and send an
+        * ICMPv6 time exceeded message
+        */
+        else {
+            struct ether_header *eth;
+            size_t eth_len;
+            eth_len = dessert_msg_ethdecap(msg, &eth);
+            /*
+            * Fake destination ether address or the host will not evaluate the packet.
+            * Multicast and broadcast frames can be ignored.
+            */
+            if (! (proc->lflags & DESSERT_LFLAG_DST_BROADCAST
+                    || proc->lflags & DESSERT_LFLAG_DST_MULTICAST)) {
+                memcpy(&(eth->ether_dhost), &(_dessert_sysif->hwaddr), ETHER_ADDR_LEN);
+            }
+            dessert_syssend(eth, eth_len);
+            free(eth);
+            return DESSERT_MSG_DROP;
+        }
+    }
+
+    return DESSERT_MSG_KEEP;
+}

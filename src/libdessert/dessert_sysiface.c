@@ -69,7 +69,7 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 	strncpy(_dessert_sysif->if_name, device, IF_NAMESIZE);
 	_dessert_sysif->if_name[IF_NAMESIZE - 1] = '\0';
 	pthread_mutex_init(&(_dessert_sysif->cnt_mutex), NULL);
-	
+
 #ifdef ANDROID
 	char *buf = "/dev/tun";
 #else
@@ -156,7 +156,7 @@ int dessert_sysif_init(char* device, uint8_t flags) {
 	}
 	return DESSERT_OK;
 
-dessert_sysif_init_err: 
+dessert_sysif_init_err:
 	close(_dessert_sysif->fd);
 	return (-errno);
 }
@@ -453,4 +453,118 @@ static void *_dessert_sysif_init_thread(void* arg) {
 	free(cbl);
 	close(sysif->fd);
 	return (NULL);
+}
+
+/** Add TAP interface
+ *
+ * This callback can be used to create a TAP device as sys interface.
+ *
+ * COMMAND: interface sys $iface $ipv4-addr $netmask $mtu
+ *
+ * @param cli the handle of the cli structure. This must be passed to all cli functions, including cli_print().
+ * @param command the entire command which was entered. This is after command expansion.
+ * @param argv the list of arguments entered
+ * @param argc the number of arguments entered
+ *
+ * @retval CLI_OK if TAP interface added
+ * @retval CLI_ERROR on error
+ */
+int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
+    char buf[255];
+    int i;
+
+    if (argc < 3 || argc > 4) {
+        cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask] [mtu]\n",
+                command);
+        return CLI_ERROR;
+    }
+
+    uint16_t mtu = DESSERT_DEFAULT_MTU;
+    if(argc == 4) {
+        mtu = (uint16_t) atoi(argv[3]);
+    }
+
+    dessert_info("initializing sys interface");
+    dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
+    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1],
+            argv[2], mtu);
+    i = system(buf);
+    if(i != 0) {
+        dessert_crit("running ifconfig on sys interface %s returned %i",argv[0], i);
+        return CLI_ERROR;
+    }
+    return CLI_OK;
+}
+
+/** Add TUN interface
+ *
+ * This callback can be used to create a TUN device as sys interface.
+ *
+ * COMMAND: interface sys $iface, $ipv4-addr, $netmask
+ *
+ * @param cli the handle of the cli structure. This must be passed to all cli functions, including cli_print().
+ * @param command the entire command which was entered. This is after command expansion.
+ * @param argv the list of arguments entered
+ * @param argc the number of arguments entered
+ *
+ * @retval CLI_OK if TUN interface added
+ * @retval CLI_ERROR on error
+ */
+int dessert_cli_cmd_addsysif_tun(struct cli_def *cli, char *command, char *argv[], int argc) {
+    char buf[255];
+    int i;
+
+    if (argc != 3) {
+        cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask]\n",
+                command);
+        return CLI_ERROR;
+    }
+    dessert_info("initializing sys interface");
+    dessert_sysif_init(argv[0], DESSERT_TUN | DESSERT_MAKE_DEFSRC);
+    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1],
+            argv[2], DESSERT_DEFAULT_MTU);
+    i = system(buf);
+    dessert_info("ifconfig on sys interface returned %i", i);
+    return (i == 0 ? CLI_OK : CLI_ERROR);
+}
+
+/** Drop IPv6 datagrams
+ *
+ * Drop all DES-SERT messages containing an IPv6 datagram.
+ * Usually when an interface if put in the up state and IPv6 is enabled,
+ * several packets are sent. In some scenarios you do want to suppress
+ * these packets. This sys callback will drop all IPv6 datagrams sent over
+ * the sys interface.
+ *
+ * @param *msg dessert msg received - original ethernet frame is encapsulated within
+ * @param len length of ethernet frame received
+ * @param *proc local processing buffer passed along the callback pipeline - may be NULL
+ * @param *sysif interface received packet on
+ * @param id unique internal frame id of the packet
+ *
+ * @retval DESSERT_MSG_DROP if the message contains an IPv6 datagram
+ * @retval DESSERT_MSG_KEEP if message contains an IPv4 datagram
+ */
+int dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id) {
+    void* payload;
+    struct ether_header* eth = dessert_msg_getl25ether(msg);
+
+    if (eth == NULL) { // has no Ethernet extension
+        void *payload;
+        dessert_msg_getpayload(msg, &payload);
+        struct ip6_hdr* ip = (struct ip6_hdr*) payload;
+        if(ip && ip->ip6_ctlun.ip6_un1.ip6_un1_flow & 0x60000000) {
+            dessert_debug("dropped raw IPv6 packet (false positives are possible)");
+            return DESSERT_MSG_DROP;
+        }
+        return DESSERT_MSG_KEEP;
+    }
+    else { // has Ethernet extension
+        if (eth->ether_type == htons(ETHERTYPE_IPV6) ) {
+            dessert_debug("dropped IPv6 packet in Ethernet frame");
+            return DESSERT_MSG_DROP;
+        }
+    }
+
+    return DESSERT_MSG_KEEP;
 }

@@ -13,6 +13,9 @@ libdessert_la_SOURCES = dessert_core.c \
                         dessert_msg.c \
                         dessert_sysiface.c \
                         dessert_utils.c \
+                        dessert_ping.c \
+                        dessert_trace.c \
+                        dessert_filter.c \
                         dessert_internal.h
 
 libdessert_la_LIBADD =  @PCAP_LIBS@ \

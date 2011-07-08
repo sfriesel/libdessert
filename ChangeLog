@@ -1,5 +1,7 @@
 XXXXXXXX - 1.04
     - Added CLI show function for monitor configuration
+    - Added packet filter support
+    - Merged dessert-extra
 
 20110621 - 1.03
     - When binding to the IPv6 socket for the CLI fails, IPv4 is tried

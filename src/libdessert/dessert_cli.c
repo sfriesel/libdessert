@@ -40,6 +40,7 @@ struct cli_command *dessert_cli_cfg_iface;
 struct cli_command *dessert_cli_cfg_no_iface;
 struct cli_command *dessert_cli_cfg_logging;
 struct cli_command *dessert_cli_cfg_no_logging;
+struct cli_command *dessert_cli_filter;
 
 /* global data storage // P R I V A T E */
 /* nothing here - yet */
@@ -172,7 +173,7 @@ int dessert_cli_run() {
   if(bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr6, sizeof(_dessert_cli_addr6))) {
       dessert_err("cli IPv6 socket bind to port %d failed - %s", _cli_port, strerror(errno));
       dessert_notice("trying IPv4 socket");
-      
+
       _dessert_cli_sock = socket(AF_INET, SOCK_STREAM, 0);
       setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
       memset(&_dessert_cli_addr4, 0, sizeof(_dessert_cli_addr4));
@@ -209,10 +210,25 @@ int _dessert_cli_init() {
     strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), dessert_proto, DESSERT_PROTO_STRLEN);
     cli_set_hostname(dessert_cli, _dessert_cli_hostname);
 
-    /* initialize show commands */
+    /* anchors */
     dessert_cli_show = cli_register_command(dessert_cli, NULL, "show",
             NULL, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "display information");
+    dessert_cli_filter = cli_register_command(dessert_cli, NULL, "filter",
+            NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "manipulate the packet filter");
+
+    /* packet filter */
+    cli_register_command(dessert_cli, dessert_cli_filter, "add",
+            _dessert_cli_cmd_addfilter, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "add MAC to filter");
+    cli_register_command(dessert_cli, dessert_cli_filter, "rm",
+            _dessert_cli_cmd_rmfilter, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            "remove MAC from filter");
+    cli_register_command(dessert_cli, dessert_cli_show, "filter",
+            _dessert_cli_cmd_showfilters, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+            "show packet filter entries");
+
     cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",
             _dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "Display information about this program.");

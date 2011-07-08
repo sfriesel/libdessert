@@ -89,6 +89,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <net/if.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <syslog.h>
 #include <pcap.h>
 #include <libcli.h>
@@ -118,6 +120,9 @@
 
 /** ethertype for frames containing DES-SERT messages */
 #define DESSERT_ETHPROTO 0x88B5
+
+/** MTU for sys interface configuration */
+#define DESSERT_DEFAULT_MTU 1300
 
 /** maximum size of the data part in dessert_ext */
 #define DESSERT_MAXEXTDATALEN 254
@@ -475,7 +480,7 @@ enum dessert_logcfg_flags {
     DESSERT_LOG_FILE      = 0x0004,
     DESSERT_LOG_NOFILE    = 0x0008, ///< disable logfile logging
     DESSERT_LOG_STDERR    = 0x0010, ///< enable logging to stderr
-    DESSERT_LOG_NOSTDERR  = 0x0020, ///< disable logging to stderr 
+    DESSERT_LOG_NOSTDERR  = 0x0020, ///< disable logging to stderr
     DESSERT_LOG_RBUF      = 0x0040, ///< enable logging to ringbuffer
     DESSERT_LOG_NORBUF    = 0x0080, ///< disable logging to ringbuffer
     DESSERT_LOG_GZ        = 0x0100, ///< enable log file compression
@@ -639,6 +644,12 @@ int dessert_meshrxcb_del(dessert_meshrxcb_t* c);
 int dessert_meshif_add(const char* dev, uint8_t flags);
 int dessert_meshif_del(const char* dev);
 
+int dessert_cli_cmd_addmeshif(struct cli_def *cli, char *command, char *argv[], int argc);
+
+int dessert_mesh_drop_ethernet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_mesh_drop_ip(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+
 dessert_meshif_t * dessert_meshif_get_name(const char* dev);
 dessert_meshif_t * dessert_meshif_get_hwaddr(const uint8_t hwaddr[ETHER_ADDR_LEN]);
 dessert_meshif_t * dessert_meshiflist_get(void);
@@ -679,6 +690,11 @@ int dessert_sysif_init(char* name, uint8_t flags);
 
 int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio);
 int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
+
+int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_cli_cmd_addsysif_tun(struct cli_def *cli, char *command, char *argv[], int argc);
+
+int dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id);
 
 int dessert_syssend_msg(dessert_msg_t *msg);
 int dessert_syssend(const void *pkt, size_t len);
@@ -1200,7 +1216,7 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
  *
  * The assertion macro enables to crash the daemon when a particular
  * condition does not apply. In contrast to the standard C library assert,
- * a message will be written using the logging feature of DES-SERT
+ * a message will be written using the log of DES-SERT
  */
 #ifdef NDEBUG
 #define assert(e)       ((void)0)
@@ -1209,6 +1225,52 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
     (__builtin_expect(!(e), 0) ? __dessert_assert(__FUNCTION__, __FILE__, __LINE__, #e) : (void)0)
 #endif
 
-/** @} */
+/***************************************************************************//**
+ * @ingroup filter
+ * @defgroup filter MAC Filter
+ *
+ * @brief Filter packets based on mac address
+ *
+ * @{
+ ******************************************************************************/
 
+enum dessert_filter {
+    DESSERT_WHITELIST = 0x00,
+    DESSERT_BLACKLIST
+};
+
+bool dessert_filter_add(char* mac, enum dessert_filter list, struct cli_def *cli);
+bool dessert_filter_rm(char* mac, enum dessert_filter list, struct cli_def *cli);
+
+int dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+
+#define dessert_whitelist_rm(mac) \
+    dessert_filter_rm(mac, DESSERT_WHITELIST, NULL)
+
+#define dessert_blacklist_rm(mac) \
+    dessert_filter_rm(mac, DESSERT_BLACKLIST, NULL)
+
+#define dessert_whitelist_add(mac) \
+    dessert_filter_add(mac, DESSERT_WHITELIST, NULL)
+
+#define dessert_blacklist_add(mac) \
+    dessert_filter_add(mac, DESSERT_BLACKLIST, NULL)
+
+/***************************************************************************//**
+ * @ingroup legacy
+ * @defgroup legacy Legacy Functions
+ *
+ * @brief The functions in this group will be removed in the future releases.
+ *
+ * @{
+ ******************************************************************************/
+
+int dessert_cli_cmd_ping(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_cli_cmd_traceroute(struct cli_def *cli, char *command, char *argv[], int argc);
+int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_mesh_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
+int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode);
+
+/** @} */
 #endif /* DESSERT_H*/

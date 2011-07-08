@@ -130,6 +130,9 @@ int _dessert_cli_no_logging_file(struct cli_def *cli, char *command, char *argv[
 int _dessert_cli_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc);
 int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc);
 int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], int argc);
+int _dessert_cli_cmd_showfilters(struct cli_def *cli, char *command, char *argv[], int argc);
+int _dessert_cli_cmd_addfilter(struct cli_def *cli, char *command, char *argv[], int argc);
+int _dessert_cli_cmd_rmfilter(struct cli_def *cli, char *command, char *argv[], int argc);
 
 /******************************************************************************
  *

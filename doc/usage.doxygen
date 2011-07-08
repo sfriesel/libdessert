@@ -3,7 +3,7 @@
  * \addtogroup DaemonUsage
  *
  * This module provides information on how to use DES-SERT based Daemons. Here you can find the following parts:
- * 
+ *
  * - \ref sec_usage_confs
  * - \ref subsec_usage_conf1
  * - \ref subsec_usage_conf2
@@ -36,7 +36,7 @@
  * @subsection subsec_usage_conf2 Daemon Configuration
  *
  * All values that are used by DES-SERT based daemons and that are protocol unspecific are placed in /etc/default/DAEMON_NAME. Currently, the configuration of the interfaces, TCP port of the CLI, and PID file are supported parameters.
- * 
+ *
  * Example file:
  * @code
  *   PIDFILE="/var/run/des-gossip.pid"
@@ -73,9 +73,9 @@
  *  Trying 127.0.0.1...
  *  Connected to localhost.
  *  Escape character is '^]'.
- *  
+ *
  *  host:DAEMON_NAME> help
- *  
+ *
  *  Commands available:
  *  help                 Show available commands
  *  quit                 Disconnect
@@ -88,7 +88,7 @@
  *  show meshifs         Print list of registered interfaces used by the daemon.
  *  show sysif           Print the name of the TUN/TAP interface used as system interface.
  *  show threshold       show treshold
- *  
+ *
  *  host:DAEMON_NAME>
  * @endcode
  *
