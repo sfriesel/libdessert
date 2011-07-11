@@ -32,15 +32,15 @@
 
 /* global data storage // P U B L I C */
 
-struct cli_def *dessert_cli;
+struct cli_def* dessert_cli;
 
-struct cli_command *dessert_cli_show;
-struct cli_command *dessert_cli_cfg_no;
-struct cli_command *dessert_cli_cfg_iface;
-struct cli_command *dessert_cli_cfg_no_iface;
-struct cli_command *dessert_cli_cfg_logging;
-struct cli_command *dessert_cli_cfg_no_logging;
-struct cli_command *dessert_cli_filter;
+struct cli_command* dessert_cli_show;
+struct cli_command* dessert_cli_cfg_no;
+struct cli_command* dessert_cli_cfg_iface;
+struct cli_command* dessert_cli_cfg_no_iface;
+struct cli_command* dessert_cli_cfg_logging;
+struct cli_command* dessert_cli_cfg_no_logging;
+struct cli_command* dessert_cli_filter;
 
 /* global data storage // P R I V A T E */
 /* nothing here - yet */
@@ -56,19 +56,19 @@ int _dessert_cli_running = 0;
 uint16_t _cli_port = 4519; // should be default port number
 
 /* internal functions forward declarations*/
-static void *_dessert_cli_accept_thread(void* arg);
-static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command, char *argv[], int argc);
-static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command, char *argv[], int argc);
-static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *argv[], int argc);
-static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command, char *argv[], int argc);
-static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char *argv[], int argc);
-static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc);
-static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc);
+static void* _dessert_cli_accept_thread(void* arg);
+static int _dessert_cli_cmd_showmeshifs(struct cli_def* cli, char* command, char* argv[], int argc);
+static int _dessert_cli_cmd_showmonifs(struct cli_def* cli, char* command, char* argv[], int argc);
+static int _dessert_cli_cmd_showsysif(struct cli_def* cli, char* command, char* argv[], int argc);
+static int _dessert_cli_cmd_showmondb(struct cli_def* cli, char* command, char* argv[], int argc);
+static int _dessert_cli_cmd_dessertinfo(struct cli_def* cli, char* command, char* argv[], int argc);
+static int _dessert_cli_cmd_setport(struct cli_def* cli, char* command, char* argv[], int argc);
+static int _dessert_cli_cmd_pid(struct cli_def* cli, char* command, char* argv[], int argc);
 #ifndef ANDROID
-static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, char *argv[], int argc);
-static int _dessert_cli_monitor_conf(struct cli_def *cli, char *command, char *argv[], int argc);
+static int _dessert_cli_monitoring_start(struct cli_def* cli, char* command, char* argv[], int argc);
+static int _dessert_cli_monitor_conf(struct cli_def* cli, char* command, char* argv[], int argc);
 #endif
-static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif);
+static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def* cli, dessert_meshif_t* meshif);
 /******************************************************************************
  *
  * EXTERNAL / PUBLIC
@@ -88,40 +88,46 @@ static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, desse
  * @return pointer to config file
  */
 FILE* dessert_cli_get_cfg(int argc, char** argv) {
-	FILE* cfg;
+    FILE* cfg;
 
-	const char* path_head = "/etc/";
-	const char* path_tail = ".conf";
+    const char* path_head = "/etc/";
+    const char* path_tail = ".conf";
 
-	char* str = alloca(strlen(argv[0])+1);
-	strcpy(str, argv[0]);
-	char* ptr = strtok(str, "/");
-	char* daemon = ptr;
-	while (ptr != NULL) {
-		daemon = ptr;
-		ptr = strtok(NULL, "/");
-	}
+    char* str = alloca(strlen(argv[0]) + 1);
+    strcpy(str, argv[0]);
+    char* ptr = strtok(str, "/");
+    char* daemon = ptr;
 
-	if (argc != 2) {
-		char* path = alloca(strlen(path_head)+1 +strlen(path_tail)+1 +strlen(daemon)+1);
-		strcat(path, path_head);
-		strcat(path, daemon);
-		strcat(path, path_tail);
-		cfg = fopen(path, "r");
-		if (cfg == NULL) {
-			dessert_err("specify configuration file\nusage: \"%s configfile\"\nusage: \"%s\" if /etc/%s.conf is present", daemon, daemon, daemon);
-			exit(1);
-		}
-	} else {
-		cfg = fopen(argv[1], "r");
-		if (cfg == NULL) {
-			dessert_err("failed to open configfile %s", argv[1]);
-			exit(2);
-		} else {
-			dessert_info("using file %s as configuration file", argv[1]);
-		}
-	}
-	return cfg;
+    while(ptr != NULL) {
+        daemon = ptr;
+        ptr = strtok(NULL, "/");
+    }
+
+    if(argc != 2) {
+        char* path = alloca(strlen(path_head) + 1 + strlen(path_tail) + 1 + strlen(daemon) + 1);
+        strcat(path, path_head);
+        strcat(path, daemon);
+        strcat(path, path_tail);
+        cfg = fopen(path, "r");
+
+        if(cfg == NULL) {
+            dessert_err("specify configuration file\nusage: \"%s configfile\"\nusage: \"%s\" if /etc/%s.conf is present", daemon, daemon, daemon);
+            exit(1);
+        }
+    }
+    else {
+        cfg = fopen(argv[1], "r");
+
+        if(cfg == NULL) {
+            dessert_err("failed to open configfile %s", argv[1]);
+            exit(2);
+        }
+        else {
+            dessert_info("using file %s as configuration file", argv[1]);
+        }
+    }
+
+    return cfg;
 }
 
 /** Set CLI port
@@ -135,20 +141,21 @@ FILE* dessert_cli_get_cfg(int argc, char** argv) {
 * @retval DESSERT_ERR otherwise
 */
 int dessert_set_cli_port(uint16_t port) {
-  if (_dessert_cli_running == 1) {
-      dessert_err("CLI is already running!");
-      return DESSERT_ERR;
-  }
+    if(_dessert_cli_running == 1) {
+        dessert_err("CLI is already running!");
+        return DESSERT_ERR;
+    }
 
-  if (port >= 1024 && port <= 49151) {
-      _cli_port = port;
-  }
-  else {
-      port = 0;
-      dessert_err("Port number has to be in [1024, 49151]");
-  }
-  dessert_notice("CLI on port %d", _cli_port);
-  return (port == 0 ? DESSERT_ERR : DESSERT_OK);
+    if(port >= 1024 && port <= 49151) {
+        _cli_port = port;
+    }
+    else {
+        port = 0;
+        dessert_err("Port number has to be in [1024, 49151]");
+    }
+
+    dessert_notice("CLI on port %d", _cli_port);
+    return (port == 0 ? DESSERT_ERR : DESSERT_OK);
 }
 
 /** Start up the command line interface.
@@ -160,35 +167,38 @@ int dessert_set_cli_port(uint16_t port) {
  *
  */
 int dessert_cli_run() {
-  _dessert_cli_running = 1;
-  int on = 1;
+    _dessert_cli_running = 1;
+    int on = 1;
 
-  /* listen for connections */
-  _dessert_cli_sock = socket(AF_INET6, SOCK_STREAM, 0);
-  setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-  memset(&_dessert_cli_addr6, 0, sizeof(_dessert_cli_addr6));
-  _dessert_cli_addr6.sin6_family = AF_INET6;
-  _dessert_cli_addr6.sin6_addr = in6addr_any;
-  _dessert_cli_addr6.sin6_port = htons(_cli_port);
-  if(bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr6, sizeof(_dessert_cli_addr6))) {
-      dessert_err("cli IPv6 socket bind to port %d failed - %s", _cli_port, strerror(errno));
-      dessert_notice("trying IPv4 socket");
+    /* listen for connections */
+    _dessert_cli_sock = socket(AF_INET6, SOCK_STREAM, 0);
+    setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    memset(&_dessert_cli_addr6, 0, sizeof(_dessert_cli_addr6));
+    _dessert_cli_addr6.sin6_family = AF_INET6;
+    _dessert_cli_addr6.sin6_addr = in6addr_any;
+    _dessert_cli_addr6.sin6_port = htons(_cli_port);
 
-      _dessert_cli_sock = socket(AF_INET, SOCK_STREAM, 0);
-      setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-      memset(&_dessert_cli_addr4, 0, sizeof(_dessert_cli_addr4));
-      _dessert_cli_addr4.sin_family = AF_INET;
-      _dessert_cli_addr4.sin_addr.s_addr = INADDR_ANY;
-      _dessert_cli_addr4.sin_port = htons(_cli_port);
-      if(bind(_dessert_cli_sock, (struct sockaddr *) &_dessert_cli_addr4, sizeof(_dessert_cli_addr4))) {
-        dessert_err("cli IPv4 socket bind to port %d failed - %s", _cli_port, strerror(errno));
-        return -errno;
-      }
-  }
-  listen(_dessert_cli_sock, 8);
-  dessert_debug("starting worker thread for CLI on port %d", _cli_port);
-  pthread_create(&_dessert_cli_worker, NULL, _dessert_cli_accept_thread, &_dessert_cli_sock);
-  return DESSERT_OK;
+    if(bind(_dessert_cli_sock, (struct sockaddr*) &_dessert_cli_addr6, sizeof(_dessert_cli_addr6))) {
+        dessert_err("cli IPv6 socket bind to port %d failed - %s", _cli_port, strerror(errno));
+        dessert_notice("trying IPv4 socket");
+
+        _dessert_cli_sock = socket(AF_INET, SOCK_STREAM, 0);
+        setsockopt(_dessert_cli_sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        memset(&_dessert_cli_addr4, 0, sizeof(_dessert_cli_addr4));
+        _dessert_cli_addr4.sin_family = AF_INET;
+        _dessert_cli_addr4.sin_addr.s_addr = INADDR_ANY;
+        _dessert_cli_addr4.sin_port = htons(_cli_port);
+
+        if(bind(_dessert_cli_sock, (struct sockaddr*) &_dessert_cli_addr4, sizeof(_dessert_cli_addr4))) {
+            dessert_err("cli IPv4 socket bind to port %d failed - %s", _cli_port, strerror(errno));
+            return -errno;
+        }
+    }
+
+    listen(_dessert_cli_sock, 8);
+    dessert_debug("starting worker thread for CLI on port %d", _cli_port);
+    pthread_create(&_dessert_cli_worker, NULL, _dessert_cli_accept_thread, &_dessert_cli_sock);
+    return DESSERT_OK;
 }
 
 /******************************************************************************
@@ -212,104 +222,104 @@ int _dessert_cli_init() {
 
     /* anchors */
     dessert_cli_show = cli_register_command(dessert_cli, NULL, "show",
-            NULL, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-            "display information");
+                                            NULL, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                                            "display information");
     dessert_cli_filter = cli_register_command(dessert_cli, NULL, "rule",
-            NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "manipulate the packet filter");
+                         NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "manipulate the packet filter");
 
     /* packet filter */
     cli_register_command(dessert_cli, dessert_cli_filter, "add",
-            _dessert_cli_cmd_rule_add, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "add MAC to filter");
+                         _dessert_cli_cmd_rule_add, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "add MAC to filter");
     cli_register_command(dessert_cli, dessert_cli_filter, "rm",
-            _dessert_cli_cmd_rule_rm, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "remove MAC from filter");
+                         _dessert_cli_cmd_rule_rm, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "remove MAC from filter");
     cli_register_command(dessert_cli, dessert_cli_show, "rules",
-            _dessert_cli_cmd_show_rules, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-            "show packet filter entries");
+                         _dessert_cli_cmd_show_rules, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "show packet filter entries");
 
     cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",
-            _dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-            "Display information about this program.");
+                         _dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "Display information about this program.");
     cli_register_command(dessert_cli, dessert_cli_show, "logging",
-            _dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-            "show logging ringbuffer");
+                         _dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "show logging ringbuffer");
     cli_register_command(dessert_cli, dessert_cli_show, "loglevel",
-            _dessert_cli_cmd_show_loglevel, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-            "show loglevel");
+                         _dessert_cli_cmd_show_loglevel, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "show loglevel");
     cli_register_command(dessert_cli, dessert_cli_show, "meshifs",
-            _dessert_cli_cmd_showmeshifs, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-            "Print list of registered interfaces used by the daemon.");
+                         _dessert_cli_cmd_showmeshifs, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "Print list of registered interfaces used by the daemon.");
     cli_register_command(dessert_cli, dessert_cli_show, "sysif", _dessert_cli_cmd_showsysif,
-            PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-            "Print the name of the TUN/TAP interface used as system interface.");
+                         PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "Print the name of the TUN/TAP interface used as system interface.");
 #ifndef ANDROID
-    cli_register_command(dessert_cli, dessert_cli_show, "monifs",_dessert_cli_cmd_showmonifs,
-			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"Print list of registered monitor interfaces.");
-    cli_register_command(dessert_cli, dessert_cli_show, "mondb",_dessert_cli_cmd_showmondb,
-			 PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-			"Print the monitor database - get informed about your connections.");
+    cli_register_command(dessert_cli, dessert_cli_show, "monifs", _dessert_cli_cmd_showmonifs,
+                         PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "Print list of registered monitor interfaces.");
+    cli_register_command(dessert_cli, dessert_cli_show, "mondb", _dessert_cli_cmd_showmondb,
+                         PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+                         "Print the monitor database - get informed about your connections.");
 #endif
     /* initialize config mode commands */
     dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
-			"interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-			"create or configure interfaces");
+                            "interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                            "create or configure interfaces");
 #ifndef ANDROID
     cli_register_command(dessert_cli, dessert_cli_cfg_iface,
-                        "monitor", _dessert_cli_monitoring_start, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                        "Creates a monitor interface for a IEEE 802.11 interface");
+                         "monitor", _dessert_cli_monitoring_start, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "Creates a monitor interface for a IEEE 802.11 interface");
     cli_register_command(dessert_cli, dessert_cli_show, "monitor_conf",
                          _dessert_cli_monitor_conf, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
                          "show loglevel");
 #endif
     dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
-            PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
+                         PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
     dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface",
-            NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "remove interface or negate interface config");
+                               NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                               "remove interface or negate interface config");
     cli_register_command(dessert_cli, NULL, "loglevel",
-            _dessert_cli_cmd_set_loglevel, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "set the loglevel [debug, info, notice, warning, error, critical, emergency]");
+                         _dessert_cli_cmd_set_loglevel, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "set the loglevel [debug, info, notice, warning, error, critical, emergency]");
     cli_register_command(dessert_cli, NULL, "log_flush_interval",
-            _dessert_cli_log_interval, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "set log file flush interval [s]");
+                         _dessert_cli_log_interval, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "set log file flush interval [s]");
     dessert_cli_cfg_logging = cli_register_command(dessert_cli, NULL,
-            "logging", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "change logging config");
+                              "logging", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                              "change logging config");
     dessert_cli_cfg_no_logging = cli_register_command(dessert_cli,
-            dessert_cli_cfg_no, "logging", NULL, PRIVILEGE_PRIVILEGED,
-            MODE_CONFIG, "disable logging for...");
+                                 dessert_cli_cfg_no, "logging", NULL, PRIVILEGE_PRIVILEGED,
+                                 MODE_CONFIG, "disable logging for...");
     cli_register_command(dessert_cli, dessert_cli_cfg_logging, "ringbuffer",
-            _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "set logging ringbuffer size (in lines)");
+                         _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "set logging ringbuffer size (in lines)");
     cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "ringbuffer",
-            _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "disable logging to ringbuffer");
+                         _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "disable logging to ringbuffer");
     cli_register_command(dessert_cli, dessert_cli_cfg_logging, "file",
-            _dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "set logfile and enable file logging");
+                         _dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "set logfile and enable file logging");
     cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "file",
-            _dessert_cli_no_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-            "set logfile disable file logging");
+                         _dessert_cli_no_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "set logfile disable file logging");
 
     cli_register_command(dessert_cli,
-            NULL,
-            "port",
-            _dessert_cli_cmd_setport,
-            PRIVILEGE_PRIVILEGED,
-            MODE_CONFIG,
-            "configure TCP port the daemon is listening on");
+                         NULL,
+                         "port",
+                         _dessert_cli_cmd_setport,
+                         PRIVILEGE_PRIVILEGED,
+                         MODE_CONFIG,
+                         "configure TCP port the daemon is listening on");
 
     cli_register_command(dessert_cli, NULL, "pid", _dessert_cli_cmd_pid,
-                PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                "write process id to file");
+                         PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+                         "write process id to file");
 
     /* initialize other commands */
     cli_register_command(dessert_cli, NULL, "shutdown",
-            _dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC,
-            "shut daemon down");
+                         _dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC,
+                         "shut daemon down");
     return DESSERT_OK;
 }
 
@@ -321,15 +331,16 @@ int _dessert_cli_init() {
  *
  ******************************************************************************/
 
-static int _dessert_cli_cmd_setport(struct cli_def *cli, char *command, char *argv[], int argc) {
-    if (_dessert_cli_running == 1) {
-        cli_print(dessert_cli,"CLI is already running!");
+static int _dessert_cli_cmd_setport(struct cli_def* cli, char* command, char* argv[], int argc) {
+    if(_dessert_cli_running == 1) {
+        cli_print(dessert_cli, "CLI is already running!");
         return CLI_ERROR;
     }
-    return (dessert_set_cli_port((uint16_t) atoi(argv[0]))==DESSERT_ERR?CLI_ERROR:CLI_OK);
+
+    return (dessert_set_cli_port((uint16_t) atoi(argv[0])) == DESSERT_ERR ? CLI_ERROR : CLI_OK);
 }
 
-static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[], int argc) {
+static int _dessert_cli_cmd_pid(struct cli_def* cli, char* command, char* argv[], int argc) {
     if(argc != 1) {
         cli_print(cli, "usage: pid /path/to/file.pid");
         return CLI_ERROR;
@@ -348,27 +359,31 @@ static int _dessert_cli_cmd_pid(struct cli_def *cli, char *command, char *argv[]
 * @param[in] timer_range The second parameter defines how long collectes RSSI-Values are guilty
 */
 #ifndef ANDROID
-static int _dessert_cli_monitor_conf(struct cli_def *cli, char *command, char *argv[], int argc) {
+static int _dessert_cli_monitor_conf(struct cli_def* cli, char* command, char* argv[], int argc) {
     extern int MAX_AGE;
     extern int MAX_RSSI_VALS;
     cli_print(cli, "max_values=%d, max_age=%d", MAX_RSSI_VALS, MAX_AGE);
 }
 
-static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, char *argv[], int argc) {
+static int _dessert_cli_monitoring_start(struct cli_def* cli, char* command, char* argv[], int argc) {
     int max_rssi_vals = 0;
     int max_age = 0;
+
     if(argc >= 1) {
         max_rssi_vals = atoi(argv[0]);
+
         if(!(0 < max_rssi_vals && max_rssi_vals < INT16_MAX)) {
             max_rssi_vals = 0;
             dessert_warn("max_rssi_values is not in range [1, INT16_MAX], using default instead");
         }
     }
+
     if(argc >= 2) {
         max_age = atoi(argv[1]);
+
         if(max_age <= 0) {
             max_age = 0;
-            dessert_warn("max age is not positive, using default %d",max_age);
+            dessert_warn("max age is not positive, using default %d", max_age);
         }
     }
 
@@ -377,41 +392,46 @@ static int _dessert_cli_monitoring_start(struct cli_def *cli, char *command, cha
 }
 #endif
 /**command "show meshifs" */
-static int _dessert_cli_cmd_showmeshifs(struct cli_def *cli, char *command, char *argv[], int argc) {
-    dessert_meshif_t *meshif = dessert_meshiflist_get();
-    if (meshif == NULL) {
+static int _dessert_cli_cmd_showmeshifs(struct cli_def* cli, char* command, char* argv[], int argc) {
+    dessert_meshif_t* meshif = dessert_meshiflist_get();
+
+    if(meshif == NULL) {
         cli_print(dessert_cli, "No mesh interfaces registered!");
         return CLI_ERROR;
     }
     else {
         MESHIFLIST_ITERATOR_START(meshif) {
             _dessert_cli_cmd_showmeshifs_print_helper(cli, meshif);
-        }MESHIFLIST_ITERATOR_STOP;
+        }
+        MESHIFLIST_ITERATOR_STOP;
         return CLI_OK;
     }
 }
 
 /**command "show monifs" */
-static int _dessert_cli_cmd_showmonifs(struct cli_def *cli, char *command, char *argv[], int argc) {
-	dessert_meshif_t *meshif;
-	MESHIFLIST_ITERATOR_START(meshif)
-		if(meshif->monitor_active) {
-			cli_print(cli, "Monitor device: [mon.%s]", meshif->if_name);
-        }
-	MESHIFLIST_ITERATOR_STOP;
-	return CLI_OK;
+static int _dessert_cli_cmd_showmonifs(struct cli_def* cli, char* command, char* argv[], int argc) {
+    dessert_meshif_t* meshif;
+    MESHIFLIST_ITERATOR_START(meshif)
+
+    if(meshif->monitor_active) {
+        cli_print(cli, "Monitor device: [mon.%s]", meshif->if_name);
+    }
+
+    MESHIFLIST_ITERATOR_STOP;
+    return CLI_OK;
 }
 
 /**command "show mondb" */
-static int _dessert_cli_cmd_showmondb(struct cli_def *cli, char *command, char *argv[], int argc) {
+static int _dessert_cli_cmd_showmondb(struct cli_def* cli, char* command, char* argv[], int argc) {
     dessert_print_monitored_database();
     return CLI_OK;
 }
 
 /** command "show sysif" */
-static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
-    dessert_sysif_t *sysif = _dessert_sysif;
-    if (sysif == NULL) {
+static int _dessert_cli_cmd_showsysif(struct cli_def* cli, char* command, char* argv[], int argc) {
+    dessert_sysif_t* sysif = _dessert_sysif;
+
+    if(sysif == NULL) {
         cli_print(cli, "\nNo system interface registered!");
         return CLI_ERROR;
     }
@@ -427,72 +447,72 @@ static int _dessert_cli_cmd_showsysif(struct cli_def *cli, char *command, char *
 }
 
 /** command "show dessert-info" */
-static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char *argv[], int argc) {
+static int _dessert_cli_cmd_dessertinfo(struct cli_def* cli, char* command, char* argv[], int argc) {
     cli_print(cli, "\nprotocol running:   %s v %d", dessert_proto, dessert_ver);
     cli_print(cli, "libdessert version: %s", VERSION);
     cli_print(
-            cli,
-            " ------------------------------------------------------------------------------ ");
+        cli,
+        " ------------------------------------------------------------------------------ ");
     cli_print(
-            cli,
-            " Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).            ");
+        cli,
+        " Copyright 2009, The DES-SERT Team, Freie Universitaet Berlin (FUB).            ");
     cli_print(
-            cli,
-            " All rights reserved.                                                           ");
+        cli,
+        " All rights reserved.                                                           ");
     cli_print(
-            cli,
-            "                                                                                ");
+        cli,
+        "                                                                                ");
     cli_print(
-            cli,
-            " These sources were originally developed by Philipp Schmidt                     ");
+        cli,
+        " These sources were originally developed by Philipp Schmidt                     ");
     cli_print(
-            cli,
-            " at Freie Universitaet Berlin (http://www.fu-berlin.de/),                       ");
+        cli,
+        " at Freie Universitaet Berlin (http://www.fu-berlin.de/),                       ");
     cli_print(
-            cli,
-            " Computer Systems and Telematics / Distributed, Embedded Systems (DES) group    ");
+        cli,
+        " Computer Systems and Telematics / Distributed, Embedded Systems (DES) group    ");
     cli_print(
-            cli,
-            " (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)                     ");
+        cli,
+        " (http://cst.mi.fu-berlin.de/, http://www.des-testbed.net/)                     ");
     cli_print(
-            cli,
-            " ------------------------------------------------------------------------------ ");
+        cli,
+        " ------------------------------------------------------------------------------ ");
     cli_print(
-            cli,
-            " This program is free software: you can redistribute it and/or modify it under  ");
+        cli,
+        " This program is free software: you can redistribute it and/or modify it under  ");
     cli_print(
-            cli,
-            " the terms of the GNU General Public License as published by the Free Software  ");
+        cli,
+        " the terms of the GNU General Public License as published by the Free Software  ");
     cli_print(
-            cli,
-            " Foundation, either version 3 of the License, or (at your option) any later     ");
+        cli,
+        " Foundation, either version 3 of the License, or (at your option) any later     ");
     cli_print(
-            cli,
-            " version.                                                                       ");
+        cli,
+        " version.                                                                       ");
     cli_print(
-            cli,
-            "                                                                                ");
+        cli,
+        "                                                                                ");
     cli_print(
-            cli,
-            " This program is distributed in the hope that it will be useful, but WITHOUT    ");
+        cli,
+        " This program is distributed in the hope that it will be useful, but WITHOUT    ");
     cli_print(
-            cli,
-            " ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS  ");
+        cli,
+        " ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS  ");
     cli_print(
-            cli,
-            " FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. ");
+        cli,
+        " FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. ");
     cli_print(
-            cli,
-            "                                                                                ");
+        cli,
+        "                                                                                ");
     cli_print(
-            cli,
-            " You should have received a copy of the GNU General Public License along with   ");
+        cli,
+        " You should have received a copy of the GNU General Public License along with   ");
     cli_print(
-            cli,
-            " this program. If not, see http://www.gnu.org/licenses/ .                       ");
+        cli,
+        " this program. If not, see http://www.gnu.org/licenses/ .                       ");
     cli_print(
-            cli,
-            " ------------------------------------------------------------------------------ ");
+        cli,
+        " ------------------------------------------------------------------------------ ");
     return CLI_OK;
 }
 
@@ -527,26 +547,27 @@ static int _dessert_cli_cmd_dessertinfo(struct cli_def *cli, char *command, char
 // }
 
 /** internal thread function running the cli */
-static void *_dessert_cli_accept_thread(void* arg) {
-  int *s = (int*) arg;
-  int sd;
+static void* _dessert_cli_accept_thread(void* arg) {
+    int* s = (int*) arg;
+    int sd;
 
-  while((sd = accept(*s, NULL, 0))) {
-//       pthread_t t;
-//       pthread_create(&t, NULL, _dessert_cli_thread, &sd);
-//       pthread_detach(t);
-      cli_loop(dessert_cli, sd); /* pass the connection off to libcli */
-      close(sd);
-  }
-  /* we should never get here */
-  dessert_warn("sd=%d, closing CLI", sd);
-  cli_done(dessert_cli); /* free data structures */
+    while((sd = accept(*s, NULL, 0))) {
+        //       pthread_t t;
+        //       pthread_create(&t, NULL, _dessert_cli_thread, &sd);
+        //       pthread_detach(t);
+        cli_loop(dessert_cli, sd); /* pass the connection off to libcli */
+        close(sd);
+    }
 
-  return NULL;
+    /* we should never get here */
+    dessert_warn("sd=%d, closing CLI", sd);
+    cli_done(dessert_cli); /* free data structures */
+
+    return NULL;
 }
 
 /** internal helper function to _dessert_cli_cmd_showmeshifs */
-static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def *cli, dessert_meshif_t *meshif) {
+static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def* cli, dessert_meshif_t* meshif) {
     cli_print(cli, "\nStatistics for mesh interface [%s]", meshif->if_name);
     cli_print(cli, "    MAC address           : [" MAC "]", EXPLODE_ARRAY6(meshif->hwaddr));
     cli_print(cli, "    Packets received      : [%"PRIi64"]", meshif->ipkts);
