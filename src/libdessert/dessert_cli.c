@@ -214,19 +214,19 @@ int _dessert_cli_init() {
     dessert_cli_show = cli_register_command(dessert_cli, NULL, "show",
             NULL, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "display information");
-    dessert_cli_filter = cli_register_command(dessert_cli, NULL, "filter",
+    dessert_cli_filter = cli_register_command(dessert_cli, NULL, "rule",
             NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "manipulate the packet filter");
 
     /* packet filter */
     cli_register_command(dessert_cli, dessert_cli_filter, "add",
-            _dessert_cli_cmd_addfilter, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            _dessert_cli_cmd_rule_add, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "add MAC to filter");
     cli_register_command(dessert_cli, dessert_cli_filter, "rm",
-            _dessert_cli_cmd_rmfilter, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+            _dessert_cli_cmd_rule_rm, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
             "remove MAC from filter");
-    cli_register_command(dessert_cli, dessert_cli_show, "filter",
-            _dessert_cli_cmd_showfilters, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
+    cli_register_command(dessert_cli, dessert_cli_show, "rules",
+            _dessert_cli_cmd_show_rules, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
             "show packet filter entries");
 
     cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",

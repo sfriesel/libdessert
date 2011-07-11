@@ -1239,8 +1239,8 @@ enum dessert_filter {
     DESSERT_BLACKLIST
 };
 
-bool dessert_filter_add(char* mac, enum dessert_filter list, struct cli_def *cli);
-bool dessert_filter_rm(char* mac, enum dessert_filter list, struct cli_def *cli);
+bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def *cli);
+bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def *cli);
 
 int dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id);
 

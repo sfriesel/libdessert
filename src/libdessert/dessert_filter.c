@@ -30,6 +30,7 @@ pthread_rwlock_t dessert_filterlock = PTHREAD_RWLOCK_INITIALIZER;
 
 typedef struct mac_entry {
     char mac[6];
+    dessert_meshif_t* iface;
     struct mac_entry* prev;
     struct mac_entry* next;
 } mac_entry_t;
@@ -37,14 +38,40 @@ typedef struct mac_entry {
 mac_entry_t* whitelist = NULL;
 mac_entry_t* blacklist = NULL;
 
-mac_entry_t* _contains(char* mac, mac_entry_t* list) {
+mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t* list) {
     mac_entry_t* elt = NULL;
     LL_FOREACH(list, elt) {
-        if(strncmp(elt->mac, mac, 6) == 0) {
+        if((elt->iface == NULL || elt->iface == iface)
+            && strncmp(elt->mac, mac, 6) == 0) {
             return elt;
         }
     }
     return NULL;
+}
+
+mac_entry_t* wildcard_in_list(mac_entry_t* list) {
+    mac_entry_t* elt = NULL;
+    LL_FOREACH(list, elt) {
+        if(strncmp(elt->mac, "*", 1) == 0) {
+            return elt;
+        }
+    }
+    return NULL;
+}
+
+/**
+ * Find dessert_meshif_t with matching name
+ */
+dessert_meshif_t* ifname2iface(char* ifname) {
+   dessert_meshif_t *iface;
+   bool b = false;
+   MESHIFLIST_ITERATOR_START(iface)
+        if(strcmp(iface->if_name, ifname) == 0) {
+            b = true;
+            break;
+        }
+   MESHIFLIST_ITERATOR_STOP;
+   return b?iface:NULL;
 }
 
 #define print_twice(level, cli, ...) \
@@ -52,7 +79,17 @@ mac_entry_t* _contains(char* mac, mac_entry_t* list) {
       if(cli) { cli_print(cli, __VA_ARGS__); } \
     }
 
-bool dessert_filter_add(char* mac, enum dessert_filter list, struct cli_def *cli) {
+/**
+ * Adds a rule to a list
+ *
+ * @param mac   6 byte MAC address of the src
+ * @param iface rx interface; may be NULL to select all interfaces
+ * @param list  add rule to this list
+ * @param cli   current CLI for printing messages
+ *
+ * @return true if rule added, else false
+ */
+bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def *cli) {
     mac_entry_t** cur = NULL;
     mac_entry_t** other = NULL;
     switch(list) {
@@ -70,12 +107,12 @@ bool dessert_filter_add(char* mac, enum dessert_filter list, struct cli_def *cli
     }
 
     pthread_rwlock_wrlock(&dessert_filterlock);
-    if(_contains(mac, *cur)) {
+    if(find_in_list(mac, iface, *cur)) {
         print_twice(LOG_WARNING, cli, MAC " is already in the list", EXPLODE_ARRAY6(mac));
         goto fail;
     }
 
-    if(_contains(mac, *other)) {
+    if(find_in_list(mac, iface, *other)) {
         print_twice(LOG_WARNING, cli, MAC " is already in the other list. Please remove it first", EXPLODE_ARRAY6(mac));
         goto fail;
     }
@@ -86,6 +123,7 @@ bool dessert_filter_add(char* mac, enum dessert_filter list, struct cli_def *cli
         goto fail;
     }
     memcpy(new_entry->mac, mac, sizeof(new_entry->mac));
+    new_entry->iface = iface;
 
     DL_APPEND(*cur, new_entry);
 
@@ -97,7 +135,17 @@ fail:
     return false;
 }
 
-bool dessert_filter_rm(char* mac, enum dessert_filter list, struct cli_def *cli) {
+/**
+ * Removes a rule from a list
+ *
+ * @param mac   6 byte MAC address of the src
+ * @param iface rx interface; may be NULL to select all interfaces
+ * @param list  remove rule from this list
+ * @param cli   current CLI for printing messages
+ *
+ * @return true if rule found and removed, else false
+ */
+bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def *cli) {
     pthread_rwlock_wrlock(&dessert_filterlock);
     mac_entry_t** cur = NULL;
     switch(list) {
@@ -113,7 +161,7 @@ bool dessert_filter_rm(char* mac, enum dessert_filter list, struct cli_def *cli)
     }
 
     pthread_rwlock_wrlock(&dessert_filterlock);
-    mac_entry_t* del = _contains(mac, *cur);
+    mac_entry_t* del = find_in_list(mac, iface, *cur);
     if(del == NULL) {
         print_twice(LOG_CRIT, cli, MAC " not found in list", EXPLODE_ARRAY6(mac));
         goto fail;
@@ -130,52 +178,71 @@ fail:
     return false;
 }
 
-int _dessert_cli_cmd_showfilters(struct cli_def *cli, char *command, char *argv[], int argc) {
+/**
+ * CLI command to show all  filter rules
+ */
+int _dessert_cli_cmd_show_rules(struct cli_def *cli, char *command, char *argv[], int argc) {
     pthread_rwlock_rdlock(&dessert_filterlock);
     mac_entry_t* elt = NULL;
     cli_print(cli, "\nwhitelist");
     cli_print(cli, "-------------------------------------");
     uint16_t i = 0;
     LL_FOREACH(whitelist, elt) {
-        cli_print(cli, "\t%d\t" MAC, i, EXPLODE_ARRAY6(elt->mac));
+        cli_print(cli, "\t%d\t" MAC ", %s", i, EXPLODE_ARRAY6(elt->mac), elt->iface?elt->iface->if_name:"*");
         i++;
     }
     cli_print(cli, "\nblacklist");
     cli_print(cli, "-------------------------------------");
     i = 0;
     LL_FOREACH(blacklist, elt) {
-        cli_print(cli, "\t%d\t" MAC, i, EXPLODE_ARRAY6(elt->mac));
+        cli_print(cli, "\t%d\t" MAC ", %s", i, EXPLODE_ARRAY6(elt->mac), elt->iface?elt->iface->if_name:"*");
         i++;
     }
     pthread_rwlock_unlock(&dessert_filterlock);
     return CLI_OK;
 }
 
-int _dessert_cli_cmd_addfilter(struct cli_def *cli, char *command, char *argv[], int argc) {
-    if(argc < 2) {
-        cli_print(cli, "usage: filter add [MAC] [whitelist|blacklist]");
+/**
+ * CLI command to add a filter rule
+ */
+int _dessert_cli_cmd_rule_add(struct cli_def *cli, char *command, char *argv[], int argc) {
+    if(argc < 2 || argc > 3) {
+        cli_print(cli, "usage: filter add whitelist|blacklist] [MAC] [IFNAME]");
         goto fail;
     }
 
-    char mac[6];
-    if(sscanf(argv[0], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
-        goto fail;
-    }
-
+    char mac[6] = "      ";
+    dessert_meshif_t* iface = NULL;
     enum dessert_filter list = -1;
+
     char* s = "whitelist";
-    if(strncmp(s, argv[1], sizeof(s)) == 0) {
+    if(strncmp(s, argv[0], sizeof(s)) == 0) {
         list = DESSERT_WHITELIST;
     }
     else {
         s = "blacklist";
-        if(list == -1 && strncmp(s, argv[1], sizeof(s)) == 0) {
+        if(strncmp(s, argv[0], sizeof(s)) == 0) {
             list = DESSERT_BLACKLIST;
+        }
+        else {
+            print_twice(LOG_ERR, cli, "could not parse list: %s", argv[0]);
+            goto fail;
         }
     }
 
-    if(dessert_filter_add(mac, list, cli)) {
+    if(sscanf(argv[1], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
+        if(argv[0] != "*") {
+            print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
+            goto fail;
+        }
+        mac[0] = '*';
+    }
+
+    if(argc == 2) {
+        iface = ifname2iface(argv[2]);
+    }
+
+    if(dessert_filter_rule_add(mac, iface, list, cli)) {
         cli_print(cli, "added " MAC " to %s", EXPLODE_ARRAY6(mac), s);
         return CLI_OK;
     }
@@ -185,31 +252,47 @@ fail:
     return CLI_ERROR;
 }
 
-int _dessert_cli_cmd_rmfilter(struct cli_def *cli, char *command, char *argv[], int argc) {
+/**
+ * CLI command to remove a filter rule
+ */
+int _dessert_cli_cmd_rule_rm(struct cli_def *cli, char *command, char *argv[], int argc) {
     if(argc < 2) {
-        cli_print(cli, "usage: filter rm [MAC] [whitelist|blacklist]");
+        cli_print(cli, "usage: filter rm [whitelist|blacklist] [MAC] [IFNAME]");
         goto fail;
     }
 
-    char mac[6];
-    if(sscanf(argv[0], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
-        goto fail;
-    }
-
+    char mac[6] = "      ";
+    dessert_meshif_t* iface = NULL;
     enum dessert_filter list = -1;
+
     char* s = "whitelist";
-    if(strncmp(s, argv[1], sizeof(s)) == 0) {
+    if(strncmp(s, argv[0], sizeof(s)) == 0) {
         list = DESSERT_WHITELIST;
     }
     else {
         s = "blacklist";
-        if(list == -1 && strncmp(s, argv[1], sizeof(s)) == 0) {
+        if(strncmp(s, argv[0], sizeof(s)) == 0) {
             list = DESSERT_BLACKLIST;
+        }
+        else {
+            print_twice(LOG_ERR, cli, "could not parse list: %s", argv[0]);
+            goto fail;
         }
     }
 
-    if(dessert_filter_rm(mac, list, cli)) {
+    if(sscanf(argv[1], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
+        if(argv[0] != "*") {
+            print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
+            goto fail;
+        }
+        mac[0] = '*';
+    }
+
+    if(argc == 2) {
+        iface = ifname2iface(argv[2]);
+    }
+
+    if(dessert_filter_rule_rm(mac, iface, list, cli)) {
         cli_print(cli, "removed " MAC " from %s", EXPLODE_ARRAY6(mac), s);
         return CLI_OK;
     }
@@ -219,17 +302,39 @@ fail:
     return CLI_ERROR;
 }
 
+/**
+ * mesh iface callback of the MAC filter
+ *
+ * Filter frames based on the layer 2 source address and the mesh interface where the frame was received.
+ * The rules are checked in the following order:
+ * 1) whitelist -> accept
+ * 2) blacklist -> drop
+ * 3) wildcard -> accept or drop
+ * 4) default -> accept
+ *
+ * Please note that the filter is fairly simple and that the first matching rule is used.
+ * Therefore a less specific rule can overwrite a more specific one.
+ */
 int dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *iface, dessert_frameid_t id) {
     char* mac = msg->l2h.ether_shost;
 
     pthread_rwlock_rdlock(&dessert_filterlock);
-    if(_contains(mac, whitelist)) {
+    if(find_in_list(mac, iface, whitelist)) {
         goto ok;
     }
 
-    if(_contains(mac, blacklist)) {
+    if(find_in_list(mac, iface, blacklist)) {
         goto drop;
     }
+
+    if(wildcard_in_list(whitelist)) {
+        goto ok;
+    }
+
+    if(wildcard_in_list(blacklist)) {
+        goto drop;
+    }
+
 
 ok:
     pthread_rwlock_unlock(&dessert_filterlock);
