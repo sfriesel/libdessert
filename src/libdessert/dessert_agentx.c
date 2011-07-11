@@ -34,22 +34,22 @@
 
 /* global data storage // P R I V A T E */
 pthread_rwlock_t _dessert_appstats_cblist_lock = PTHREAD_RWLOCK_INITIALIZER;
-dessert_agentx_appstats_cb_entry_t *_dessert_appstats_cblist = NULL;
+dessert_agentx_appstats_cb_entry_t* _dessert_appstats_cblist = NULL;
 
 pthread_rwlock_t _dessert_appparams_cblist_lock = PTHREAD_RWLOCK_INITIALIZER;
-dessert_agentx_appparams_cb_entry_t *_dessert_appparams_cblist = NULL;
+dessert_agentx_appparams_cb_entry_t* _dessert_appparams_cblist = NULL;
 
 /* local data storage*/
 int keep_snmp_running = 1;
 
 pthread_mutex_t _dessert_agentx_appparams_nextindex_mutex =
-		PTHREAD_MUTEX_INITIALIZER;
+    PTHREAD_MUTEX_INITIALIZER;
 uint8_t _dessert_agentx_appparams_nextindex = 0;
 
 /* internal functions forward declarations*/
-static void *_dessert_agentx_worker(void *arg);
-static dessert_agentx_appstats_cb_entry_t *_dessert_agentx_appstats_add(
-		dessert_agentx_appstatscb_get_t *c, uint8_t bulknobulk_flag);
+static void* _dessert_agentx_worker(void* arg);
+static dessert_agentx_appstats_cb_entry_t* _dessert_agentx_appstats_add(
+    dessert_agentx_appstatscb_get_t* c, uint8_t bulknobulk_flag);
 static uint8_t _dessert_agentx_appparams_new_index(void);
 
 /******************************************************************************
@@ -76,25 +76,25 @@ static uint8_t _dessert_agentx_appparams_new_index(void);
  * @par Description:\n
  *
  */
-dessert_agentx_appstats_t *dessert_agentx_appstats_new() {
-	dessert_agentx_appstats_t *appstat;
+dessert_agentx_appstats_t* dessert_agentx_appstats_new() {
+    dessert_agentx_appstats_t* appstat;
 
-	appstat = malloc(sizeof(dessert_agentx_appstats_t));
+    appstat = malloc(sizeof(dessert_agentx_appstats_t));
 
-	appstat->prev = appstat;
-	appstat->next = NULL;
+    appstat->prev = appstat;
+    appstat->next = NULL;
 
-	memset(appstat->name,0, sizeof(appstat->name));
-	memset(appstat->desc,0, sizeof(appstat->desc));
+    memset(appstat->name, 0, sizeof(appstat->name));
+    memset(appstat->desc, 0, sizeof(appstat->desc));
 
-	appstat->value_type = DESSERT_APPSTATS_VALUETYPE_BOOL;
-	appstat->node_or_link = DESSERT_APPSTATS_NODEORLINK_NONE;
-	memset(appstat->macaddress1, 0, ETHER_ADDR_LEN);
-	memset(appstat->macaddress2, 0, ETHER_ADDR_LEN);
+    appstat->value_type = DESSERT_APPSTATS_VALUETYPE_BOOL;
+    appstat->node_or_link = DESSERT_APPSTATS_NODEORLINK_NONE;
+    memset(appstat->macaddress1, 0, ETHER_ADDR_LEN);
+    memset(appstat->macaddress2, 0, ETHER_ADDR_LEN);
 
-	appstat->boolean = DESSERT_APPSTATS_BOOL_FALSE;
+    appstat->boolean = DESSERT_APPSTATS_BOOL_FALSE;
 
-	return appstat;
+    return appstat;
 }
 
 /** Frees a dessert_agentx_appstats_t.
@@ -107,8 +107,8 @@ dessert_agentx_appstats_t *dessert_agentx_appstats_new() {
  *
  * @par Description:\n
  */
-void dessert_agentx_appstats_destroy(dessert_agentx_appstats_t *appstat) {
-	free(appstat);
+void dessert_agentx_appstats_destroy(dessert_agentx_appstats_t* appstat) {
+    free(appstat);
 }
 
 /** Adds an application statistics callback.
@@ -121,10 +121,10 @@ void dessert_agentx_appstats_destroy(dessert_agentx_appstats_t *appstat) {
  * @par Description:\n
  *
  */
-dessert_agentx_appstats_cb_entry_t *dessert_agentx_appstats_add(
-		dessert_agentx_appstatscb_get_t *c) {
+dessert_agentx_appstats_cb_entry_t* dessert_agentx_appstats_add(
+    dessert_agentx_appstatscb_get_t* c) {
 
-	return (_dessert_agentx_appstats_add(c, DESSERT_APPSTATS_CB_NOBULK));
+    return (_dessert_agentx_appstats_add(c, DESSERT_APPSTATS_CB_NOBULK));
 }
 
 /** Adds an application statistics bulk callback.
@@ -137,10 +137,10 @@ dessert_agentx_appstats_cb_entry_t *dessert_agentx_appstats_add(
  * @par Description:\n
  *
  */
-dessert_agentx_appstats_cb_entry_t *dessert_agentx_appstats_add_bulk(
-		dessert_agentx_appstatscb_get_t *c) {
+dessert_agentx_appstats_cb_entry_t* dessert_agentx_appstats_add_bulk(
+    dessert_agentx_appstatscb_get_t* c) {
 
-	return (_dessert_agentx_appstats_add(c, DESSERT_APPSTATS_CB_BULK));
+    return (_dessert_agentx_appstats_add(c, DESSERT_APPSTATS_CB_BULK));
 }
 
 /** Deletes an application statistics callback.
@@ -155,19 +155,19 @@ dessert_agentx_appstats_cb_entry_t *dessert_agentx_appstats_add_bulk(
  *
  * @par Description:\n
  */
-int dessert_agentx_appstats_del(dessert_agentx_appstats_cb_entry_t *e) {
+int dessert_agentx_appstats_del(dessert_agentx_appstats_cb_entry_t* e) {
 
-	if (e == NULL) {
-		return DESSERT_ERR;
-	}
+    if(e == NULL) {
+        return DESSERT_ERR;
+    }
 
-	pthread_rwlock_wrlock(&_dessert_appstats_cblist_lock);
-	DL_DELETE(_dessert_appstats_cblist, e);
-	pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
+    pthread_rwlock_wrlock(&_dessert_appstats_cblist_lock);
+    DL_DELETE(_dessert_appstats_cblist, e);
+    pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
 
-	free(e);
+    free(e);
 
-	return DESSERT_OK;
+    return DESSERT_OK;
 }
 
 /******************************************************************************
@@ -186,19 +186,19 @@ int dessert_agentx_appstats_del(dessert_agentx_appstats_cb_entry_t *e) {
  * @par Description:\n
  *
  */
-dessert_agentx_appparams_t *dessert_agentx_appparam_new() {
-	dessert_agentx_appparams_t *appparam;
+dessert_agentx_appparams_t* dessert_agentx_appparam_new() {
+    dessert_agentx_appparams_t* appparam;
 
-	appparam = malloc(sizeof(dessert_agentx_appparams_t));
+    appparam = malloc(sizeof(dessert_agentx_appparams_t));
 
-	memset(appparam->name,0, sizeof(appparam->name));
-	memset(appparam->desc,0, sizeof(appparam->desc));
+    memset(appparam->name, 0, sizeof(appparam->name));
+    memset(appparam->desc, 0, sizeof(appparam->desc));
 
-	appparam->value_type = DESSERT_APPPARAMS_VALUETYPE_BOOL;
+    appparam->value_type = DESSERT_APPPARAMS_VALUETYPE_BOOL;
 
-	appparam->boolean = DESSERT_APPSTATS_BOOL_FALSE;
+    appparam->boolean = DESSERT_APPSTATS_BOOL_FALSE;
 
-	return appparam;
+    return appparam;
 }
 
 /** Frees a dessert_agentx_appparams_t.
@@ -212,8 +212,8 @@ dessert_agentx_appparams_t *dessert_agentx_appparam_new() {
  *
  * @par Description:\n
  */
-void dessert_agentx_appparam_destroy(dessert_agentx_appparams_t *appparam) {
-	free(appparam);
+void dessert_agentx_appparam_destroy(dessert_agentx_appparams_t* appparam) {
+    free(appparam);
 }
 
 /** Adds an application parameter callback.
@@ -227,28 +227,28 @@ void dessert_agentx_appparam_destroy(dessert_agentx_appparams_t *appparam) {
  * @par Description:\n
  *
  */
-dessert_agentx_appparams_cb_entry_t *dessert_agentx_appparams_add(
-		dessert_agentx_appparamscb_get_t *get,
-		dessert_agentx_appparamscb_set_t *set) {
+dessert_agentx_appparams_cb_entry_t* dessert_agentx_appparams_add(
+    dessert_agentx_appparamscb_get_t* get,
+    dessert_agentx_appparamscb_set_t* set) {
 
-	dessert_agentx_appparams_cb_entry_t *e;
+    dessert_agentx_appparams_cb_entry_t* e;
 
-	e = malloc(sizeof(dessert_agentx_appparams_cb_entry_t));
+    e = malloc(sizeof(dessert_agentx_appparams_cb_entry_t));
 
-	if (e == NULL) {
-		dessert_err("failed to allocate buffer for new dessert_agentx_appparams_entry_t");
-		return (NULL);
-	}
+    if(e == NULL) {
+        dessert_err("failed to allocate buffer for new dessert_agentx_appparams_entry_t");
+        return (NULL);
+    }
 
-	e->index = _dessert_agentx_appparams_new_index();
-	e->get = get;
-	e->set = set;
+    e->index = _dessert_agentx_appparams_new_index();
+    e->get = get;
+    e->set = set;
 
-	pthread_rwlock_wrlock(&_dessert_appparams_cblist_lock);
-	DL_APPEND(_dessert_appparams_cblist, e);
-	pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
+    pthread_rwlock_wrlock(&_dessert_appparams_cblist_lock);
+    DL_APPEND(_dessert_appparams_cblist, e);
+    pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
 
-	return (e);
+    return (e);
 }
 
 /** Deletes an application parameter callback.
@@ -262,19 +262,19 @@ dessert_agentx_appparams_cb_entry_t *dessert_agentx_appparams_add(
  *
  * @par Description:\n
  */
-int dessert_agentx_appparams_del(dessert_agentx_appparams_cb_entry_t *e) {
+int dessert_agentx_appparams_del(dessert_agentx_appparams_cb_entry_t* e) {
 
-	if (e == NULL) {
-		return DESSERT_ERR;
-	}
+    if(e == NULL) {
+        return DESSERT_ERR;
+    }
 
-	pthread_rwlock_wrlock(&_dessert_appparams_cblist_lock);
-	DL_DELETE(_dessert_appparams_cblist, e);
-	pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
+    pthread_rwlock_wrlock(&_dessert_appparams_cblist_lock);
+    DL_DELETE(_dessert_appparams_cblist, e);
+    pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
 
-	/* TODO: invalidate row*/
+    /* TODO: invalidate row*/
 
-	return DESSERT_OK;
+    return DESSERT_OK;
 }
 
 /******************************************************************************
@@ -289,154 +289,165 @@ int dessert_agentx_appparams_del(dessert_agentx_appparams_cb_entry_t *e) {
  * appStats
  ******************************************************************************/
 
-void _dessert_agentx_appstats_free(dessert_agentx_appstats_t *appstat){
-	if (appstat->value_type == DESSERT_APPSTATS_VALUETYPE_OCTETSTRING
-			&& appstat->octetstring != NULL) {
-		free(appstat->octetstring);
-	}
-	dessert_agentx_appstats_destroy(appstat);
+void _dessert_agentx_appstats_free(dessert_agentx_appstats_t* appstat) {
+    if(appstat->value_type == DESSERT_APPSTATS_VALUETYPE_OCTETSTRING
+       && appstat->octetstring != NULL) {
+        free(appstat->octetstring);
+    }
+
+    dessert_agentx_appstats_destroy(appstat);
 }
 
 void _dessert_agentx_appstats_free_list(
-		dessert_agentx_appstats_t **appstats_list) {
-	dessert_agentx_appstats_t *appstat;
-	dessert_agentx_appstats_t *tbf;
+    dessert_agentx_appstats_t** appstats_list) {
+    dessert_agentx_appstats_t* appstat;
+    dessert_agentx_appstats_t* tbf;
 
-	for (appstat = (*appstats_list); appstat;) {
-		tbf = appstat;
-		appstat = appstat->next;
-		_dessert_agentx_appstats_free(tbf);
-	}
+    for(appstat = (*appstats_list); appstat;) {
+        tbf = appstat;
+        appstat = appstat->next;
+        _dessert_agentx_appstats_free(tbf);
+    }
 }
 
 int _dessert_agentx_appstats_harvest_callbacks(
-		dessert_agentx_appstats_t **appstats_list) {
-	dessert_agentx_appstats_cb_entry_t *cbe;
-	dessert_agentx_appstats_t *new_appstat;
-	dessert_agentx_appstats_t *appstat;
-	int res = 0;
+    dessert_agentx_appstats_t** appstats_list) {
+    dessert_agentx_appstats_cb_entry_t* cbe;
+    dessert_agentx_appstats_t* new_appstat;
+    dessert_agentx_appstats_t* appstat;
+    int res = 0;
 
-	pthread_rwlock_rdlock(&_dessert_appstats_cblist_lock);
-	DL_FOREACH(_dessert_appstats_cblist, cbe) {
+    pthread_rwlock_rdlock(&_dessert_appstats_cblist_lock);
+    DL_FOREACH(_dessert_appstats_cblist, cbe) {
 
-		new_appstat = dessert_agentx_appstats_new();
-		if (new_appstat == NULL) {
-			dessert_err("failed to allocate buffer for new dessert_agentx_appstats_entry_t");
+        new_appstat = dessert_agentx_appstats_new();
 
-			dessert_err("freeing appstats harvested so far...");
-			_dessert_agentx_appstats_free_list(appstats_list);
+        if(new_appstat == NULL) {
+            dessert_err("failed to allocate buffer for new dessert_agentx_appstats_entry_t");
 
-			return DESSERT_ERR;
-		}
+            dessert_err("freeing appstats harvested so far...");
+            _dessert_agentx_appstats_free_list(appstats_list);
 
-		res = cbe->c(new_appstat);
+            return DESSERT_ERR;
+        }
 
-		if (res == DESSERT_OK) {
-			if (cbe->isbulk_flag & DESSERT_APPSTATS_CB_NOBULK) {
+        res = cbe->c(new_appstat);
 
-				DL_APPEND(*appstats_list, new_appstat);
-			} else { // DESSERT_APPSTATS_BULK
-				dessert_agentx_appstats_t temp;
-				DL_FOREACH(new_appstat, appstat ) {
-					temp.next = appstat->next;
-					temp.prev = appstat->prev;
-					DL_APPEND(*appstats_list, appstat);
-					appstat = &temp;
-				}
-			}
-		} else {
-			dessert_err("freeing list of appstats received from callback...");
-			_dessert_agentx_appstats_free_list(&new_appstat);
-			pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
-			dessert_agentx_appstats_del(cbe);
-			pthread_rwlock_rdlock(&_dessert_appstats_cblist_lock);
-		}
+        if(res == DESSERT_OK) {
+            if(cbe->isbulk_flag & DESSERT_APPSTATS_CB_NOBULK) {
 
-	}
-	pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
+                DL_APPEND(*appstats_list, new_appstat);
+            }
+            else {   // DESSERT_APPSTATS_BULK
+                dessert_agentx_appstats_t temp;
+                DL_FOREACH(new_appstat, appstat) {
+                    temp.next = appstat->next;
+                    temp.prev = appstat->prev;
+                    DL_APPEND(*appstats_list, appstat);
+                    appstat = &temp;
+                }
+            }
+        }
+        else {
+            dessert_err("freeing list of appstats received from callback...");
+            _dessert_agentx_appstats_free_list(&new_appstat);
+            pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
+            dessert_agentx_appstats_del(cbe);
+            pthread_rwlock_rdlock(&_dessert_appstats_cblist_lock);
+        }
 
-	return DESSERT_OK;
+    }
+    pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
+
+    return DESSERT_OK;
 }
 
 /******************************************************************************
  * appParams
  ******************************************************************************/
 
-void _dessert_agentx_appparams_free(dessert_agentx_appparams_t *appparam) {
-	if (appparam->value_type == DESSERT_APPPARAMS_VALUETYPE_OCTETSTRING
-			&& appparam->octetstring != NULL) {
-		free(appparam->octetstring);
-	}
-	dessert_agentx_appparam_destroy(appparam);
+void _dessert_agentx_appparams_free(dessert_agentx_appparams_t* appparam) {
+    if(appparam->value_type == DESSERT_APPPARAMS_VALUETYPE_OCTETSTRING
+       && appparam->octetstring != NULL) {
+        free(appparam->octetstring);
+    }
+
+    dessert_agentx_appparam_destroy(appparam);
 }
 
 void _dessert_agentx_appparams_free_list(
-		dessert_agentx_appparams_t **appparams_list) {
-	dessert_agentx_appparams_t *appparam;
-	dessert_agentx_appparams_t *tbf;
+    dessert_agentx_appparams_t** appparams_list) {
+    dessert_agentx_appparams_t* appparam;
+    dessert_agentx_appparams_t* tbf;
 
-	for (appparam = (*appparams_list); appparam;) {
-		tbf = appparam;
-		appparam = appparam->next;
-		_dessert_agentx_appparams_free(tbf);
-	}
+    for(appparam = (*appparams_list); appparam;) {
+        tbf = appparam;
+        appparam = appparam->next;
+        _dessert_agentx_appparams_free(tbf);
+    }
 }
 
 int _dessert_agentx_appparams_harvest_callbacks(
-		dessert_agentx_appparams_t **appparams_list) {
-	dessert_agentx_appparams_cb_entry_t *cbe;
-	dessert_agentx_appparams_t *new_appparam;
-	int res = 0;
+    dessert_agentx_appparams_t** appparams_list) {
+    dessert_agentx_appparams_cb_entry_t* cbe;
+    dessert_agentx_appparams_t* new_appparam;
+    int res = 0;
 
-	pthread_rwlock_rdlock(&_dessert_appparams_cblist_lock);
-	DL_FOREACH(_dessert_appparams_cblist, cbe) {
-		new_appparam = dessert_agentx_appparam_new();
+    pthread_rwlock_rdlock(&_dessert_appparams_cblist_lock);
+    DL_FOREACH(_dessert_appparams_cblist, cbe) {
+        new_appparam = dessert_agentx_appparam_new();
 
-		if (new_appparam == NULL) {
-			dessert_err("failed to allocate buffer for new dessert_agentx_appparams_entry_t");
+        if(new_appparam == NULL) {
+            dessert_err("failed to allocate buffer for new dessert_agentx_appparams_entry_t");
 
-			dessert_err("freeing appstats harvested so far...");
-			_dessert_agentx_appparams_free_list(appparams_list);
+            dessert_err("freeing appstats harvested so far...");
+            _dessert_agentx_appparams_free_list(appparams_list);
 
-			return DESSERT_ERR;
-		}
+            return DESSERT_ERR;
+        }
 
-		res = cbe->get(new_appparam);
-		new_appparam->index = cbe->index;
+        res = cbe->get(new_appparam);
+        new_appparam->index = cbe->index;
 
-		if (res == DESSERT_OK) {
-			DL_APPEND(*appparams_list, new_appparam);
-		} else {
-			_dessert_agentx_appparams_free(new_appparam);
-			pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
-			dessert_agentx_appparams_del(cbe);
-			pthread_rwlock_rdlock(&_dessert_appparams_cblist_lock);
-		}
+        if(res == DESSERT_OK) {
+            DL_APPEND(*appparams_list, new_appparam);
+        }
+        else {
+            _dessert_agentx_appparams_free(new_appparam);
+            pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
+            dessert_agentx_appparams_del(cbe);
+            pthread_rwlock_rdlock(&_dessert_appparams_cblist_lock);
+        }
 
-	} // DL_FOREACH
+    } // DL_FOREACH
 
-	pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
+    pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
 
-	return DESSERT_OK;
+    return DESSERT_OK;
 }
 
-dessert_agentx_appparamscb_set_t *_dessert_agentx_appparams_getsettercbforindex(
-		int index) {
-	dessert_agentx_appparams_cb_entry_t *cbe;
+dessert_agentx_appparamscb_set_t* _dessert_agentx_appparams_getsettercbforindex(
+    int index) {
+    dessert_agentx_appparams_cb_entry_t* cbe;
 
-	pthread_rwlock_rdlock(&_dessert_appparams_cblist_lock);
-	DL_FOREACH(_dessert_appparams_cblist, cbe)
-		if (cbe->index == index)
-			break;
-	pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
+    pthread_rwlock_rdlock(&_dessert_appparams_cblist_lock);
+    DL_FOREACH(_dessert_appparams_cblist, cbe)
 
-	if (cbe->index == index)
+    if(cbe->index == index) {
+        break;
+    }
 
-		return cbe->set;
-	else {
+    pthread_rwlock_unlock(&_dessert_appparams_cblist_lock);
 
-		return NULL;
-	}
+    if(cbe->index == index)
+
+    {
+        return cbe->set;
+    }
+    else {
+
+        return NULL;
+    }
 }
 
 /******************************************************************************
@@ -445,67 +456,68 @@ dessert_agentx_appparamscb_set_t *_dessert_agentx_appparams_getsettercbforindex(
 
 /** setup and initialize net-snmp subagent (via agent x)*/
 void _dessert_agentx_init_subagent() {
-	/**************************************************************************
-	 * setup snmp handling....
-	 *************************************************************************/
+    /**************************************************************************
+     * setup snmp handling....
+     *************************************************************************/
 
-	pthread_t snmp_worker;
+    pthread_t snmp_worker;
 
-	snmp_enable_calllog();
-	//debug_register_tokens("trace");
-	//debug_register_tokens("tdomain");
-	debug_register_tokens(AGENT);
-	//debug_register_tokens("snmp_agent");
-	//debug_register_tokens("helper:table:req");
+    snmp_enable_calllog();
+    //debug_register_tokens("trace");
+    //debug_register_tokens("tdomain");
+    debug_register_tokens(AGENT);
+    //debug_register_tokens("snmp_agent");
+    //debug_register_tokens("helper:table:req");
 
-	debug_register_tokens("dessertAppParamsTable");
-	debug_register_tokens("verbose:dessertAppParamsTable");
-	debug_register_tokens("internal:dessertAppParamsTable");
+    debug_register_tokens("dessertAppParamsTable");
+    debug_register_tokens("verbose:dessertAppParamsTable");
+    debug_register_tokens("internal:dessertAppParamsTable");
 
-	debug_register_tokens("dessertAppParamsTable");
-	debug_register_tokens("verbose:dessertAppStatsTable");
-	debug_register_tokens("internal:dessertAppStatsTable");
+    debug_register_tokens("dessertAppParamsTable");
+    debug_register_tokens("verbose:dessertAppStatsTable");
+    debug_register_tokens("internal:dessertAppStatsTable");
 
-	snmp_set_do_debugging(1);
+    snmp_set_do_debugging(1);
 
-	netsnmp_log_handler *logh;
+    netsnmp_log_handler* logh;
 
-	logh = netsnmp_register_loghandler(NETSNMP_LOGHANDLER_FILE, LOG_DEBUG);
-	if (logh) {
-		logh->pri_max = LOG_EMERG;
-		logh->token = strdup("/tmp/dessertAGENTX.log");
-	}
+    logh = netsnmp_register_loghandler(NETSNMP_LOGHANDLER_FILE, LOG_DEBUG);
 
-	netsnmp_ds_set_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE, 1);
+    if(logh) {
+        logh->pri_max = LOG_EMERG;
+        logh->token = strdup("/tmp/dessertAGENTX.log");
+    }
 
-	//SOCK_STARTUP;
-	init_agent(AGENT);
+    netsnmp_ds_set_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE, 1);
 
-	/*
-	 * initialize the scalars
-	 */
-	init_dessertObjects();
+    //SOCK_STARTUP;
+    init_agent(AGENT);
 
-	/*
-	 * init dessert{Mesh, Sys}ifTable mib code
-	 */
-	init_dessertMeshifTable();
-	init_dessertSysifTable();
+    /*
+     * initialize the scalars
+     */
+    init_dessertObjects();
 
-	/*
-	 * init dessertApp{Stats, Param}Table mib code
-	 */
-	init_dessertAppParamsTable();
-	init_dessertAppStatsTable();
+    /*
+     * init dessert{Mesh, Sys}ifTable mib code
+     */
+    init_dessertMeshifTable();
+    init_dessertSysifTable();
 
-	init_snmp(AGENT);
-	DEBUGMSGTL((AGENT, "Initialized agent and snmp.\n"));
+    /*
+     * init dessertApp{Stats, Param}Table mib code
+     */
+    init_dessertAppParamsTable();
+    init_dessertAppStatsTable();
 
-	pthread_create(&snmp_worker, NULL, _dessert_agentx_worker, NULL);
+    init_snmp(AGENT);
+    DEBUGMSGTL((AGENT, "Initialized agent and snmp.\n"));
+
+    pthread_create(&snmp_worker, NULL, _dessert_agentx_worker, NULL);
 }
 
 void dessert_agentx_stop_subagent() {
-	keep_snmp_running = 0;
+    keep_snmp_running = 0;
 }
 
 /******************************************************************************
@@ -516,53 +528,53 @@ void dessert_agentx_stop_subagent() {
  *
  ******************************************************************************/
 
-static dessert_agentx_appstats_cb_entry_t *_dessert_agentx_appstats_add(
-		dessert_agentx_appstatscb_get_t *c, uint8_t bulknobulk_flag) {
+static dessert_agentx_appstats_cb_entry_t* _dessert_agentx_appstats_add(
+    dessert_agentx_appstatscb_get_t* c, uint8_t bulknobulk_flag) {
 
-	dessert_agentx_appstats_cb_entry_t *e;
+    dessert_agentx_appstats_cb_entry_t* e;
 
-	e = malloc(sizeof(dessert_agentx_appstats_cb_entry_t));
+    e = malloc(sizeof(dessert_agentx_appstats_cb_entry_t));
 
-	if (e == NULL) {
-		dessert_err("failed to allocate buffer for new dessert_agentx_appstats_entry_t");
-		return (NULL);
-	}
+    if(e == NULL) {
+        dessert_err("failed to allocate buffer for new dessert_agentx_appstats_entry_t");
+        return (NULL);
+    }
 
-	e->isbulk_flag |= bulknobulk_flag;
-	e->c = c;
+    e->isbulk_flag |= bulknobulk_flag;
+    e->c = c;
 
-	pthread_rwlock_wrlock(&_dessert_appstats_cblist_lock);
-	DL_APPEND(_dessert_appstats_cblist, e);
-	pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
+    pthread_rwlock_wrlock(&_dessert_appstats_cblist_lock);
+    DL_APPEND(_dessert_appstats_cblist, e);
+    pthread_rwlock_unlock(&_dessert_appstats_cblist_lock);
 
-	return (e);
+    return (e);
 }
 
 static uint8_t _dessert_agentx_appparams_new_index(void) {
-	uint8_t index;
+    uint8_t index;
 
-	pthread_mutex_lock(&_dessert_agentx_appparams_nextindex_mutex);
-	index = _dessert_agentx_appparams_nextindex++;
-	pthread_mutex_unlock(&_dessert_agentx_appparams_nextindex_mutex);
+    pthread_mutex_lock(&_dessert_agentx_appparams_nextindex_mutex);
+    index = _dessert_agentx_appparams_nextindex++;
+    pthread_mutex_unlock(&_dessert_agentx_appparams_nextindex_mutex);
 
-	return index;
+    return index;
 }
 
-static void *_dessert_agentx_worker(void *arg) {
-	DEBUGMSGTL((AGENT, "snmp_worker running...\n"));
-	dessert_info("snmp_worker running...");
+static void* _dessert_agentx_worker(void* arg) {
+    DEBUGMSGTL((AGENT, "snmp_worker running...\n"));
+    dessert_info("snmp_worker running...");
 
-	while (keep_snmp_running) {
-		/*
-		 * if you use select(), see snmp_select_info() in snmp_api(3)
-		 */
-		/*
-		 * --- OR ---
-		 */
-		agent_check_and_process(1); /* 0 == don't block */
-	}
+    while(keep_snmp_running) {
+        /*
+         * if you use select(), see snmp_select_info() in snmp_api(3)
+         */
+        /*
+         * --- OR ---
+         */
+        agent_check_and_process(1); /* 0 == don't block */
+    }
 
-	dessert_info("snmp_worker exiting...");
+    dessert_info("snmp_worker exiting...");
 
-	return (NULL);
+    return (NULL);
 }

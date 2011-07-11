@@ -45,7 +45,7 @@ pthread_mutex_t _dessert_nextframeid_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t _dessert_exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t _dessert_exit_do = PTHREAD_COND_INITIALIZER;
 int _dessert_exit_code = 0;
-char *dessert_pidfile_name = NULL;
+char* dessert_pidfile_name = NULL;
 
 /* internal functions forward declarations*/
 static void _dessert_cleanup(void);
@@ -81,7 +81,7 @@ int dessert_init(const char* proto, int version, uint16_t opts) {
     pthread_rwlock_unlock(&dessert_cfglock);
 
     /* daemonize if needed */
-    if ((opts & DESSERT_OPT_DAEMONIZE) && !(opts & DESSERT_OPT_NODAEMONIZE)) {
+    if((opts & DESSERT_OPT_DAEMONIZE) && !(opts & DESSERT_OPT_NODAEMONIZE)) {
         _dessert_daemonize();
     }
 
@@ -111,7 +111,7 @@ int dessert_init(const char* proto, int version, uint16_t opts) {
  * @return DESSERT_OK if pid written and file closed, else DESSERT_ERR
  */
 int dessert_pid(char* pidfile) {
-    FILE *fd;
+    FILE* fd;
 
     if(dessert_pidfile_name != NULL) {
         dessert_warn("pid file already written to: %s\n", dessert_pidfile_name);
@@ -119,18 +119,21 @@ int dessert_pid(char* pidfile) {
     }
 
     fd = fopen(pidfile, "w");
-    if (fd == 0) {
+
+    if(fd == 0) {
         dessert_warn("could not open pid file");
         return DESSERT_ERR;
-    } else {
+    }
+    else {
         int r;
         r = fprintf(fd, "%d\n", getpid());
-        if (r < 0) {
+
+        if(r < 0) {
             dessert_warn("could not write to pid file");
             return DESSERT_ERR;
         }
 
-        if (fclose(fd) != 0) {
+        if(fclose(fd) != 0) {
             dessert_warn("failed to close pid file");
         }
     }
@@ -177,7 +180,7 @@ dessert_frameid_t _dessert_newframeid() {
  ******************************************************************************/
 
 /** command "shutdown" */
-int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[], int argc) {
+int _dessert_cli_cmd_shutdown(struct cli_def* cli, char* command, char* argv[], int argc) {
     cli_print(cli, "daemon will shut down now!");
     pthread_mutex_lock(&_dessert_exit_mutex);
     pthread_cond_broadcast(&_dessert_exit_do);
@@ -199,6 +202,7 @@ void _dessert_cleanup(void) {
     if(dessert_pidfile_name != NULL) {
         unlink(dessert_pidfile_name);
     }
+
 #ifndef ANDROID
     dessert_monitoring_stop();
 #endif
@@ -215,13 +219,15 @@ void _dessert_daemonize(void) {
 
     /* Fork off the parent process */
     pid = fork();
-    if (pid < 0) {
+
+    if(pid < 0) {
         perror("could not create daemon process!");
         exit(EXIT_FAILURE);
     }
+
     /* If we got a good PID, then
     we can exit the parent process. */
-    if (pid > 0) {
+    if(pid > 0) {
         exit(EXIT_SUCCESS);
     }
 
@@ -232,13 +238,14 @@ void _dessert_daemonize(void) {
 
     /* Create a new SID for the child process */
     sid = setsid();
-    if (sid < 0) {
+
+    if(sid < 0) {
         perror("could not set sid!");
         exit(EXIT_FAILURE);
     }
 
     /* Change the current working directory */
-    if ((chdir("/")) < 0) {
+    if((chdir("/")) < 0) {
         perror("could not chdir /!");
         exit(EXIT_FAILURE);
     }

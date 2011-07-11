@@ -28,7 +28,7 @@
 #include <string.h>
 #include <netinet/ip.h>
 
-struct cli_def *_dessert_callbacks_cli;
+struct cli_def* _dessert_callbacks_cli;
 
 /** add initial trace header to dessert message
  * @arg *msg dessert_msg_t message used for tracing
@@ -40,29 +40,35 @@ struct cli_def *_dessert_callbacks_cli;
  **/
 int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode) {
 
-    dessert_ext_t *ext;
-    struct ether_header *l25h;
+    dessert_ext_t* ext;
+    struct ether_header* l25h;
 
-    if (type != DESSERT_EXT_TRACE_REQ && type != DESSERT_EXT_TRACE_RPL)
+    if(type != DESSERT_EXT_TRACE_REQ && type != DESSERT_EXT_TRACE_RPL) {
         return EINVAL;
+    }
 
-    if (mode != DESSERT_MSG_TRACE_HOST && mode != DESSERT_MSG_TRACE_IFACE)
+    if(mode != DESSERT_MSG_TRACE_HOST && mode != DESSERT_MSG_TRACE_IFACE) {
         return EINVAL;
+    }
 
-    if (msg->flags & DESSERT_FLAG_SPARSE)
+    if(msg->flags & DESSERT_FLAG_SPARSE) {
         return DESSERT_MSG_NEEDNOSPARSE;
+    }
 
     dessert_msg_addext(msg, &ext, type, mode);
     memcpy((ext->data), dessert_l25_defsrc, ETHER_ADDR_LEN);
-    if (mode == DESSERT_MSG_TRACE_IFACE) {
+
+    if(mode == DESSERT_MSG_TRACE_IFACE) {
         memcpy((ext->data) + ETHER_ADDR_LEN, msg->l2h.ether_shost,
-                ETHER_ADDR_LEN);
+               ETHER_ADDR_LEN);
         l25h = dessert_msg_getl25ether(msg);
-        if (l25h == NULL) {
+
+        if(l25h == NULL) {
             memcpy((ext->data) + ETHER_ADDR_LEN, ether_null, ETHER_ADDR_LEN);
-        } else {
+        }
+        else {
             memcpy((ext->data) + ETHER_ADDR_LEN * 2, l25h->ether_shost,
-                    ETHER_ADDR_LEN);
+                   ETHER_ADDR_LEN);
         }
     }
 
@@ -84,34 +90,36 @@ int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode) {
  * @retval CLI_OK if trace packet sent
  * @retval CLI_ERROR on error
  */
-int dessert_cli_cmd_traceroute(struct cli_def *cli, char *command, char *argv[], int argc) {
+int dessert_cli_cmd_traceroute(struct cli_def* cli, char* command, char* argv[], int argc) {
     u_char ether_trace[ETHER_ADDR_LEN];
-    dessert_msg_t *msg;
-    dessert_ext_t *ext;
-    struct ether_header *l25h;
+    dessert_msg_t* msg;
+    dessert_ext_t* ext;
+    struct ether_header* l25h;
 
-    if( argc<1 || argc >2 ||
-        sscanf(argv[0], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-            &ether_trace[0], &ether_trace[1], &ether_trace[2],
-            &ether_trace[3], &ether_trace[4], &ether_trace[5]) != 6
-    ) {
+    if(argc < 1 || argc > 2 ||
+       sscanf(argv[0], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+              &ether_trace[0], &ether_trace[1], &ether_trace[2],
+              &ether_trace[3], &ether_trace[4], &ether_trace[5]) != 6
+      ) {
         cli_print(cli, "usage %s [mac-address in xx:xx:xx:xx:xx:xx notation] ([i])\n", command);
         return CLI_ERROR;
     }
+
     cli_print(cli, "sending trace packet to " MAC " ...\n", EXPLODE_ARRAY6(ether_trace));
     dessert_info("sending trace packet to " MAC, EXPLODE_ARRAY6(ether_trace));
 
     dessert_msg_new(&msg);
 
     dessert_msg_addext(msg, &ext, DESSERT_EXT_ETH, ETHER_HDR_LEN);
-    l25h = (struct ether_header *) ext->data;
+    l25h = (struct ether_header*) ext->data;
     memcpy(l25h->ether_shost, dessert_l25_defsrc, ETHER_ADDR_LEN);
     memcpy(l25h->ether_dhost, ether_trace, ETHER_ADDR_LEN);
     l25h->ether_type = htons(0x0000);
 
     if(argc == 2 && argv[1][0] == 'i') {
         dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE_REQ, DESSERT_MSG_TRACE_IFACE);
-    } else {
+    }
+    else {
         dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE_REQ, DESSERT_MSG_TRACE_HOST);
     }
 
@@ -140,45 +148,52 @@ int dessert_cli_cmd_traceroute(struct cli_def *cli, char *command, char *argv[],
  * @retval DESSERT_MSG_DROP if this host is the destination of the trace request
  * @retval DESSERT_MSG_KEEP if this host is not the destination of the trace request
  */
-int dessert_mesh_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *meshif, dessert_frameid_t id) {
+int dessert_mesh_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
 
-	struct ether_header *l25h = dessert_msg_getl25ether(msg);
+    struct ether_header* l25h = dessert_msg_getl25ether(msg);
 
-	if(l25h && proc->lflags & DESSERT_LFLAG_DST_SELF) {
-		char buf[1024];
-		memset(buf, 0x0, sizeof(buf));
+    if(l25h && proc->lflags & DESSERT_LFLAG_DST_SELF) {
+        char buf[1024];
+        memset(buf, 0x0, sizeof(buf));
 
-		dessert_ext_t *request_ext;
-		if(dessert_msg_getext(msg, &request_ext, DESSERT_EXT_TRACE_REQ, 0)) {
+        dessert_ext_t* request_ext;
 
-			dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_REQ, buf, sizeof(buf));
+        if(dessert_msg_getext(msg, &request_ext, DESSERT_EXT_TRACE_REQ, 0)) {
 
-			dessert_debug("trace request from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
-			if(_dessert_callbacks_cli != NULL) {
-				cli_print(_dessert_callbacks_cli, "\ntrace request from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
-			}
-			u_int8_t temp[ETHER_ADDR_LEN];
-			memcpy(temp, l25h->ether_shost, ETHER_ADDR_LEN);
-			memcpy(l25h->ether_shost, l25h->ether_dhost, ETHER_ADDR_LEN);
-			memcpy(l25h->ether_dhost, temp, ETHER_ADDR_LEN);
+            dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_REQ, buf, sizeof(buf));
 
-			int len = dessert_ext_getdatalen(request_ext) == DESSERT_MSG_TRACE_IFACE ? DESSERT_MSG_TRACE_IFACE : DESSERT_MSG_TRACE_HOST;
-			dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE_RPL, len);
-			dessert_meshsend(msg, NULL);
-			return DESSERT_MSG_DROP;
-		}
+            dessert_debug("trace request from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
 
-		dessert_ext_t *reply_ext;
-		if(dessert_msg_getext(msg, &reply_ext, DESSERT_EXT_TRACE_RPL, 0)) {
-			dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_RPL, buf, sizeof(buf));
+            if(_dessert_callbacks_cli != NULL) {
+                cli_print(_dessert_callbacks_cli, "\ntrace request from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
+            }
 
-			dessert_debug("trace reply from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
-			if(_dessert_callbacks_cli != NULL) {
-				cli_print(_dessert_callbacks_cli, "\ntrace reply from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
-			}
-			return DESSERT_MSG_DROP;
-		}
-	}
-	return DESSERT_MSG_KEEP;
+            u_int8_t temp[ETHER_ADDR_LEN];
+            memcpy(temp, l25h->ether_shost, ETHER_ADDR_LEN);
+            memcpy(l25h->ether_shost, l25h->ether_dhost, ETHER_ADDR_LEN);
+            memcpy(l25h->ether_dhost, temp, ETHER_ADDR_LEN);
+
+            int len = dessert_ext_getdatalen(request_ext) == DESSERT_MSG_TRACE_IFACE ? DESSERT_MSG_TRACE_IFACE : DESSERT_MSG_TRACE_HOST;
+            dessert_msg_trace_initiate(msg, DESSERT_EXT_TRACE_RPL, len);
+            dessert_meshsend(msg, NULL);
+            return DESSERT_MSG_DROP;
+        }
+
+        dessert_ext_t* reply_ext;
+
+        if(dessert_msg_getext(msg, &reply_ext, DESSERT_EXT_TRACE_RPL, 0)) {
+            dessert_msg_trace_dump(msg, DESSERT_EXT_TRACE_RPL, buf, sizeof(buf));
+
+            dessert_debug("trace reply from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
+
+            if(_dessert_callbacks_cli != NULL) {
+                cli_print(_dessert_callbacks_cli, "\ntrace reply from " MAC "\n%s", EXPLODE_ARRAY6(l25h->ether_shost), buf);
+            }
+
+            return DESSERT_MSG_DROP;
+        }
+    }
+
+    return DESSERT_MSG_KEEP;
 }
 

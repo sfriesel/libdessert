@@ -33,15 +33,15 @@ uint8_t dessert_sysif_hwaddr[ETHER_ADDR_LEN]; /** \todo unused! to be removed ??
 /* nothing here - yet */
 
 /* global data storage // P R I V A T E */
-dessert_sysif_t *_dessert_sysif = NULL;
+dessert_sysif_t* _dessert_sysif = NULL;
 
 /* local data storage*/
-dessert_sysrxcbe_t *_dessert_sysrxcblist = NULL;
+dessert_sysrxcbe_t* _dessert_sysrxcblist = NULL;
 int _dessert_sysrxcblistver = 0;
 
 /* internal functions forward declarations*/
-static void *_dessert_sysif_init_thread(void* arg);
-static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id);
+static void* _dessert_sysif_init_thread(void* arg);
+static int _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
 
 /******************************************************************************
  *
@@ -59,106 +59,114 @@ static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len, desser
  * @return EFAULT  -- if interface not specified and not guessed
  **/
 int dessert_sysif_init(char* device, uint8_t flags) {
-	/* initialize _dessert_sysif */
-	_dessert_sysif = malloc(sizeof(dessert_sysif_t));
-	if (_dessert_sysif == NULL) {
-		return (-errno);
+    /* initialize _dessert_sysif */
+    _dessert_sysif = malloc(sizeof(dessert_sysif_t));
+
+    if(_dessert_sysif == NULL) {
+        return (-errno);
     }
-	memset((void *) _dessert_sysif, 0, sizeof(dessert_sysif_t));
-	_dessert_sysif->flags = flags;
-	strncpy(_dessert_sysif->if_name, device, IF_NAMESIZE);
-	_dessert_sysif->if_name[IF_NAMESIZE - 1] = '\0';
-	pthread_mutex_init(&(_dessert_sysif->cnt_mutex), NULL);
+
+    memset((void*) _dessert_sysif, 0, sizeof(dessert_sysif_t));
+    _dessert_sysif->flags = flags;
+    strncpy(_dessert_sysif->if_name, device, IF_NAMESIZE);
+    _dessert_sysif->if_name[IF_NAMESIZE - 1] = '\0';
+    pthread_mutex_init(&(_dessert_sysif->cnt_mutex), NULL);
 
 #ifdef ANDROID
-	char *buf = "/dev/tun";
+    char* buf = "/dev/tun";
 #else
-	char *buf = "/dev/net/tun";
+    char* buf = "/dev/net/tun";
 #endif
-	/* open device */
-	_dessert_sysif->fd = open(buf, O_RDWR);
-	struct ifreq ifr;
-	memset(&ifr, 0, sizeof(ifr));
-	if (flags & DESSERT_TUN) {
-		ifr.ifr_flags = IFF_TUN | IFF_NO_PI; /* we want the service flag and IFF_NO_PI */
-	} else {
-		ifr.ifr_flags = IFF_TAP | IFF_NO_PI; /* we want the service flag and IFF_NO_PI */
-	}
-	strcpy(ifr.ifr_name, _dessert_sysif->if_name);
-	if (ioctl(_dessert_sysif->fd, TUNSETIFF, (void *) &ifr) < 0) {
-		dessert_err("ioctl(TUNSETIFF) failed: %s", strerror(errno));
-		goto dessert_sysif_init_err;
-		return (-errno);
-	}
-	/**
-	 * Derive TAP MAC address from eth0 MAC address
-	 */
-	if(if_nametoindex("eth0")) {
-		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-		if(_dessert_getHWAddr("eth0", ifr.ifr_hwaddr.sa_data) == DESSERT_OK) {
-			ifr.ifr_hwaddr.sa_data[0] = 0xFE;
-			if(ioctl(_dessert_sysif->fd, SIOCSIFHWADDR, &ifr) < 0) {
-				dessert_warn("ioctl(SIOCSIFHWADDR) failed: %s", strerror(errno));
-			}
-		}
-	}
-	/****************************************************/
-	strcpy(_dessert_sysif->if_name, ifr.ifr_name);
+    /* open device */
+    _dessert_sysif->fd = open(buf, O_RDWR);
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
 
-	/* check interface - abusing dessert_meshif methods */
-	_dessert_sysif->if_index = if_nametoindex(device);
-	if (!_dessert_sysif->if_index) {
-		dessert_err("interface %s - no such interface", _dessert_sysif->if_name);
-		goto dessert_sysif_init_err;
-	}
+    if(flags & DESSERT_TUN) {
+        ifr.ifr_flags = IFF_TUN | IFF_NO_PI; /* we want the service flag and IFF_NO_PI */
+    }
+    else {
+        ifr.ifr_flags = IFF_TAP | IFF_NO_PI; /* we want the service flag and IFF_NO_PI */
+    }
 
-	/* do "ip link set dev %s up" to set the interface up - strange things happen otherwise */
-	char system_call[64];
-	snprintf(system_call, sizeof(system_call), "ip link set dev %s up", _dessert_sysif->if_name);
-	int status = system(system_call);
-	if(status < 0) {
-		dessert_warning("\"ip link set dev %s up\" failed!", _dessert_sysif->if_name);
-	}
+    strcpy(ifr.ifr_name, _dessert_sysif->if_name);
 
-	/* get hardware address in tap mode if possible */
-	if (flags & DESSERT_TAP) {
-		if (_dessert_meshif_gethwaddr((dessert_meshif_t *) _dessert_sysif) != 0) {
-			dessert_err("failed to get hwaddr of interface %s(%d) - hope src of first packet received from is it",
-					_dessert_sysif->if_name, _dessert_sysif->if_index, _dessert_sysif);
-			_dessert_sysif->flags |= _DESSERT_TAP_NOMAC;
-			dessert_sysrxcb_add(_dessert_sysif_init_getmachack, 0);
-		} else {
-			/* check whether we need to set defsrc */
-			if ((flags & DESSERT_MAKE_DEFSRC) || memcmp(dessert_l25_defsrc,
-					ether_null, ETHER_ADDR_LEN) == 0) {
-				memcpy(dessert_l25_defsrc, _dessert_sysif->hwaddr,
-						ETHER_ADDR_LEN);
-				dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
-			}
-		}
-	}
+    if(ioctl(_dessert_sysif->fd, TUNSETIFF, (void*) &ifr) < 0) {
+        dessert_err("ioctl(TUNSETIFF) failed: %s", strerror(errno));
+        goto dessert_sysif_init_err;
+        return (-errno);
+    }
 
-	/* info message */
-	if (flags & DESSERT_TAP) {
-		dessert_info("starting worker thread for tap interface %s(%d) hwaddr " MAC,
-                     _dessert_sysif->if_name, _dessert_sysif->if_index, EXPLODE_ARRAY6(_dessert_sysif->hwaddr));
-	} else {
-		dessert_info("starting worker thread for tap interface %s(%d) fd %d",
-                     _dessert_sysif->if_name, _dessert_sysif->if_index, _dessert_sysif->fd);
-	}
+    /**
+     * Derive TAP MAC address from eth0 MAC address
+     */
+    if(if_nametoindex("eth0")) {
+        ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 
-	/* start worker thread */
-	if (pthread_create(&(_dessert_sysif->worker), NULL,
-			_dessert_sysif_init_thread, (void *) _dessert_sysif)) {
-		dessert_err("creating worker thread failed for interface %s(%d)",
-				_dessert_sysif->if_name, _dessert_sysif->if_index);
-		goto dessert_sysif_init_err;
-	}
-	return DESSERT_OK;
+        if(_dessert_getHWAddr("eth0", ifr.ifr_hwaddr.sa_data) == DESSERT_OK) {
+            ifr.ifr_hwaddr.sa_data[0] = 0xFE;
+
+            if(ioctl(_dessert_sysif->fd, SIOCSIFHWADDR, &ifr) < 0) {
+                dessert_warn("ioctl(SIOCSIFHWADDR) failed: %s", strerror(errno));
+            }
+        }
+    }
+
+    /****************************************************/
+    strcpy(_dessert_sysif->if_name, ifr.ifr_name);
+
+    /* check interface - abusing dessert_meshif methods */
+    _dessert_sysif->if_index = if_nametoindex(device);
+
+    if(!_dessert_sysif->if_index) {
+        dessert_err("interface %s - no such interface", _dessert_sysif->if_name);
+        goto dessert_sysif_init_err;
+    }
+
+    /* do "ip link set dev %s up" to set the interface up - strange things happen otherwise */
+    char system_call[64];
+    snprintf(system_call, sizeof(system_call), "ip link set dev %s up", _dessert_sysif->if_name);
+    int status = system(system_call);
+
+    if(status < 0) {
+        dessert_warning("\"ip link set dev %s up\" failed!", _dessert_sysif->if_name);
+    }
+
+    /* get hardware address in tap mode if possible */
+    if(flags & DESSERT_TAP) {
+        if(_dessert_meshif_gethwaddr((dessert_meshif_t*) _dessert_sysif) != 0) {
+            dessert_err("failed to get hwaddr of interface %s(%d) - hope src of first packet received from is it", _dessert_sysif->if_name, _dessert_sysif->if_index, _dessert_sysif);
+            _dessert_sysif->flags |= _DESSERT_TAP_NOMAC;
+            dessert_sysrxcb_add(_dessert_sysif_init_getmachack, 0);
+        }
+        else {
+            /* check whether we need to set defsrc */
+            if((flags & DESSERT_MAKE_DEFSRC) || memcmp(dessert_l25_defsrc, ether_null, ETHER_ADDR_LEN) == 0) {
+                memcpy(dessert_l25_defsrc, _dessert_sysif->hwaddr, ETHER_ADDR_LEN);
+                dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
+            }
+        }
+    }
+
+    /* info message */
+    if(flags & DESSERT_TAP) {
+        dessert_info("starting worker thread for tap interface %s(%d) hwaddr " MAC, _dessert_sysif->if_name, _dessert_sysif->if_index, EXPLODE_ARRAY6(_dessert_sysif->hwaddr));
+    }
+    else {
+        dessert_info("starting worker thread for tap interface %s(%d) fd %d", _dessert_sysif->if_name, _dessert_sysif->if_index, _dessert_sysif->fd);
+    }
+
+    /* start worker thread */
+    if(pthread_create(&(_dessert_sysif->worker), NULL, _dessert_sysif_init_thread, (void*) _dessert_sysif)) {
+        dessert_err("creating worker thread failed for interface %s(%d)", _dessert_sysif->if_name, _dessert_sysif->if_index);
+        goto dessert_sysif_init_err;
+    }
+
+    return DESSERT_OK;
 
 dessert_sysif_init_err:
-	close(_dessert_sysif->fd);
-	return (-errno);
+    close(_dessert_sysif->fd);
+    return (-errno);
 }
 
 /** adds a callback function to call if a packet should be injected into dessert via a tun/tap interface
@@ -168,54 +176,55 @@ dessert_sysif_init_err:
  * @return -errno       on error
  **/
 int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio) {
-	dessert_sysrxcbe_t *cb, *i;
+    dessert_sysrxcbe_t* cb, *i;
 
-	cb = (struct dessert_sysrxcbe*) malloc(sizeof(struct dessert_sysrxcbe));
-	if (cb == NULL) {
-		dessert_err("failed to allocate memory for registering sys callback: %s", strerror(errno));
-		return (-errno);
-	}
+    cb = (struct dessert_sysrxcbe*) malloc(sizeof(struct dessert_sysrxcbe));
 
-	if (c == NULL) {
-		dessert_err("tried to add a null pointer as dessert_sysrxcb");
-		return (-EINVAL);
-	}
-
-	pthread_rwlock_wrlock(&dessert_cfglock);
-
-	cb->c = c;
-	cb->prio = prio;
-	cb->next = NULL;
-
-	if (_dessert_sysrxcblist == NULL) {
-		_dessert_sysrxcblist = cb;
-		_dessert_sysrxcblistver++;
-
-		pthread_rwlock_unlock(&dessert_cfglock);
-		return DESSERT_OK;
-	}
-
-	if (_dessert_sysrxcblist->prio > cb->prio) {
-		cb->next = _dessert_sysrxcblist;
-		_dessert_sysrxcblist = cb;
-		_dessert_sysrxcblistver++;
-
-		pthread_rwlock_unlock(&dessert_cfglock);
-		return DESSERT_OK;
-	}
-
-	/* find right place for callback */
-	for (i = _dessert_sysrxcblist; i->next != NULL && i->next->prio <= cb->prio; i = i->next) {
-		;
+    if(cb == NULL) {
+        dessert_err("failed to allocate memory for registering sys callback: %s", strerror(errno));
+        return (-errno);
     }
 
-	/* insert it */
-	cb->next = i->next;
-	i->next = cb;
-	_dessert_sysrxcblistver++;
+    if(c == NULL) {
+        dessert_err("tried to add a null pointer as dessert_sysrxcb");
+        return (-EINVAL);
+    }
 
-	pthread_rwlock_unlock(&dessert_cfglock);
-	return DESSERT_OK;
+    pthread_rwlock_wrlock(&dessert_cfglock);
+
+    cb->c = c;
+    cb->prio = prio;
+    cb->next = NULL;
+
+    if(_dessert_sysrxcblist == NULL) {
+        _dessert_sysrxcblist = cb;
+        _dessert_sysrxcblistver++;
+
+        pthread_rwlock_unlock(&dessert_cfglock);
+        return DESSERT_OK;
+    }
+
+    if(_dessert_sysrxcblist->prio > cb->prio) {
+        cb->next = _dessert_sysrxcblist;
+        _dessert_sysrxcblist = cb;
+        _dessert_sysrxcblistver++;
+
+        pthread_rwlock_unlock(&dessert_cfglock);
+        return DESSERT_OK;
+    }
+
+    /* find right place for callback */
+    for(i = _dessert_sysrxcblist; i->next != NULL && i->next->prio <= cb->prio; i = i->next) {
+        ;
+    }
+
+    /* insert it */
+    cb->next = i->next;
+    i->next = cb;
+    _dessert_sysrxcblistver++;
+
+    pthread_rwlock_unlock(&dessert_cfglock);
+    return DESSERT_OK;
 }
 
 /** removes all occurrences of the callback function from the list of callbacks.
@@ -223,38 +232,41 @@ int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio) {
  * @return DESSERT_OK   on success, DESSERT_ERR  on error
  **/
 int dessert_sysrxcb_del(dessert_sysrxcb_t* c) {
-	int count = 0;
-	dessert_sysrxcbe_t *i, *last;
+    int count = 0;
+    dessert_sysrxcbe_t* i, *last;
 
-	pthread_rwlock_wrlock(&dessert_cfglock);
+    pthread_rwlock_wrlock(&dessert_cfglock);
 
-	if (_dessert_sysrxcblist == NULL) {
-		goto dessert_sysrxcb_del_out;
-	}
+    if(_dessert_sysrxcblist == NULL) {
+        goto dessert_sysrxcb_del_out;
+    }
 
-	while (_dessert_sysrxcblist->c == c) {
-		count++;
-		i = _dessert_sysrxcblist;
-		_dessert_sysrxcblist = _dessert_sysrxcblist->next;
-		free(i);
-		if (_dessert_sysrxcblist == NULL) {
-			goto dessert_sysrxcb_del_out;
-		}
-	}
+    while(_dessert_sysrxcblist->c == c) {
+        count++;
+        i = _dessert_sysrxcblist;
+        _dessert_sysrxcblist = _dessert_sysrxcblist->next;
+        free(i);
 
-	for (i = _dessert_sysrxcblist; i->next != NULL; i = i->next) {
-		if (i->c == c) {
-			count++;
-			last->next = i->next;
-			free(i);
-			i = last;
-		}
-		last = i;
-	}
+        if(_dessert_sysrxcblist == NULL) {
+            goto dessert_sysrxcb_del_out;
+        }
+    }
 
-	dessert_sysrxcb_del_out: _dessert_sysrxcblistver++;
-	pthread_rwlock_unlock(&dessert_cfglock);
-	return ((count > 0) ? DESSERT_OK : DESSERT_ERR);
+    for(i = _dessert_sysrxcblist; i->next != NULL; i = i->next) {
+        if(i->c == c) {
+            count++;
+            last->next = i->next;
+            free(i);
+            i = last;
+        }
+
+        last = i;
+    }
+
+dessert_sysrxcb_del_out:
+    _dessert_sysrxcblistver++;
+    pthread_rwlock_unlock(&dessert_cfglock);
+    return ((count > 0) ? DESSERT_OK : DESSERT_ERR);
 
 }
 
@@ -263,16 +275,18 @@ int dessert_sysrxcb_del(dessert_sysrxcb_t* c) {
  * @return DESSERT_OK   on success
  * @return -EIO         if message failed to be sent
  **/
-int dessert_syssend_msg(dessert_msg_t *msg) {
-    void *pkt;
+int dessert_syssend_msg(dessert_msg_t* msg) {
+    void* pkt;
     int len = dessert_msg_ethdecap(msg, (struct ether_header**) &pkt);
+
     // lets see if the message contains an Ethernet frame
-    if (len == -1) {
+    if(len == -1) {
         // might only be an ip datagram due to TUN usage
         len = dessert_msg_ipdecap(msg, (uint8_t**) &pkt);
+
         // if neither a Ethernet header nor ip datagram are available, something must be wrong
         // also make sure to forward ip datagrams only to a TUN interface
-        if (len == -1 || !_dessert_sysif|| !(_dessert_sysif->flags & DESSERT_TUN)) {
+        if(len == -1 || !_dessert_sysif || !(_dessert_sysif->flags & DESSERT_TUN)) {
             return (-EIO);
         }
     }
@@ -291,20 +305,22 @@ int dessert_syssend_msg(dessert_msg_t *msg) {
  **/
 int dessert_syssend(const void* pkt, size_t len) {
 
-	if (_dessert_sysif == NULL) {
-		return (-EIO);
+    if(_dessert_sysif == NULL) {
+        return (-EIO);
     }
 
-	size_t res = write(_dessert_sysif->fd, (const void *) pkt, len);
-	if (res == len) {
-		pthread_mutex_lock(&(_dessert_sysif->cnt_mutex));
-		_dessert_sysif->opkts++;
-		_dessert_sysif->obytes += res;
-		pthread_mutex_unlock(&(_dessert_sysif->cnt_mutex));
-		return (DESSERT_OK);
-	} else {
-		return (-EIO);
-	}
+    size_t res = write(_dessert_sysif->fd, (const void*) pkt, len);
+
+    if(res == len) {
+        pthread_mutex_lock(&(_dessert_sysif->cnt_mutex));
+        _dessert_sysif->opkts++;
+        _dessert_sysif->obytes += res;
+        pthread_mutex_unlock(&(_dessert_sysif->cnt_mutex));
+        return (DESSERT_OK);
+    }
+    else {
+        return (-EIO);
+    }
 }
 
 /******************************************************************************
@@ -316,22 +332,23 @@ int dessert_syssend(const void* pkt, size_t len) {
  ******************************************************************************/
 
 int _dessert_getHWAddr(char* device, char* hwaddr) {
-	/* we need some socket to do that */
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    /* we need some socket to do that */
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-	struct ifreq ifr;
-	/* set interface options and get hardware address */
-	strncpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
+    struct ifreq ifr;
+    /* set interface options and get hardware address */
+    strncpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
 
-	if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0) {
-		memcpy(hwaddr, &ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
-		close(sockfd);
-		return (DESSERT_OK);
-	} else {
-		dessert_err("acquiring hwaddr failed");
-		close(sockfd);
-		return (DESSERT_ERR);
-	}
+    if(ioctl(sockfd, SIOCGIFHWADDR, &ifr) >= 0) {
+        memcpy(hwaddr, &ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+        close(sockfd);
+        return (DESSERT_OK);
+    }
+    else {
+        dessert_err("could not read hwaddr");
+        close(sockfd);
+        return (DESSERT_ERR);
+    }
 }
 
 /******************************************************************************
@@ -343,116 +360,133 @@ int _dessert_getHWAddr(char* device, char* hwaddr) {
  ******************************************************************************/
 
 /** internal callback which gets registered if we can't find out mac address of tap interface */
-static int _dessert_sysif_init_getmachack(dessert_msg_t *msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id) {
-	struct ether_header *eth;
-	dessert_msg_ethdecap(msg, &eth);
+static int _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
+    struct ether_header* eth;
+    dessert_msg_ethdecap(msg, &eth);
 
-	/* hack to get the hardware address */
-	if (sysif->flags & _DESSERT_TAP_NOMAC) {
-		/* copy from first packet received */
-		memcpy(sysif->hwaddr, eth->ether_shost, ETHER_ADDR_LEN);
-		dessert_info("guessed hwaddr for %s: " MAC, sysif->if_name, EXPLODE_ARRAY6(sysif->hwaddr));
-		/* check whether we need to set defsrc */
-		if ((sysif->flags & DESSERT_MAKE_DEFSRC)
-            || memcmp(dessert_l25_defsrc, ether_null, ETHER_ADDR_LEN) == 0) {
-			memcpy(dessert_l25_defsrc, sysif->hwaddr, ETHER_ADDR_LEN);
-			dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
-		}
-		sysif->flags &= ~_DESSERT_TAP_NOMAC;
-	}
+    /* hack to get the hardware address */
+    if(sysif->flags & _DESSERT_TAP_NOMAC) {
+        /* copy from first packet received */
+        memcpy(sysif->hwaddr, eth->ether_shost, ETHER_ADDR_LEN);
+        dessert_info("guessed hwaddr for %s: " MAC, sysif->if_name, EXPLODE_ARRAY6(sysif->hwaddr));
 
-	/* unregister me */
-	dessert_sysrxcb_del(_dessert_sysif_init_getmachack);
+        /* check whether we need to set defsrc */
+        if((sysif->flags & DESSERT_MAKE_DEFSRC)
+           || memcmp(dessert_l25_defsrc, ether_null, ETHER_ADDR_LEN) == 0) {
+            memcpy(dessert_l25_defsrc, sysif->hwaddr, ETHER_ADDR_LEN);
+            dessert_info("set dessert_l25_defsrc to hwaddr " MAC, EXPLODE_ARRAY6(dessert_l25_defsrc));
+        }
 
-	return DESSERT_MSG_KEEP;
+        sysif->flags &= ~_DESSERT_TAP_NOMAC;
+    }
+
+    /* unregister me */
+    dessert_sysrxcb_del(_dessert_sysif_init_getmachack);
+
+    return DESSERT_MSG_KEEP;
 }
 
 /** internal packet processing thread body */
-static void *_dessert_sysif_init_thread(void* arg) {
-	dessert_sysif_t *sysif = (dessert_sysif_t *) arg;
-	dessert_sysrxcbe_t *cb;
-	dessert_sysrxcb_t **cbl = NULL;
+static void* _dessert_sysif_init_thread(void* arg) {
+    dessert_sysif_t* sysif = (dessert_sysif_t*) arg;
+    dessert_sysrxcbe_t* cb;
+    dessert_sysrxcb_t** cbl = NULL;
 
-	int cblver = -1;
-	int cbllen = 0;
-	for(;;) {
-		char buf[ETHER_MAX_LEN];
-		memset(buf, 0, ETHER_MAX_LEN);
-		int len;
-		if (sysif->flags & DESSERT_TUN) { // read IP datagram from TUN interface
-			len = read((sysif->fd), buf + ETHER_HDR_LEN, ETHER_MAX_LEN - ETHER_HDR_LEN);
-		} else { // read Ethernet frame from TAP interface
-			len = read((sysif->fd), buf, sizeof(buf));
-		}
-		/* Right now the packet has been written to the buffer. The packet is aligned so that
-		 * the first layer 3 byte is always at the same position independent whether a TUN or
-		 * a TAP interface has been used:
-		 * buf: [Ethernet Header Space][Layer 3 Header]
-		 */
-		if (len == -1) {
-			dessert_debug("got %s while reading on %s (fd %d) - is the sys (tun/tap) interface up?", strerror(errno), sysif->if_name, sysif->fd);
-			sleep(1);
-			continue;
-		}
+    int cblver = -1;
+    int cbllen = 0;
 
-		/* copy callbacks to internal list to release dessert_cfglock before invoking callbacks*/
-		pthread_rwlock_rdlock(&dessert_cfglock);
-		if (cblver < _dessert_sysrxcblistver) {
-			/* callback list changed - rebuild it */
-			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next) {
-				cbllen++;
-            }
-			cbl = realloc(cbl, cbllen * sizeof(dessert_sysrxcb_t *));
-			if (cbl == NULL && cbllen > 0) {
-				dessert_err("failed to allocate memory for internal callback list");
-				pthread_rwlock_unlock(&dessert_cfglock);
-				return (NULL);
-			}
+    for(;;) {
+        char buf[ETHER_MAX_LEN];
+        memset(buf, 0, ETHER_MAX_LEN);
+        int len;
 
-			int iter = 0;
-			for (cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next) {
-				cbl[iter++] = cb->c;
-            }
-
-			cblver = _dessert_sysrxcblistver;
-		}
-		pthread_rwlock_unlock(&dessert_cfglock);
-
-		/* generate frame id */
-		dessert_frameid_t id = _dessert_newframeid();
-
-		/* count packet */
-		pthread_mutex_lock(&(sysif->cnt_mutex));
-		sysif->ipkts++;
-		sysif->ibytes += len;
-		pthread_mutex_unlock(&(sysif->cnt_mutex));
-
-		dessert_msg_proc_t proc;
-		memset(&proc, 0, DESSERT_MSGPROCLEN);
-		dessert_msg_t *msg = NULL;
-		if (sysif->flags & DESSERT_TUN) {
-			if (dessert_msg_ipencap((uint8_t*) (buf + ETHER_HDR_LEN), len, &msg) < 0) {
-				dessert_err("failed to encapsulate ip datagram on host-to-network-pipeline: %s", errno);
-			}
-		} else {
-			if (dessert_msg_ethencap((struct ether_header *) buf, len, &msg) < 0) {
-				dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
-			}
-		}
-		int res = 0;
-		int iter = 0;
-		while (res > DESSERT_MSG_DROP && iter < cbllen) {
-			res = cbl[iter++](msg, len, &proc, sysif, id);
-		}
-		if (msg != NULL) {
-			dessert_msg_destroy(msg);
+        if(sysif->flags & DESSERT_TUN) {  // read IP datagram from TUN interface
+            len = read((sysif->fd), buf + ETHER_HDR_LEN, ETHER_MAX_LEN - ETHER_HDR_LEN);
         }
-	}
-	dessert_info("stopped reading on %s (fd %d): %s", sysif->if_name, sysif->fd, strerror(errno));
+        else {   // read Ethernet frame from TAP interface
+            len = read((sysif->fd), buf, sizeof(buf));
+        }
 
-	free(cbl);
-	close(sysif->fd);
-	return (NULL);
+        /* Right now the packet has been written to the buffer. The packet is aligned so that
+         * the first layer 3 byte is always at the same position independent whether a TUN or
+         * a TAP interface has been used:
+         * buf: [Ethernet Header Space][Layer 3 Header]
+         */
+        if(len == -1) {
+            dessert_debug("got %s while reading on %s (fd %d) - is the sys (tun/tap) interface up?", strerror(errno), sysif->if_name, sysif->fd);
+            sleep(1);
+            continue;
+        }
+
+        /* copy callbacks to internal list to release dessert_cfglock before invoking callbacks*/
+        pthread_rwlock_rdlock(&dessert_cfglock);
+
+        if(cblver < _dessert_sysrxcblistver) {
+            /* callback list changed - rebuild it */
+            for(cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next) {
+                cbllen++;
+            }
+
+            cbl = realloc(cbl, cbllen * sizeof(dessert_sysrxcb_t*));
+
+            if(cbl == NULL && cbllen > 0) {
+                dessert_err("failed to allocate memory for internal callback list");
+                pthread_rwlock_unlock(&dessert_cfglock);
+                return (NULL);
+            }
+
+            int iter = 0;
+
+            for(cb = _dessert_sysrxcblist; cb != NULL; cb = cb->next) {
+                cbl[iter++] = cb->c;
+            }
+
+            cblver = _dessert_sysrxcblistver;
+        }
+
+        pthread_rwlock_unlock(&dessert_cfglock);
+
+        /* generate frame id */
+        dessert_frameid_t id = _dessert_newframeid();
+
+        /* count packet */
+        pthread_mutex_lock(&(sysif->cnt_mutex));
+        sysif->ipkts++;
+        sysif->ibytes += len;
+        pthread_mutex_unlock(&(sysif->cnt_mutex));
+
+        dessert_msg_proc_t proc;
+        memset(&proc, 0, DESSERT_MSGPROCLEN);
+        dessert_msg_t* msg = NULL;
+
+        if(sysif->flags & DESSERT_TUN) {
+            if(dessert_msg_ipencap((uint8_t*)(buf + ETHER_HDR_LEN), len, &msg) < 0) {
+                dessert_err("failed to encapsulate ip datagram on host-to-network-pipeline: %s", errno);
+            }
+        }
+        else {
+            if(dessert_msg_ethencap((struct ether_header*) buf, len, &msg) < 0) {
+                dessert_err("failed to encapsulate ethernet frame on host-to-network-pipeline: %s", errno);
+            }
+        }
+
+        int res = 0;
+        int iter = 0;
+
+        while(res > DESSERT_MSG_DROP && iter < cbllen) {
+            res = cbl[iter++](msg, len, &proc, sysif, id);
+        }
+
+        if(msg != NULL) {
+            dessert_msg_destroy(msg);
+        }
+    }
+
+    dessert_info("stopped reading on %s (fd %d): %s", sysif->if_name, sysif->fd, strerror(errno));
+
+    free(cbl);
+    close(sysif->fd);
+    return (NULL);
 }
 
 /** Add TAP interface
@@ -469,30 +503,31 @@ static void *_dessert_sysif_init_thread(void* arg) {
  * @retval CLI_OK if TAP interface added
  * @retval CLI_ERROR on error
  */
-int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], int argc) {
+int dessert_cli_cmd_addsysif(struct cli_def* cli, char* command, char* argv[], int argc) {
     char buf[255];
     int i;
 
-    if (argc < 3 || argc > 4) {
-        cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask] [mtu]\n",
-                command);
+    if(argc < 3 || argc > 4) {
+        cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask] [mtu]\n", command);
         return CLI_ERROR;
     }
 
     uint16_t mtu = DESSERT_DEFAULT_MTU;
+
     if(argc == 4) {
         mtu = (uint16_t) atoi(argv[3]);
     }
 
     dessert_info("initializing sys interface");
     dessert_sysif_init(argv[0], DESSERT_TAP | DESSERT_MAKE_DEFSRC);
-    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1],
-            argv[2], mtu);
+    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1], argv[2], mtu);
     i = system(buf);
+
     if(i != 0) {
-        dessert_crit("running ifconfig on sys interface %s returned %i",argv[0], i);
+        dessert_crit("running ifconfig on sys interface %s returned %i", argv[0], i);
         return CLI_ERROR;
     }
+
     return CLI_OK;
 }
 
@@ -510,19 +545,18 @@ int dessert_cli_cmd_addsysif(struct cli_def *cli, char *command, char *argv[], i
  * @retval CLI_OK if TUN interface added
  * @retval CLI_ERROR on error
  */
-int dessert_cli_cmd_addsysif_tun(struct cli_def *cli, char *command, char *argv[], int argc) {
+int dessert_cli_cmd_addsysif_tun(struct cli_def* cli, char* command, char* argv[], int argc) {
     char buf[255];
     int i;
 
-    if (argc != 3) {
-        cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask]\n",
-                command);
+    if(argc != 3) {
+        cli_print(cli, "usage %s [sys-interface] [ip-address] [netmask]\n", command);
         return CLI_ERROR;
     }
+
     dessert_info("initializing sys interface");
     dessert_sysif_init(argv[0], DESSERT_TUN | DESSERT_MAKE_DEFSRC);
-    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1],
-            argv[2], DESSERT_DEFAULT_MTU);
+    sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1], argv[2], DESSERT_DEFAULT_MTU);
     i = system(buf);
     dessert_info("ifconfig on sys interface returned %i", i);
     return (i == 0 ? CLI_OK : CLI_ERROR);
@@ -545,22 +579,24 @@ int dessert_cli_cmd_addsysif_tun(struct cli_def *cli, char *command, char *argv[
  * @retval DESSERT_MSG_DROP if the message contains an IPv6 datagram
  * @retval DESSERT_MSG_KEEP if message contains an IPv4 datagram
  */
-int dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_sysif_t *sysif, dessert_frameid_t id) {
+int dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
     void* payload;
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 
-    if (eth == NULL) { // has no Ethernet extension
-        void *payload;
+    if(eth == NULL) {  // has no Ethernet extension
+        void* payload;
         dessert_msg_getpayload(msg, &payload);
         struct ip6_hdr* ip = (struct ip6_hdr*) payload;
+
         if(ip && ip->ip6_ctlun.ip6_un1.ip6_un1_flow & 0x60000000) {
             dessert_debug("dropped raw IPv6 packet (false positives are possible)");
             return DESSERT_MSG_DROP;
         }
+
         return DESSERT_MSG_KEEP;
     }
     else { // has Ethernet extension
-        if (eth->ether_type == htons(ETHERTYPE_IPV6) ) {
+        if(eth->ether_type == htons(ETHERTYPE_IPV6)) {
             dessert_debug("dropped IPv6 packet in Ethernet frame");
             return DESSERT_MSG_DROP;
         }

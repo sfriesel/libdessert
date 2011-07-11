@@ -44,11 +44,13 @@ sig_handler_t* _sig_handlers_map = NULL;
 
 static uint8_t _signal_supported(int signal) {
     size_t i;
-    for(i = 0; i < sizeof(dessert_supported_signals)/sizeof(int); i++) {
+
+    for(i = 0; i < sizeof(dessert_supported_signals) / sizeof(int); i++) {
         if(dessert_supported_signals[i] == signal) {
             return 1;
         }
     }
+
     return 0;
 }
 
@@ -76,33 +78,38 @@ int dessert_signalcb_add(int signal, dessert_signalcb_t* callback) {
 
     /* Find the entry in the hash map */
     HASH_FIND_INT(_sig_handlers_map, &signal, sig_handlers);
+
     if(sig_handlers == NULL) {
         sig_handlers = malloc(sizeof(sig_handler_t));
         sig_handlers->signal = signal;
         sig_handlers->list = NULL;
+
         if(sig_handlers == NULL) {
             dessert_err("failed to allocate new sig_handler entry");
             goto add_failed;
         }
+
         HASH_ADD_INT(_sig_handlers_map, signal, sig_handlers);
     }
 
     /* Insert new handler in list */
     sig_handlercb_t* new_cb = malloc(sizeof(sig_handlercb_t));
+
     if(new_cb == NULL) {
         dessert_err("failed to allocate new sig_handlercb_t entry");
         goto add_failed;
     }
+
     new_cb->callback = callback;
     LL_APPEND(sig_handlers->list, new_cb);
     pthread_mutex_unlock(&_dessert_signal_mutex);
     dessert_notice("registered signal handler for signal %d", signal);
     return 0;
 
-    add_failed:
-        pthread_mutex_unlock(&_dessert_signal_mutex);
-        dessert_err("could not add signal handler callback");
-        return -1;
+add_failed:
+    pthread_mutex_unlock(&_dessert_signal_mutex);
+    dessert_err("could not add signal handler callback");
+    return -1;
 }
 
 /** Remove signal callback
@@ -145,10 +152,10 @@ int dessert_signalcb_del(int signal, dessert_signalcb_t* callback) {
     pthread_mutex_unlock(&_dessert_signal_mutex);
     return 0;
 
-    del_failed:
-        pthread_mutex_unlock(&_dessert_signal_mutex);
-        dessert_err("could not remove signal callback");
-        return -1;
+del_failed:
+    pthread_mutex_unlock(&_dessert_signal_mutex);
+    dessert_err("could not remove signal callback");
+    return -1;
 }
 
 void* dessert_signal_thread(void* param) {
@@ -156,18 +163,22 @@ void* dessert_signal_thread(void* param) {
     sigemptyset(&signal_mask_catch);
 
     size_t i;
-    for(i = 0; i < sizeof(dessert_supported_signals)/sizeof(int); i++) {
+
+    for(i = 0; i < sizeof(dessert_supported_signals) / sizeof(int); i++) {
         sigaddset(&signal_mask_catch, dessert_supported_signals[i]);
     }
 
     dessert_info("signal thread started");
     int sig_caught;
+
     while(1) {
         int rc = sigwait(&signal_mask_catch, &sig_caught);
-        if (rc != 0) {
+
+        if(rc != 0) {
             dessert_crit("sigwait returned = %d", rc);
             continue;
         }
+
         switch(sig_caught) {
             case SIGTERM:
                 dessert_debug("caught SIGTERM, preparing to exit main thread");
@@ -191,6 +202,7 @@ void* dessert_signal_thread(void* param) {
 
         sig_handler_t* sig_handlers = NULL;
         HASH_FIND_INT(_sig_handlers_map, &sig_caught, sig_handlers);
+
         if(sig_handlers) {
             sig_handlercb_t* cur;
             LL_FOREACH(sig_handlers->list, cur) {
@@ -209,6 +221,7 @@ void* dessert_signal_thread(void* param) {
                 break;
         }
     }
+
     dessert_emerg("signal thread exited");
     return NULL;
 }
@@ -220,9 +233,11 @@ int _dessert_signals_init() {
     sigaddset(&signal_mask_block, SIGHUP);
     sigaddset(&signal_mask_block, SIGINT);
     int rc = pthread_sigmask(SIG_BLOCK, &signal_mask_block, NULL);
-    if (rc != 0) {
+
+    if(rc != 0) {
         dessert_err("could not set sigmask to block signals");
     }
+
     pthread_create(&_dessert_signal_thread, NULL, dessert_signal_thread, NULL);
     return 0;
 }

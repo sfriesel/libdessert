@@ -29,7 +29,7 @@
 /* global data storage // P U B L I C */
 
 /* global data storage // P R I V A T E */
-dessert_periodic_t *_tasklist = NULL;
+dessert_periodic_t* _tasklist = NULL;
 pthread_mutex_t _dessert_periodic_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t _dessert_periodic_changed = PTHREAD_COND_INITIALIZER;
 pthread_t _dessert_periodic_worker;
@@ -38,8 +38,8 @@ int _dessert_periodic_worker_running = 0;
 /* local data storage*/
 
 /* local functions forward declarations*/
-static int _dessert_periodic_add_periodic_t(dessert_periodic_t *task);
-static void *_dessert_periodic_thread(void* arg);
+static int _dessert_periodic_add_periodic_t(dessert_periodic_t* task);
+static void* _dessert_periodic_thread(void* arg);
 
 /******************************************************************************
  *
@@ -84,24 +84,26 @@ static void *_dessert_periodic_thread(void* arg);
  *
  *
  */
-dessert_periodic_t *dessert_periodic_add(dessert_periodiccallback_t* c, void *data, const struct timeval *scheduled, const struct timeval *interval) {
+dessert_periodic_t* dessert_periodic_add(dessert_periodiccallback_t* c, void* data, const struct timeval* scheduled, const struct timeval* interval) {
     struct timeval now;
-    dessert_periodic_t *task;
+    dessert_periodic_t* task;
 
-    if (scheduled == NULL) {
+    if(scheduled == NULL) {
         gettimeofday(&now, NULL);
         scheduled = &now;
     }
+
     assert(scheduled != NULL);
 
     /* sanity checks */
-    if (c == NULL) {
+    if(c == NULL) {
         return (NULL);
     }
 
     /* get task memory */
     task = malloc(sizeof(dessert_periodic_t));
-    if (task == NULL) {
+
+    if(task == NULL) {
         return NULL;
     }
 
@@ -109,12 +111,15 @@ dessert_periodic_t *dessert_periodic_add(dessert_periodiccallback_t* c, void *da
     task->c = c;
     task->data = data;
     memcpy(&(task->scheduled), scheduled, sizeof(struct timeval));
-    if (interval == NULL) {
+
+    if(interval == NULL) {
         task->interval.tv_sec = 0;
         task->interval.tv_usec = 0;
-    } else {
+    }
+    else {
         memcpy(&(task->interval), interval, sizeof(struct timeval));
     }
+
     task->next = NULL;
 
     pthread_mutex_lock(&_dessert_periodic_mutex);
@@ -134,7 +139,7 @@ dessert_periodic_t *dessert_periodic_add(dessert_periodiccallback_t* c, void *da
  *
  * %DESCRIPTION: \n
  */
-dessert_periodic_t *dessert_periodic_add_delayed(dessert_periodiccallback_t* c, void *data, int delay) {
+dessert_periodic_t* dessert_periodic_add_delayed(dessert_periodiccallback_t* c, void* data, int delay) {
     struct timeval at;
     gettimeofday(&at, NULL);
     at.tv_sec += delay;
@@ -149,25 +154,27 @@ dessert_periodic_t *dessert_periodic_add_delayed(dessert_periodiccallback_t* c, 
  *
  * %DESCRIPTION: \n
  */
-int dessert_periodic_del(dessert_periodic_t *p) {
-    dessert_periodic_t *i;
+int dessert_periodic_del(dessert_periodic_t* p) {
+    dessert_periodic_t* i;
     int x = -1;
 
     assert(p != NULL);
 
     pthread_mutex_lock(&_dessert_periodic_mutex);
 
-    if (p == _tasklist) {
+    if(p == _tasklist) {
         _tasklist = _tasklist->next;
         x++;
     }
 
     i = _tasklist;
-    while (i != NULL) {
-        if (i->next == p) {
+
+    while(i != NULL) {
+        if(i->next == p) {
             i->next = p->next;
             x++;
         }
+
         i = i->next;
     }
 
@@ -189,10 +196,10 @@ int dessert_periodic_del(dessert_periodic_t *p) {
 
 /** internal function to start periodic worker */
 void _dessert_periodic_init() {
-    if (_dessert_periodic_worker_running == 0) {
+    if(_dessert_periodic_worker_running == 0) {
         _dessert_periodic_worker_running = 1;
         pthread_create(&_dessert_periodic_worker, NULL,
-                _dessert_periodic_thread, NULL);
+                       _dessert_periodic_thread, NULL);
     }
 }
 
@@ -205,21 +212,22 @@ void _dessert_periodic_init() {
  ******************************************************************************/
 
 /* internal task list modifier - only call while holding _dessert_periodic_mutex */
-static int _dessert_periodic_add_periodic_t(dessert_periodic_t *task) {
-    dessert_periodic_t *i;
+static int _dessert_periodic_add_periodic_t(dessert_periodic_t* task) {
+    dessert_periodic_t* i;
 
     /* first task? */
-    if (_tasklist == task) {
+    if(_tasklist == task) {
         dessert_err("infinite loop in periodic tasklist requested - aborting!");
         return (-1);
-    } else if (_tasklist == NULL) {
+    }
+    else if(_tasklist == NULL) {
         _tasklist = task;
         pthread_cond_broadcast(&_dessert_periodic_changed);
     }
     /* is next task.... */
-    else if (task->scheduled.tv_sec < _tasklist->scheduled.tv_sec
+    else if(task->scheduled.tv_sec < _tasklist->scheduled.tv_sec
             || (task->scheduled.tv_sec == _tasklist->scheduled.tv_sec
-                    && task->scheduled.tv_usec < _tasklist->scheduled.tv_usec)) {
+                && task->scheduled.tv_usec < _tasklist->scheduled.tv_usec)) {
         task->next = _tasklist;
         _tasklist = task;
         pthread_cond_broadcast(&_dessert_periodic_changed);
@@ -227,16 +235,19 @@ static int _dessert_periodic_add_periodic_t(dessert_periodic_t *task) {
     /* search right place */
     else {
         i = _tasklist;
-        while (i->next != NULL && (i->next->scheduled.tv_sec
-                < task->scheduled.tv_sec || (i->next->scheduled.tv_sec
-                == task->scheduled.tv_sec && i->next->scheduled.tv_usec
-                <= task->scheduled.tv_usec))) {
+
+        while(i->next != NULL && (i->next->scheduled.tv_sec
+                                  < task->scheduled.tv_sec || (i->next->scheduled.tv_sec
+                                          == task->scheduled.tv_sec && i->next->scheduled.tv_usec
+                                          <= task->scheduled.tv_usec))) {
             i = i->next;
-            if (i->next == task) {
+
+            if(i->next == task) {
                 dessert_err("infinite loop in periodic tasklist requested - aborting!");
                 return (-1);
             }
         }
+
         /* last or right place */
         task->next = i->next;
         i->next = task;
@@ -248,32 +259,36 @@ static int _dessert_periodic_add_periodic_t(dessert_periodic_t *task) {
 }
 
 /* internal worker for the task list */
-static void *_dessert_periodic_thread(void* arg) {
-    dessert_periodic_t *next_task;
+static void* _dessert_periodic_thread(void* arg) {
+    dessert_periodic_t* next_task;
     dessert_periodic_t task;
     struct timeval now;
     struct timespec ts;
 
     pthread_mutex_lock(&_dessert_periodic_mutex);
 
-    while (1) {
+    while(1) {
         gettimeofday(&now, NULL);
 
-        if (_tasklist == NULL) {
-            if (pthread_cond_wait(&_dessert_periodic_changed, &_dessert_periodic_mutex) == EINVAL) {
+        if(_tasklist == NULL) {
+            if(pthread_cond_wait(&_dessert_periodic_changed, &_dessert_periodic_mutex) == EINVAL) {
                 dessert_err("sleeping failed in periodic scheduler - scheduler died");
                 break;
             }
+
             continue;
-        } else if (now.tv_sec < _tasklist->scheduled.tv_sec
-            || (now.tv_sec == _tasklist->scheduled.tv_sec
-            && now.tv_usec < _tasklist->scheduled.tv_usec)) {
+        }
+        else if(now.tv_sec < _tasklist->scheduled.tv_sec
+                || (now.tv_sec == _tasklist->scheduled.tv_sec
+                    && now.tv_usec < _tasklist->scheduled.tv_usec)) {
             ts.tv_sec = _tasklist->scheduled.tv_sec;
             ts.tv_nsec = _tasklist->scheduled.tv_usec * 1000;
-            if (pthread_cond_timedwait(&_dessert_periodic_changed, &_dessert_periodic_mutex, &ts) == EINVAL) {
+
+            if(pthread_cond_timedwait(&_dessert_periodic_changed, &_dessert_periodic_mutex, &ts) == EINVAL) {
                 dessert_err("sleeping failed in periodic scheduler - scheduler died");
                 break;
             }
+
             continue;
         }
 
@@ -285,13 +300,15 @@ static void *_dessert_periodic_thread(void* arg) {
         memcpy(&task, next_task, sizeof(dessert_periodic_t));
 
         /* periodic task - re-add */
-        if (next_task->interval.tv_sec != 0 || next_task->interval.tv_usec != 0) {
+        if(next_task->interval.tv_sec != 0 || next_task->interval.tv_usec != 0) {
             next_task->scheduled.tv_sec += next_task->interval.tv_sec;
             next_task->scheduled.tv_usec += next_task->interval.tv_usec;
-            if (next_task->scheduled.tv_usec >= 1000000) {
+
+            if(next_task->scheduled.tv_usec >= 1000000) {
                 next_task->scheduled.tv_sec += 1;
                 next_task->scheduled.tv_usec -= 1000000;
             }
+
             _dessert_periodic_add_periodic_t(next_task);
         }
         /* otherwise free memory */
@@ -301,10 +318,12 @@ static void *_dessert_periodic_thread(void* arg) {
 
         /* run the callback */
         pthread_mutex_unlock(&_dessert_periodic_mutex);
+
         /* call the callback - remove it from list if exits with nonzero code */
-        if (task.c(task.data, &(task.scheduled), &(task.interval))) {
+        if(task.c(task.data, &(task.scheduled), &(task.interval))) {
             dessert_periodic_del(next_task);
         }
+
         pthread_mutex_lock(&_dessert_periodic_mutex);
     }
 

@@ -76,15 +76,15 @@ extern int         _dessert_status;
 
 dessert_frameid_t _dessert_newframeid(void);
 
-int _dessert_cli_cmd_shutdown(struct cli_def *cli, char *command, char *argv[], int argc);
+int _dessert_cli_cmd_shutdown(struct cli_def* cli, char* command, char* argv[], int argc);
 
 //this should be in utlist.h in the future
 #ifndef DL_LENGTH
-#define DL_LENGTH(head,len,tmp)                                                                \
-do {                                                                                           \
-  len=0;                                                                                       \
-  DL_FOREACH(head,tmp)                                                                         \
-    len++;                                                                                     \
+#define DL_LENGTH(head,len,tmp) \
+do { \
+  len=0; \
+  DL_FOREACH(head,tmp) \
+    len++; \
 } while (0)
 #endif
 
@@ -120,19 +120,19 @@ int _dessert_signals_init(void);
 #define DESSERT_LOGLINE_MAX 4096
 
 /** logfile file pointer to use with DESSERT_OPT_LOGFILE */
-extern FILE *dessert_logfd;
+extern FILE* dessert_logfd;
 
-int _dessert_cli_cmd_set_loglevel(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_cmd_show_loglevel(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_cmd_logging(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_logging_file(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_no_logging_file(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_no_logging_ringbuffer(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_log_interval(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_cmd_show_rules(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_cmd_rule_add(struct cli_def *cli, char *command, char *argv[], int argc);
-int _dessert_cli_cmd_rule_rm(struct cli_def *cli, char *command, char *argv[], int argc);
+int _dessert_cli_cmd_set_loglevel(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_cmd_show_loglevel(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_cmd_logging(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_logging_file(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_no_logging_file(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_logging_ringbuffer(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_no_logging_ringbuffer(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_log_interval(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_cmd_show_rules(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], int argc);
 
 /******************************************************************************
  *
@@ -145,15 +145,15 @@ int _dessert_cli_cmd_rule_rm(struct cli_def *cli, char *command, char *argv[], i
 /** callback list entry for dessert mesh interface callbacks */
 typedef struct dessert_meshrxcbe {
     /** pointer to callback to call */
-    dessert_meshrxcb_t *c;
+    dessert_meshrxcb_t* c;
     /** priority - lowest first */
     int prio;
     /** next entry in list */
-    struct dessert_meshrxcbe *next;
+    struct dessert_meshrxcbe* next;
 } dessert_meshrxcbe_t;
 
-int _dessert_meshif_gethwaddr(dessert_meshif_t *meshif);
-int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t *proc_in, const dessert_meshif_t *meshif, dessert_frameid_t id);
+int _dessert_meshif_gethwaddr(dessert_meshif_t* meshif);
+int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, const dessert_meshif_t* meshif, dessert_frameid_t id);
 
 /******************************************************************************
  *
@@ -168,14 +168,14 @@ int _dessert_getHWAddr(char* device, char* hwaddr);
 /** callback list entry for tun/tap callbacks */
 typedef struct dessert_sysrxcbe {
     /** pointer to callback to call */
-    dessert_sysrxcb_t *c;
+    dessert_sysrxcb_t* c;
     /** priority - lowest first */
     int prio;
     /** next entry in list */
-    struct dessert_sysrxcbe *next;
+    struct dessert_sysrxcbe* next;
 } dessert_sysrxcbe_t;
 
-extern dessert_sysif_t *_dessert_sysif;
+extern dessert_sysif_t* _dessert_sysif;
 
 /******************************************************************************
  *
@@ -228,22 +228,22 @@ void _dessert_periodic_init(void);
  ******************************************************************************/
 
 extern pthread_rwlock_t _dessert_appstats_cblist_lock;
-extern dessert_agentx_appstats_cb_entry_t *_dessert_appstats_cblist;
+extern dessert_agentx_appstats_cb_entry_t* _dessert_appstats_cblist;
 
 extern pthread_rwlock_t _dessert_appparams_cblist_lock;
-extern dessert_agentx_appparams_cb_entry_t *_dessert_appparams_cblist;
+extern dessert_agentx_appparams_cb_entry_t* _dessert_appparams_cblist;
 
 /******************************************************************************
  * functions
  ******************************************************************************/
-int _dessert_agentx_appstats_harvest_callbacks(dessert_agentx_appstats_t **appstats_list);
-void _dessert_agentx_appstats_free(dessert_agentx_appstats_t *appstat);
-void _dessert_agentx_appstats_free_list(dessert_agentx_appstats_t **appstats_list);
+int _dessert_agentx_appstats_harvest_callbacks(dessert_agentx_appstats_t** appstats_list);
+void _dessert_agentx_appstats_free(dessert_agentx_appstats_t* appstat);
+void _dessert_agentx_appstats_free_list(dessert_agentx_appstats_t** appstats_list);
 
-int _dessert_agentx_appparams_harvest_callbacks(dessert_agentx_appparams_t **appparams_list);
-void _dessert_agentx_appparams_free(dessert_agentx_appparams_t *appparam);
-void _dessert_agentx_appparams_free_list(dessert_agentx_appparams_t **appparams_list);
-dessert_agentx_appparamscb_set_t *_dessert_agentx_appparams_getsettercbforindex(int index);
+int _dessert_agentx_appparams_harvest_callbacks(dessert_agentx_appparams_t** appparams_list);
+void _dessert_agentx_appparams_free(dessert_agentx_appparams_t* appparam);
+void _dessert_agentx_appparams_free_list(dessert_agentx_appparams_t** appparams_list);
+dessert_agentx_appparamscb_set_t* _dessert_agentx_appparams_getsettercbforindex(int index);
 
 void _dessert_agentx_init_subagent(void);
 void dessert_agentx_stop_subagent(void);

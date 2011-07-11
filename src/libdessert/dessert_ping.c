@@ -27,7 +27,7 @@
 #include <string.h>
 #include <netinet/ip.h>
 
-struct cli_def *_dessert_callbacks_cli;
+struct cli_def* _dessert_callbacks_cli;
 
 /** Send a ping packet
  *
@@ -39,41 +39,39 @@ struct cli_def *_dessert_callbacks_cli;
  * @retval CLI_OK if ping sent
  * @retval CLI_ERROR on error
  */
-int dessert_cli_cmd_ping(struct cli_def *cli, char *command, char *argv[], int argc) {
+int dessert_cli_cmd_ping(struct cli_def* cli, char* command, char* argv[], int argc) {
     u_char ether_trace[ETHER_ADDR_LEN];
-    dessert_msg_t *msg;
-    dessert_ext_t *ext;
-    struct ether_header *l25h;
+    dessert_msg_t* msg;
+    dessert_ext_t* ext;
+    struct ether_header* l25h;
 
-    if( argc<1 || argc >2 ||
-        sscanf(argv[0], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-            &ether_trace[0], &ether_trace[1], &ether_trace[2],
-            &ether_trace[3], &ether_trace[4], &ether_trace[5]) != 6
-    ) {
+    if(argc < 1 || argc > 2 ||
+       sscanf(argv[0], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+              &ether_trace[0], &ether_trace[1], &ether_trace[2],
+              &ether_trace[3], &ether_trace[4], &ether_trace[5]) != 6
+      ) {
         cli_print(cli, "usage %s [mac-address in xx:xx:xx:xx:xx:xx notation] ([text])\n", command);
         return CLI_ERROR;
     }
-    cli_print(cli, "sending ping packet to " MAC "...\n",
-         ether_trace[0], ether_trace[1], ether_trace[2],
-         ether_trace[3], ether_trace[4], ether_trace[5]);
-    dessert_info("sending ping packet to " MAC,
-          ether_trace[0], ether_trace[1], ether_trace[2],
-          ether_trace[3], ether_trace[4], ether_trace[5]);
+
+    cli_print(cli, "sending ping packet to " MAC "...\n", EXPLODE_ARRAY6(ether_trace));
+    dessert_info("sending ping packet to " MAC, EXPLODE_ARRAY6(ether_trace));
 
     dessert_msg_new(&msg);
 
     dessert_msg_addext(msg, &ext, DESSERT_EXT_ETH, ETHER_HDR_LEN);
-    l25h = (struct ether_header *) ext->data;
+    l25h = (struct ether_header*) ext->data;
     memcpy(l25h->ether_shost, dessert_l25_defsrc, ETHER_ADDR_LEN);
     memcpy(l25h->ether_dhost, ether_trace, ETHER_ADDR_LEN);
     l25h->ether_type = htons(0x0000);
 
     if(argc == 2) {
         int len = strlen(argv[1]);
-        len = len>DESSERT_MAXEXTDATALEN?DESSERT_MAXEXTDATALEN:len;
+        len = len > DESSERT_MAXEXTDATALEN ? DESSERT_MAXEXTDATALEN : len;
         dessert_msg_addext(msg, &ext, DESSERT_EXT_PING, len);
         memcpy(ext->data, argv[1], len);
-    } else {
+    }
+    else {
         dessert_msg_addext(msg, &ext, DESSERT_EXT_PING, 5);
         memcpy(ext->data, "ping", 5);
     }
@@ -97,20 +95,18 @@ int dessert_cli_cmd_ping(struct cli_def *cli, char *command, char *argv[], int a
  * @retval DESSERT_MSG_DROP if the ping is destined to this host
  * @retval DESSERT_MSG_KEEP if some other host is the destination
  */
-int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *meshif, dessert_frameid_t id) {
-    dessert_ext_t *ext;
-    struct ether_header *l25h;
+int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+    dessert_ext_t* ext;
+    struct ether_header* l25h;
     u_char temp[ETHER_ADDR_LEN];
 
     l25h = dessert_msg_getl25ether(msg);
 
     if(l25h
-      && proc->lflags & DESSERT_LFLAG_DST_SELF
-      && dessert_msg_getext(msg, &ext, DESSERT_EXT_PING, 0)) {
+       && proc->lflags & DESSERT_LFLAG_DST_SELF
+       && dessert_msg_getext(msg, &ext, DESSERT_EXT_PING, 0)) {
 
-        dessert_debug("got ping packet from " MAC " - sending pong",
-            l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
-            l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5]);
+        dessert_debug("got ping packet from " MAC " - sending pong", EXPLODE_ARRAY6(l25h->ether_shost));
 
         memcpy(temp, l25h->ether_shost, ETHER_ADDR_LEN);
         memcpy(l25h->ether_shost, l25h->ether_dhost, ETHER_ADDR_LEN);
@@ -136,23 +132,20 @@ int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, 
  * @retval DESSERT_MSG_DROP if the pong is destined to this host
  * @retval DESSERT_MSG_KEEP if some other host is the destination
  */
-int dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t *proc, dessert_meshif_t *meshif, dessert_frameid_t id) {
-    dessert_ext_t *ext;
-    struct ether_header *l25h;
+int dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+    dessert_ext_t* ext;
+    struct ether_header* l25h;
     u_char temp[ETHER_ADDR_LEN];
 
     l25h = dessert_msg_getl25ether(msg);
 
     if(l25h
-      && proc->lflags & DESSERT_LFLAG_DST_SELF
-      && dessert_msg_getext(msg, &ext, DESSERT_EXT_PONG, 0)) {
-        dessert_debug("got pong packet from " MAC,
-            l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
-            l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5]);
+       && proc->lflags & DESSERT_LFLAG_DST_SELF
+       && dessert_msg_getext(msg, &ext, DESSERT_EXT_PONG, 0)) {
+        dessert_debug("got pong packet from " MAC, EXPLODE_ARRAY6(l25h->ether_shost));
+
         if(_dessert_callbacks_cli != NULL)
-            cli_print(_dessert_callbacks_cli, "\ngot pong packet from " MAC,
-                    l25h->ether_shost[0], l25h->ether_shost[1], l25h->ether_shost[2],
-                    l25h->ether_shost[3], l25h->ether_shost[4], l25h->ether_shost[5]);
+            cli_print(_dessert_callbacks_cli, "\ngot pong packet from " MAC, EXPLODE_ARRAY6(l25h->ether_shost));
 
         return DESSERT_MSG_DROP;
     }
