@@ -192,23 +192,29 @@ fail:
 int _dessert_cli_cmd_show_rules(struct cli_def* cli, char* command, char* argv[], int argc) {
     pthread_rwlock_rdlock(&dessert_filterlock);
     mac_entry_t* elt = NULL;
-    cli_print(cli, "\nwhitelist");
-    cli_print(cli, "-------------------------------------");
+    cli_print(cli, "\n\t[whitelist]");
+    cli_print(cli, "\t----------------------------------------");
+    cli_print(cli, "\t# \tMAC \t\t\tmeshif");
+    cli_print(cli, "\t----------------------------------------");
     uint16_t i = 0;
     LL_FOREACH(_dessert_whitelist, elt) {
-        cli_print(cli, "\t%d\t" MAC ", %s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
+        cli_print(cli, "\t%d\t" MAC "\t%s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
         i++;
     }
-    cli_print(cli, "\nblacklist");
-    cli_print(cli, "-------------------------------------");
+    cli_print(cli, "\n\t[blacklist]");
+    cli_print(cli, "\t----------------------------------------");
+    cli_print(cli, "\t# \tMAC \t\t\tmeshif");
+    cli_print(cli, "\t----------------------------------------");
     i = 0;
     LL_FOREACH(_dessert_blacklist, elt) {
-        cli_print(cli, "\t%d\t" MAC ", %s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
+        cli_print(cli, "\t%d\t" MAC "\t%s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
         i++;
     }
     pthread_rwlock_unlock(&dessert_filterlock);
     return CLI_OK;
 }
+
+enum { PARAM_LIST = 0, PARAM_MAC, PARAM_IFNAME };
 
 /**
  * CLI command to add a filter rule
@@ -231,7 +237,7 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
     else {
         s = "blacklist";
 
-        if(strncmp(s, argv[0], sizeof(s)) == 0) {
+        if(strncmp(s, argv[PARAM_LIST], sizeof(s)) == 0) {
             list = DESSERT_BLACKLIST;
         }
         else {
@@ -240,8 +246,8 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
         }
     }
 
-    if(sscanf(argv[1], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        if(argv[1][0] != "*") {
+    if(sscanf(argv[PARAM_MAC], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
+        if(strcmp(argv[PARAM_MAC], "*") != 0) {
             print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
             goto fail;
         }
@@ -249,8 +255,8 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
         mac[0] = '*';
     }
 
-    if(argc == 2) {
-        iface = ifname2iface(argv[2]);
+    if(argc == 3) {
+        iface = ifname2iface(argv[PARAM_IFNAME]);
     }
 
     if(dessert_filter_rule_add(mac, iface, list, cli)) {
@@ -278,13 +284,13 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
 
     char* s = "whitelist";
 
-    if(strncmp(s, argv[0], sizeof(s)) == 0) {
+    if(strncmp(s, argv[PARAM_LIST], sizeof(s)) == 0) {
         list = DESSERT_WHITELIST;
     }
     else {
         s = "blacklist";
 
-        if(strncmp(s, argv[0], sizeof(s)) == 0) {
+        if(strncmp(s, argv[PARAM_LIST], sizeof(s)) == 0) {
             list = DESSERT_BLACKLIST;
         }
         else {
@@ -293,8 +299,8 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
         }
     }
 
-    if(sscanf(argv[1], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        if(argv[1][0] != "*") {
+    if(sscanf(argv[PARAM_MAC], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
+        if(strcmp(argv[PARAM_MAC], "*") != 0) {
             print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
             goto fail;
         }
@@ -302,8 +308,8 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
         mac[0] = '*';
     }
 
-    if(argc == 2) {
-        iface = ifname2iface(argv[2]);
+    if(argc == 3) {
+        iface = ifname2iface(argv[PARAM_IFNAME]);
     }
 
     if(dessert_filter_rule_rm(mac, iface, list, cli)) {
