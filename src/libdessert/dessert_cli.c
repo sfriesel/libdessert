@@ -35,12 +35,14 @@
 struct cli_def* dessert_cli;
 
 struct cli_command* dessert_cli_show;
+struct cli_command* dessert_cli_set;
+struct cli_command* dessert_cli_filter;
+
 struct cli_command* dessert_cli_cfg_no;
 struct cli_command* dessert_cli_cfg_iface;
 struct cli_command* dessert_cli_cfg_no_iface;
 struct cli_command* dessert_cli_cfg_logging;
 struct cli_command* dessert_cli_cfg_no_logging;
-struct cli_command* dessert_cli_filter;
 
 /* global data storage // P R I V A T E */
 /* nothing here - yet */
@@ -209,6 +211,52 @@ int dessert_cli_run() {
  *
  ******************************************************************************/
 
+static void _dessert_cli_init_anchors() {
+    dessert_cli_show = cli_register_command(
+        dessert_cli,
+        NULL,
+        "show",
+        NULL,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Display information.");
+
+    dessert_cli_set = cli_register_command(
+        dessert_cli,
+        NULL,
+        "set",
+        NULL,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Configure parameter.");
+
+    dessert_cli_filter = cli_register_command(
+        dessert_cli,
+        NULL,
+        "rule",
+        NULL,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Manipulate the packet filter.");
+
+    dessert_cli_cfg_no = cli_register_command(dessert_cli,
+        NULL,
+        "no",
+        NULL,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Negate command.");
+
+    dessert_cli_cfg_iface = cli_register_command(dessert_cli,
+        NULL,
+        "interface",
+        NULL,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Add or configure interfaces.");
+}
+
+
 /** internal function to initialize libcli */
 int _dessert_cli_init() {
     dessert_cli = cli_init();
@@ -220,106 +268,202 @@ int _dessert_cli_init() {
     strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), dessert_proto, DESSERT_PROTO_STRLEN);
     cli_set_hostname(dessert_cli, _dessert_cli_hostname);
 
-    /* anchors */
-    dessert_cli_show = cli_register_command(dessert_cli, NULL, "show",
-                                            NULL, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                                            "display information");
-    dessert_cli_filter = cli_register_command(dessert_cli, NULL, "rule",
-                         NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "manipulate the packet filter");
+    _dessert_cli_init_anchors();
 
     /* packet filter */
-    cli_register_command(dessert_cli, dessert_cli_filter, "add",
-                         _dessert_cli_cmd_rule_add, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "add MAC to filter");
-    cli_register_command(dessert_cli, dessert_cli_filter, "rm",
-                         _dessert_cli_cmd_rule_rm, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "remove MAC from filter");
-    cli_register_command(dessert_cli, dessert_cli_show, "rules",
-                         _dessert_cli_cmd_show_rules, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "show packet filter entries");
-
-    cli_register_command(dessert_cli, dessert_cli_show, "dessert-info",
-                         _dessert_cli_cmd_dessertinfo, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "Display information about this program.");
-    cli_register_command(dessert_cli, dessert_cli_show, "logging",
-                         _dessert_cli_cmd_logging, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "show logging ringbuffer");
-    cli_register_command(dessert_cli, dessert_cli_show, "loglevel",
-                         _dessert_cli_cmd_show_loglevel, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "show loglevel");
-    cli_register_command(dessert_cli, dessert_cli_show, "meshifs",
-                         _dessert_cli_cmd_showmeshifs, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "Print list of registered interfaces used by the daemon.");
-    cli_register_command(dessert_cli, dessert_cli_show, "sysif", _dessert_cli_cmd_showsysif,
-                         PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "Print the name of the TUN/TAP interface used as system interface.");
-#ifndef ANDROID
-    cli_register_command(dessert_cli, dessert_cli_show, "monifs", _dessert_cli_cmd_showmonifs,
-                         PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "Print list of registered monitor interfaces.");
-    cli_register_command(dessert_cli, dessert_cli_show, "mondb", _dessert_cli_cmd_showmondb,
-                         PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "Print the monitor database - get informed about your connections.");
-#endif
-    /* initialize config mode commands */
-    dessert_cli_cfg_iface = cli_register_command(dessert_cli, NULL,
-                            "interface", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                            "create or configure interfaces");
-#ifndef ANDROID
-    cli_register_command(dessert_cli, dessert_cli_cfg_iface,
-                         "monitor", _dessert_cli_monitoring_start, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "Creates a monitor interface for a IEEE 802.11 interface");
-    cli_register_command(dessert_cli, dessert_cli_show, "monitor_conf",
-                         _dessert_cli_monitor_conf, PRIVILEGE_UNPRIVILEGED, MODE_EXEC,
-                         "show loglevel");
-#endif
-    dessert_cli_cfg_no = cli_register_command(dessert_cli, NULL, "no", NULL,
-                         PRIVILEGE_PRIVILEGED, MODE_CONFIG, "negate command");
-    dessert_cli_cfg_no_iface = cli_register_command(dessert_cli, dessert_cli_cfg_no, "interface",
-                               NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                               "remove interface or negate interface config");
-    cli_register_command(dessert_cli, NULL, "loglevel",
-                         _dessert_cli_cmd_set_loglevel, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "set the loglevel [debug, info, notice, warning, error, critical, emergency]");
-    cli_register_command(dessert_cli, NULL, "log_flush_interval",
-                         _dessert_cli_log_interval, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "set log file flush interval [s]");
-    dessert_cli_cfg_logging = cli_register_command(dessert_cli, NULL,
-                              "logging", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                              "change logging config");
-    dessert_cli_cfg_no_logging = cli_register_command(dessert_cli,
-                                 dessert_cli_cfg_no, "logging", NULL, PRIVILEGE_PRIVILEGED,
-                                 MODE_CONFIG, "disable logging for...");
-    cli_register_command(dessert_cli, dessert_cli_cfg_logging, "ringbuffer",
-                         _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "set logging ringbuffer size (in lines)");
-    cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "ringbuffer",
-                         _dessert_cli_logging_ringbuffer, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "disable logging to ringbuffer");
-    cli_register_command(dessert_cli, dessert_cli_cfg_logging, "file",
-                         _dessert_cli_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "set logfile and enable file logging");
-    cli_register_command(dessert_cli, dessert_cli_cfg_no_logging, "file",
-                         _dessert_cli_no_logging_file, PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "set logfile disable file logging");
+    cli_register_command(dessert_cli,
+        dessert_cli_filter,
+        "add",
+        _dessert_cli_cmd_rule_add,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Add MAC to filter.");
 
     cli_register_command(dessert_cli,
-                         NULL,
-                         "port",
-                         _dessert_cli_cmd_setport,
-                         PRIVILEGE_PRIVILEGED,
-                         MODE_CONFIG,
-                         "configure TCP port the daemon is listening on");
+        dessert_cli_filter,
+        "rm",
+        _dessert_cli_cmd_rule_rm,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Remove MAC from filter.");
 
-    cli_register_command(dessert_cli, NULL, "pid", _dessert_cli_cmd_pid,
-                         PRIVILEGE_PRIVILEGED, MODE_CONFIG,
-                         "write process id to file");
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "rules",
+        _dessert_cli_cmd_show_rules,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show packet filter rules.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "dessert-info",
+        _dessert_cli_cmd_dessertinfo,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Display information about this daemon.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "logging",
+        _dessert_cli_cmd_logging,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show logging ringbuffer.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "loglevel",
+        _dessert_cli_cmd_show_loglevel,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show loglevel.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "meshifs",
+        _dessert_cli_cmd_showmeshifs,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show list of registered mesh interfaces.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "sysif",
+        _dessert_cli_cmd_showsysif,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show list of registered sys (TUN/TAP) interface.");
+
+    /* initialize config mode commands */
+#ifndef ANDROID
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "monifs",
+        _dessert_cli_cmd_showmonifs,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show list of registered monitor interfaces.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "mondb",
+        _dessert_cli_cmd_showmondb,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show content of monitor database.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_cfg_iface,
+        "monitor",
+        _dessert_cli_monitoring_start,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Create monitor interface for a IEEE 802.11 device.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "monitor_conf",
+        _dessert_cli_monitor_conf,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Configure monitor database.");
+#endif
+
+    dessert_cli_cfg_no_iface = cli_register_command(dessert_cli,
+        dessert_cli_cfg_no,
+        "interface",
+        NULL,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Remove interface or negate interface config.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_set, "loglevel",
+        _dessert_cli_cmd_set_loglevel,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set loglevel: [debug, info, notice, warning, error, critical, emergency]");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_set,
+        "log_flush",
+        _dessert_cli_log_interval,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set log file flush interval [s].");
+
+    dessert_cli_cfg_logging = cli_register_command(dessert_cli,
+        NULL,
+        "logging",
+        NULL,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Change logging configuration.");
+
+    dessert_cli_cfg_no_logging = cli_register_command(dessert_cli,
+        dessert_cli_cfg_no,
+        "logging",
+        NULL,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Disable logging to...");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_cfg_logging,
+        "ringbuffer",
+        _dessert_cli_logging_ringbuffer,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set logging ringbuffer size [lines].");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_cfg_no_logging,
+        "ringbuffer",
+        _dessert_cli_logging_ringbuffer,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Disable logging to ringbuffer.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_cfg_logging,
+        "file",
+        _dessert_cli_logging_file,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set logfile and enable file logging.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_cfg_no_logging,
+        "file",
+        _dessert_cli_no_logging_file,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Disable logging to file.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_set,
+        "port",
+        _dessert_cli_cmd_setport,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set TCP port for the CLI's telnet interface.");
+
+    cli_register_command(dessert_cli,
+        NULL,
+        "pid",
+        _dessert_cli_cmd_pid,
+        PRIVILEGE_PRIVILEGED, MODE_CONFIG,
+        "Write process id to file.");
 
     /* initialize other commands */
-    cli_register_command(dessert_cli, NULL, "shutdown",
-                         _dessert_cli_cmd_shutdown, PRIVILEGE_PRIVILEGED, MODE_EXEC,
-                         "shut daemon down");
+    cli_register_command(dessert_cli,
+        NULL,
+        "shutdown",
+        _dessert_cli_cmd_shutdown,
+        PRIVILEGE_PRIVILEGED,
+        MODE_EXEC,
+        "Shut down daemon.");
     return DESSERT_OK;
 }
 

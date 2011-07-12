@@ -442,6 +442,8 @@ void dessert_exit(void);
 extern struct cli_def* dessert_cli; ///< DES-SERT CLI
 
 extern struct cli_command* dessert_cli_show; ///< CLI Anchor for show commands
+extern struct cli_command* dessert_cli_set; ///< CLI Anchor for set commands
+
 extern struct cli_command* dessert_cli_cfg_iface; ///< CLI Anchor interface configuration commands
 extern struct cli_command* dessert_cli_cfg_no; ///< CLI Anchor for deactivation commands
 extern struct cli_command* dessert_cli_cfg_no_iface; ///< CLI Anchor for interface removal commands
