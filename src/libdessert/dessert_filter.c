@@ -35,10 +35,10 @@ typedef struct mac_entry {
     struct mac_entry* next;
 } mac_entry_t;
 
-mac_entry_t* whitelist = NULL;
-mac_entry_t* blacklist = NULL;
+static mac_entry_t* _dessert_whitelist = NULL;
+static mac_entry_t* _dessert_blacklist = NULL;
 
-mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t* list) {
+static mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t* list) {
     mac_entry_t* elt = NULL;
     LL_FOREACH(list, elt) {
         if((elt->iface == NULL || elt->iface == iface)
@@ -49,7 +49,7 @@ mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t* list)
     return NULL;
 }
 
-mac_entry_t* wildcard_in_list(mac_entry_t* list) {
+static mac_entry_t* wildcard_in_list(mac_entry_t* list) {
     mac_entry_t* elt = NULL;
     LL_FOREACH(list, elt) {
         if(strncmp(elt->mac, "*", 1) == 0) {
@@ -62,7 +62,7 @@ mac_entry_t* wildcard_in_list(mac_entry_t* list) {
 /**
  * Find dessert_meshif_t with matching name
  */
-dessert_meshif_t* ifname2iface(char* ifname) {
+static dessert_meshif_t* ifname2iface(char* ifname) {
     dessert_meshif_t* iface;
     bool b = false;
     MESHIFLIST_ITERATOR_START(iface)
@@ -97,12 +97,12 @@ bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, enum dessert_fi
 
     switch(list) {
         case DESSERT_WHITELIST:
-            cur = &whitelist;
-            other = &blacklist;
+            cur = &_dessert_whitelist;
+            other = &_dessert_blacklist;
             break;
         case DESSERT_BLACKLIST:
-            cur = &blacklist;
-            other = &whitelist;
+            cur = &_dessert_blacklist;
+            other = &_dessert_whitelist;
             break;
         default:
             dessert_warning("unknown filter: %d", list);
@@ -157,10 +157,10 @@ bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_fil
 
     switch(list) {
         case DESSERT_WHITELIST:
-            cur = &whitelist;
+            cur = &_dessert_whitelist;
             break;
         case DESSERT_BLACKLIST:
-            cur = &blacklist;
+            cur = &_dessert_blacklist;
             break;
         default:
             dessert_warning("unknown filter: %d", list);
@@ -195,14 +195,14 @@ int _dessert_cli_cmd_show_rules(struct cli_def* cli, char* command, char* argv[]
     cli_print(cli, "\nwhitelist");
     cli_print(cli, "-------------------------------------");
     uint16_t i = 0;
-    LL_FOREACH(whitelist, elt) {
+    LL_FOREACH(_dessert_whitelist, elt) {
         cli_print(cli, "\t%d\t" MAC ", %s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
         i++;
     }
     cli_print(cli, "\nblacklist");
     cli_print(cli, "-------------------------------------");
     i = 0;
-    LL_FOREACH(blacklist, elt) {
+    LL_FOREACH(_dessert_blacklist, elt) {
         cli_print(cli, "\t%d\t" MAC ", %s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
         i++;
     }
@@ -334,19 +334,19 @@ int dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc
 
     pthread_rwlock_rdlock(&dessert_filterlock);
 
-    if(find_in_list(mac, iface, whitelist)) {
+    if(find_in_list(mac, iface, _dessert_whitelist)) {
         goto ok;
     }
 
-    if(find_in_list(mac, iface, blacklist)) {
+    if(find_in_list(mac, iface, _dessert_blacklist)) {
         goto drop;
     }
 
-    if(wildcard_in_list(whitelist)) {
+    if(wildcard_in_list(_dessert_whitelist)) {
         goto ok;
     }
 
-    if(wildcard_in_list(blacklist)) {
+    if(wildcard_in_list(_dessert_blacklist)) {
         goto drop;
     }
 
