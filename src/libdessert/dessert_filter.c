@@ -241,7 +241,7 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
     }
 
     if(sscanf(argv[1], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        if(argv[0] != "*") {
+        if(argv[1] != "*") {
             print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
             goto fail;
         }
@@ -294,7 +294,7 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
     }
 
     if(sscanf(argv[1], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        if(argv[0] != "*") {
+        if(argv[1] != "*") {
             print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[0]);
             goto fail;
         }
