@@ -51,6 +51,8 @@ AC_SEARCH_LIBS([cli_print],
 AC_SUBST([CLI_LIBS])
 
 # Check for ut*
+AC_CHECK_HEADERS([uthash.h utlist.h],,[AC_MSG_ERROR([Please install uthash from http://uthash.sourceforge.net/])])
+
 AC_CHECK_HEADERS([iwlib.h],,[AC_MSG_ERROR([iwlib could not be found, please install development package of iwlib])])
 
 # Checks for libraries.
