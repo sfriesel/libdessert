@@ -2,7 +2,6 @@
 
 # important configuration variables, check these if something went wrong
 SVN_LIBDESSERT=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/trunk
-SVN_LIBDESSERT_EXTRA=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert-extra/trunk
 SVN_IP6=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/trunk/android/netinet
 SVN_LIBREGEX=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/trunk/android/libregex/
 SVN_LIBPTHREADEX=https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/libdessert/trunk/android/libpthreadex/
@@ -13,20 +12,25 @@ ANDROID_PLATFORM=android-3
 
 # android-ndk
 NDK_LOCATION=http://dl.google.com/android/ndk
-NDK_FILE=android-ndk-r5b-linux-x86.tar.bz2
+NDK_FILE=android-ndk-r6-linux-x86.tar.bz2
+#NDK_FILE=android-ndk-r5b-linux-x86.tar.bz2
 
 # libpcap
 LIBPCAP_LOCATION=http://www.tcpdump.org/release/
 LIBPCAP_FILE=libpcap-1.1.1.tar.gz
 
 # uthash
-UTHASH_LOCATION=http://sourceforge.net/projects/uthash/files/uthash/uthash-1.9.3/
-UTHASH_FILE=uthash-1.9.3.tar.bz2
+UTHASH_LOCATION=http://downloads.sourceforge.net/uthash/
+UTHASH_FILE=uthash-1.9.4.tar.bz2
 
 # libcli IMPORTANT: This is a git repository location...you need git to fetch those files.
 GIT_LIBCLI=https://github.com/dparrish/libcli
 
-# more important variables...do not change
+
+
+#############################################
+# more important variables...DO NOT CHANGE  #
+#############################################
 INSTALL_DIR=$1
 NDK_DIR=${NDK_FILE%"-linux-x86.tar.bz2"}
 LIBPCAP_DIR=${LIBPCAP_FILE%".tar.gz"}
@@ -108,18 +112,6 @@ else
 	exit 0
 fi
 
-echo "Checking out current libdessert-extra from repository..."
-svn co -q $SVN_LIBDESSERT_EXTRA
-if [ -d "trunk" ]
-then
-	echo "Renaming trunk/ to libdesser-extra/..."
-	mv trunk libdessert-extra
-else
-	echo "Something went wrong while fetching libdessert-extra from the repository...aborting."
-	exit 0
-fi
-
-
 # install android-ndk and toolchain
 echo "Installing android-ndk..."
 tar xvjf $NDK_FILE &> /dev/null
@@ -129,6 +121,7 @@ export ANDROID_NDK_HOME=$INSTALL_DIR"/"$NDK_DIR
 ./make-standalone-toolchain.sh --ndk-dir=$INSTALL_DIR"/"$NDK_DIR --install-dir=$ANDROID_TOOLCHAIN
 echo "Setting ANDROID_TOOLCHAIN..."
 export ANDROID_TOOLCHAIN=$ANDROID_TOOLCHAIN
+echo "Android Toolchain dir set to $ANDROID_TOOLCHAIN"
 if [ ! -d "$ANDROID_TOOLCHAIN" ]
 then
 	echo "Failed to install android toolchain. Aborting"
@@ -138,7 +131,7 @@ cd $INSTALL_DIR
 
 # copy android-gcc and android-strip to bin directory
 echo "Copying android-gcc wrapper to bin..."
-cp libdessert/android-* bin
+cp libdessert/android/android-* bin
 
 # add bin directory to path
 echo "Adding bin directory to path..."
@@ -261,21 +254,6 @@ then
 	exit 0
 fi
 
-# building libdessert-extra
-echo "Building libdessert-extra..."
-cd libdessert-extra
-sh autogen.sh
-./configure CFLAGS="-I$INSTALL_DIR/dessert-lib/include -D__linux__" LDFLAGS="-L$INSTALL_DIR/dessert-lib/lib -Wl,-rpath-link=$INSTALL_DIR/dessert-lib/lib" --prefix=$INSTALL_DIR"/dessert-lib" --host=arm-none-linux  ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes
-make &> build.log
-make install
-cd $INSTALL_DIR
-if [ ! -e "dessert-lib/lib/libdessert-extra.la" ]
-then
-	echo "Failed to build libdessert-extra. See \"libdessert-extra/build.log\"."
-	exit 0
-fi
-
-
 # cleanup
 echo "Cleaning up..."
 rm *.tar.gz
@@ -297,6 +275,7 @@ echo "As last step you have to set the following environment variables:"
 echo "  export ANDROID_TOOLCHAIN=$ANDROID_TOOLCHAIN"
 echo "  export DESSERT_LIB=$INSTALL_DIR/dessert-lib"
 echo "  export ANDROID_NDK_HOME=$INSTALL_DIR/$NDK_DIR"
+echo "  export PATH=\$PATH:$INSTALL_DIR/BIN"
 echo "=================================================================="
 echo "You can now do: make android from any dessert daemon source dir!"
 
