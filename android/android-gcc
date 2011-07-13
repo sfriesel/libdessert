@@ -58,6 +58,8 @@ if ($ndk_home =~ /-r3/i) {
 # Android NDK r5
 } elsif ($ndk_home =~ /-r5/i) {
     $platform_dir = "${ndk_home}/platforms/${ndk_platform}";
+} elsif ($ndk_home =~ /-r6/i) {
+    $platform_dir = "${ndk_home}/platforms/${ndk_platform}";
 }
 
 my $gcc_exec = "${toolchain_dir}/bin/arm-linux-androideabi-gcc";
