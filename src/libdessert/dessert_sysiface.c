@@ -41,7 +41,7 @@ int _dessert_sysrxcblistver = 0;
 
 /* internal functions forward declarations*/
 static void* _dessert_sysif_init_thread(void* arg);
-static int _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
+static dessert_cb_result _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
 
 /******************************************************************************
  *
@@ -360,7 +360,7 @@ int _dessert_getHWAddr(char* device, char* hwaddr) {
  ******************************************************************************/
 
 /** internal callback which gets registered if we can't find out mac address of tap interface */
-static int _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
+static dessert_cb_result _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
     struct ether_header* eth;
     dessert_msg_ethdecap(msg, &eth);
 
@@ -579,7 +579,7 @@ int dessert_cli_cmd_addsysif_tun(struct cli_def* cli, char* command, char* argv[
  * @retval DESSERT_MSG_DROP if the message contains an IPv6 datagram
  * @retval DESSERT_MSG_KEEP if message contains an IPv4 datagram
  */
-int dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
+dessert_cb_result dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
     void* payload;
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 

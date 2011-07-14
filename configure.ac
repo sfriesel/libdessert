@@ -46,7 +46,7 @@ AC_CHECK_HEADERS([libcli.h])
 AC_SEARCH_LIBS([cli_print],
                [cli],
                [AC_DEFINE([CLI_LIBS],[-lcli],[defines linkoption for libcli])],
-               [AC_MSG_ERROR([libcli could not be found, please install development package of libcli])]
+               [AC_MSG_ERROR([libcli not be found])]
 )
 AC_SUBST([CLI_LIBS])
 
@@ -54,6 +54,13 @@ AC_SUBST([CLI_LIBS])
 AC_CHECK_HEADERS([uthash.h utlist.h],,[AC_MSG_ERROR([Please install uthash from http://uthash.sourceforge.net/])])
 
 AC_CHECK_HEADERS([iwlib.h],,[AC_MSG_ERROR([iwlib could not be found, please install development package of iwlib])])
+#AC_SEARCH_LIBS([iw_get_ext],
+#               [iw],
+#               [AC_DEFINE([IW_LIBS],[-liw],[defines linkoption for libiw])],
+#               [AC_MSG_ERROR([libiw not be found])]
+#)
+#AC_SUBST([IW_LIBS])
+
 
 # Checks for libraries.
 

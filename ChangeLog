@@ -1,3 +1,8 @@
+20110713 - 1.05
+    - Fixed bugs in packet filter
+    - Removed legacy defines that are replaced by enums
+    - Replaced int return values by enum types
+
 20110712 - 1.04
     - Added CLI show function for monitor configuration
     - Added packet filter support (untested)

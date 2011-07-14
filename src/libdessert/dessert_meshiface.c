@@ -764,7 +764,7 @@ dessert_meshif_add_err:
  * %DESCRIPTION:
  *
  */
-int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, const dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, const dessert_meshif_t* meshif, dessert_frameid_t id) {
     dessert_msg_t* msg = msg_in;
     dessert_msg_proc_t* proc = proc_in;
     dessert_meshrxcbe_t* cb;
@@ -903,9 +903,9 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
         return EINVAL;
     }
 
-    /* send packet - temporally setting DESSERT_FLAG_SPARSE */
+    /* send packet - temporally setting DESSERT_RX_FLAG_SPARSE */
     uint8_t oldflags = msg->flags;
-    msg->flags &= ~DESSERT_FLAG_SPARSE;
+    msg->flags &= ~DESSERT_RX_FLAG_SPARSE;
     int res = pcap_inject(iface->pcap, (u_int8_t*) msg, msglen);
     msg->flags = oldflags;
 
@@ -1174,7 +1174,7 @@ int dessert_cli_cmd_addmeshif(struct cli_def* cli, char* command, char* argv[], 
  * @retval DESSERT_MSG_DROP if Ethernet extension is available
  * @retval DESSERT_MSG_KEEP if Ethernet extension is missing
  */
-int dessert_mesh_drop_ethernet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result dessert_mesh_drop_ethernet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 
     if(eth != NULL) {  // has Ethernet extension
@@ -1198,7 +1198,7 @@ int dessert_mesh_drop_ethernet(dessert_msg_t* msg, size_t len, dessert_msg_proc_
  * @retval DESSERT_MSG_KEEP if Ethernet extension is available
  * @retval DESSERT_MSG_DROP if Ethernet extension is missing
  */
-int dessert_mesh_drop_ip(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result dessert_mesh_drop_ip(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 
     if(eth == NULL) {  // has no Ethernet extension
@@ -1226,7 +1226,7 @@ int dessert_mesh_drop_ip(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* pro
  * @retval DESSERT_MSG_KEEP if TTL or Hop Limit > 1
  * @retval DESSERT_MSG_DROP if TTL or Hop Limit <= 1
  */
-int dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     void* payload;
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 
@@ -1235,12 +1235,12 @@ int dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc,
         return DESSERT_MSG_KEEP;
     }
 
-    if(proc->lflags & DESSERT_LFLAG_DST_SELF) {
+    if(proc->lflags & DESSERT_RX_FLAG_L25_DST) {
         // the packet got here, so we can ignore the TTL value
         return DESSERT_MSG_KEEP;
     }
 
-    if(!(proc->lflags & DESSERT_LFLAG_NEXTHOP_SELF)) {
+    if(!(proc->lflags & DESSERT_RX_FLAG_L2_DST)) {
         return DESSERT_MSG_KEEP;
     }
 
@@ -1266,8 +1266,8 @@ int dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc,
             * Fake destination ether address or the host will not evaluate the packet.
             * Multicast and broadcast frames can be ignored.
             */
-            if(!(proc->lflags & DESSERT_LFLAG_DST_BROADCAST
-                 || proc->lflags & DESSERT_LFLAG_DST_MULTICAST)) {
+            if(!(proc->lflags & DESSERT_RX_FLAG_L25_BROADCAST
+                 || proc->lflags & DESSERT_RX_FLAG_L25_MULTICAST)) {
                 memcpy(&(eth->ether_dhost), &(_dessert_sysif->hwaddr), ETHER_ADDR_LEN);
             }
 
@@ -1297,8 +1297,8 @@ int dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc,
             * Fake destination ether address or the host will not evaluate the packet.
             * Multicast and broadcast frames can be ignored.
             */
-            if(!(proc->lflags & DESSERT_LFLAG_DST_BROADCAST
-                 || proc->lflags & DESSERT_LFLAG_DST_MULTICAST)) {
+            if(!(proc->lflags & DESSERT_RX_FLAG_L25_BROADCAST
+                 || proc->lflags & DESSERT_RX_FLAG_L25_MULTICAST)) {
                 memcpy(&(eth->ether_dhost), &(_dessert_sysif->hwaddr), ETHER_ADDR_LEN);
             }
 

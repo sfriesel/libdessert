@@ -142,6 +142,19 @@
 /******************************************************************************
  * typedefs
  ******************************************************************************/
+
+typedef enum _dessert_return_code {
+    dessert_ok  = DESSERT_OK,
+    dessert_err = DESSERT_ERR
+} dessert_result;
+
+typedef enum dessert_return_codes {
+    DESSERT_MSG_DROP            = -1, ///< stop handling the packet and drop it
+    DESSERT_MSG_KEEP            =  0, ///< continue to handle the packet in the following callback
+    DESSERT_MSG_NEEDNOSPARSE    =  1, ///< forces to copy the message and call again
+    DESSERT_MSG_NEEDMSGPROC     =  2, ///< forces to generate processing info and call again
+} dessert_cb_result;
+
 /** runtime-unique frame id */
 typedef uint64_t dessert_frameid_t;
 
@@ -283,6 +296,8 @@ typedef struct dessert_sysif {
     pthread_t           worker;
 } dessert_sysif_t;
 
+
+
 /** Callback type to call if a packed is received via a dessert mesh interface.
  *
  * @param *msg dessert_msg_t frame received
@@ -305,7 +320,7 @@ typedef struct dessert_sysif {
  * providing the requested resource.
  *
  */
-typedef int dessert_meshrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+typedef dessert_cb_result dessert_meshrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
 /** Callback type to call if a packed should be injected into dessert via a tun/tap interface.
  *
@@ -323,7 +338,7 @@ typedef int dessert_meshrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_
  * \warning YOU MUST also make sure not to do anything blocking in a callback!
  *
 */
-typedef int dessert_sysrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
+typedef dessert_cb_result dessert_sysrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
 
 /** callbacks type to call in a periodic task
  *
@@ -447,7 +462,6 @@ extern struct cli_command* dessert_cli_set; ///< CLI Anchor for set commands
 extern struct cli_command* dessert_cli_cfg_iface; ///< CLI Anchor interface configuration commands
 extern struct cli_command* dessert_cli_cfg_no; ///< CLI Anchor for deactivation commands
 extern struct cli_command* dessert_cli_cfg_no_iface; ///< CLI Anchor for interface removal commands
-extern struct cli_command* dessert_cli_cfg_set; ///< CLI Anchor for set commands
 extern struct cli_command* dessert_cli_cfg_logging; ///< CLI Anchor to enable logging
 extern struct cli_command* dessert_cli_cfg_no_logging; ///< CLI Anchor to disable logging
 
@@ -599,13 +613,6 @@ int dessert_parse_mac(const char* input_mac, mac_addr* hwaddr);
  * #defines
  ******************************************************************************/
 
-enum dessert_return_codes {
-    DESSERT_MSG_DROP            = -1, ///< stop handling the packet and drop it
-    DESSERT_MSG_KEEP            =  0, ///< continue to handle the packet in the following callback
-    DESSERT_MSG_NEEDNOSPARSE    =  1, ///< forces to copy the message and call again
-    DESSERT_MSG_NEEDMSGPROC     =  2, ///< forces to generate processing info and call again
-};
-
 /** flag for dessert_meshif_add - set interface in promiscuous-mode (default) */
 #define DESSERT_IF_PROMISC 0x0
 
@@ -646,12 +653,15 @@ int dessert_meshrxcb_del(dessert_meshrxcb_t* c);
 int dessert_meshif_add(const char* dev, uint8_t flags);
 int dessert_meshif_del(const char* dev);
 
+/* cli functions */
 int dessert_cli_cmd_addmeshif(struct cli_def* cli, char* command, char* argv[], int argc);
 
-int dessert_mesh_drop_ethernet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_mesh_drop_ip(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+/* mesh callbacks */
+dessert_cb_result dessert_mesh_drop_ethernet(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_mesh_drop_ip(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
+/* helper functions */
 dessert_meshif_t* dessert_meshif_get_name(const char* dev);
 dessert_meshif_t* dessert_meshif_get_hwaddr(const uint8_t hwaddr[ETHER_ADDR_LEN]);
 dessert_meshif_t* dessert_meshiflist_get(void);
@@ -693,11 +703,14 @@ int dessert_sysif_init(char* name, uint8_t flags);
 int dessert_sysrxcb_add(dessert_sysrxcb_t* c, int prio);
 int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
 
+/* cli functions */
 int dessert_cli_cmd_addsysif(struct cli_def* cli, char* command, char* argv[], int argc);
 int dessert_cli_cmd_addsysif_tun(struct cli_def* cli, char* command, char* argv[], int argc);
 
-int dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
+/* sys callbacks */
+dessert_cb_result dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
 
+/* send functions */
 int dessert_syssend_msg(dessert_msg_t* msg);
 int dessert_syssend(const void* pkt, size_t len);
 
@@ -727,41 +740,6 @@ enum dessert_rx_flags {
     DESSERT_RX_FLAG_L25_OVERHEARD   = 0x0100,   ///< receiver is destination of the packet on L25 but not on L2
     DESSERT_RX_FLAG_L2_OVERHEARD    = 0x0200    ///< receiver is destination of the packet on L2 but it was received on the wrong interface, e.g., two interfaces on the same channel
 };
-
-/** flag for dessert_msg.flags - message len is hlen+plen
- * if not set buffer len is assumed as DESSERT_MAXFRAMELEN + DESSERT_MSGPROCLEN */
-#define DESSERT_FLAG_SPARSE 0x1
-
-/** flag for dessert_msg_proc.lflags - l25 src is one of our interfaces */
-#define DESSERT_LFLAG_SRC_SELF 0x0002
-
-/** flag for dessert_msg_proc.lflags - l25 dst is multicast address*/
-#define DESSERT_LFLAG_DST_MULTICAST 0x0004
-
-/** flag for dessert_msg_proc.lflags - l25 dst is one of our interfaces */
-#define DESSERT_LFLAG_DST_SELF 0x0008
-
-/** flag for dessert_msg_proc.lflags - l25 dst is broadcast */
-#define DESSERT_LFLAG_DST_BROADCAST 0x0010
-
-/** flag for dessert_msg_proc.lflags - l2 src is one of our interfaces */
-#define DESSERT_LFLAG_PREVHOP_SELF 0x0020
-
-/** flag for dessert_msg_proc.lflags - l2 dst is one of our interfaces */
-#define DESSERT_LFLAG_NEXTHOP_SELF 0x0040
-
-/** flag for dessert_msg_proc.lflags - l2 dst is broadcast */
-#define DESSERT_LFLAG_NEXTHOP_BROADCAST 0x0080
-
-/** flag for dessert_msg_proc.lflags - l25 dst is one of our interfaces,
- * but we received the message not via the indented interface, e.g. we
- * overheard it  */
-#define DESSERT_LFLAG_DST_SELF_OVERHEARD 0x0100
-
-/** flag for dessert_msg_proc.lflags - l2 dst is one of our interfaces,
- * but we received the message not via the indented interface, e.g. we
- * overheard it */
-#define DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD 0x0200
 
 /* *********************** */
 
@@ -823,10 +801,11 @@ int dessert_msg_resizeext(dessert_msg_t* msg, dessert_ext_t* ext, size_t new_len
 int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index);
 int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type);
 
-int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* riface, dessert_frameid_t id);
+/* mesh callbacks */
+dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
 int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen);
 
@@ -1246,7 +1225,7 @@ enum dessert_filter {
 bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def* cli);
 bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def* cli);
 
-int dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
 #define dessert_whitelist_rm(mac) \
     dessert_filter_rm(mac, DESSERT_WHITELIST, NULL)
@@ -1271,9 +1250,9 @@ int dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc
 
 int dessert_cli_cmd_ping(struct cli_def* cli, char* command, char* argv[], int argc);
 int dessert_cli_cmd_traceroute(struct cli_def* cli, char* command, char* argv[], int argc);
-int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_mesh_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result dessert_mesh_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode);
 
 /** @} */

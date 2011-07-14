@@ -95,7 +95,7 @@ int dessert_cli_cmd_ping(struct cli_def* cli, char* command, char* argv[], int a
  * @retval DESSERT_MSG_DROP if the ping is destined to this host
  * @retval DESSERT_MSG_KEEP if some other host is the destination
  */
-int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     dessert_ext_t* ext;
     struct ether_header* l25h;
     u_char temp[ETHER_ADDR_LEN];
@@ -103,7 +103,7 @@ int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, 
     l25h = dessert_msg_getl25ether(msg);
 
     if(l25h
-       && proc->lflags & DESSERT_LFLAG_DST_SELF
+       && proc->lflags & DESSERT_RX_FLAG_L25_DST
        && dessert_msg_getext(msg, &ext, DESSERT_EXT_PING, 0)) {
 
         dessert_debug("got ping packet from " MAC " - sending pong", EXPLODE_ARRAY6(l25h->ether_shost));
@@ -132,7 +132,7 @@ int dessert_mesh_ping(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, 
  * @retval DESSERT_MSG_DROP if the pong is destined to this host
  * @retval DESSERT_MSG_KEEP if some other host is the destination
  */
-int dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     dessert_ext_t* ext;
     struct ether_header* l25h;
     u_char temp[ETHER_ADDR_LEN];
@@ -140,7 +140,7 @@ int dessert_mesh_pong(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, 
     l25h = dessert_msg_getl25ether(msg);
 
     if(l25h
-       && proc->lflags & DESSERT_LFLAG_DST_SELF
+       && proc->lflags & DESSERT_RX_FLAG_L25_DST
        && dessert_msg_getext(msg, &ext, DESSERT_EXT_PONG, 0)) {
         dessert_debug("got pong packet from " MAC, EXPLODE_ARRAY6(l25h->ether_shost));
 

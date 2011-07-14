@@ -94,10 +94,10 @@ int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, uint8
     memcpy(msg, msgold, msglen);
 
     if(sparse) {
-        msg->flags |= DESSERT_FLAG_SPARSE;
+        msg->flags |= DESSERT_RX_FLAG_SPARSE;
     }
     else {
-        msg->flags &= ~DESSERT_FLAG_SPARSE;
+        msg->flags &= ~DESSERT_RX_FLAG_SPARSE;
     }
 
     *msgnew = msg;
@@ -379,7 +379,7 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 
     _dessert_msg_check_append("\tflags:    ");
 
-    if(msg->flags & DESSERT_FLAG_SPARSE) {
+    if(msg->flags & DESSERT_RX_FLAG_SPARSE) {
         _dessert_msg_check_append(" SPARSE");
     }
 
@@ -447,31 +447,31 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
         _dessert_msg_check_append("\tlocal processing header:\n");
         _dessert_msg_check_append("\tlflags:    ");
 
-        if(proc->lflags & DESSERT_LFLAG_SRC_SELF) {
+        if(proc->lflags & DESSERT_RX_FLAG_L25_SRC) {
             _dessert_msg_check_append(" DESSERT_FLAG_SRC_SELF");
         }
 
-        if(proc->lflags & DESSERT_LFLAG_DST_SELF) {
+        if(proc->lflags & DESSERT_RX_FLAG_L25_DST) {
             _dessert_msg_check_append(" DESSERT_FLAG_DST_MULTICAST");
         }
 
-        if(proc->lflags & DESSERT_LFLAG_DST_MULTICAST) {
+        if(proc->lflags & DESSERT_RX_FLAG_L25_MULTICAST) {
             _dessert_msg_check_append(" DESSERT_FLAG_DST_SELF");
         }
 
-        if(proc->lflags & DESSERT_LFLAG_DST_BROADCAST) {
+        if(proc->lflags & DESSERT_RX_FLAG_L25_BROADCAST) {
             _dessert_msg_check_append(" DESSERT_FLAG_DST_BROADCAST");
         }
 
-        if(proc->lflags & DESSERT_LFLAG_PREVHOP_SELF) {
+        if(proc->lflags & DESSERT_RX_FLAG_L2_SRC) {
             _dessert_msg_check_append(" DESSERT_FLAG_PREVHOP_SELF");
         }
 
-        if(proc->lflags & DESSERT_LFLAG_NEXTHOP_SELF) {
+        if(proc->lflags & DESSERT_RX_FLAG_L2_DST) {
             _dessert_msg_check_append(" NEXTHOP_SELF");
         }
 
-        if(proc->lflags & DESSERT_LFLAG_NEXTHOP_BROADCAST) {
+        if(proc->lflags & DESSERT_RX_FLAG_L2_BROADCAST) {
             _dessert_msg_check_append(" NEXTHOP_BROADCAST");
         }
     }
@@ -536,7 +536,7 @@ int dessert_msg_getpayload(dessert_msg_t* msg, void** payload) {
 int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, size_t len) {
 
     /* check if sparse message */
-    if((msg->flags & DESSERT_FLAG_SPARSE) > 0) {
+    if((msg->flags & DESSERT_RX_FLAG_SPARSE) > 0) {
         dessert_debug("tried to add extension to a sparse message - use dessert_msg_clone() first!");
         return -1;
     }
@@ -695,7 +695,7 @@ int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type) {
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP if message is valid, DESSERT_MSG_DROP otherwise
  **/
-int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     if(dessert_msg_check(msg, len)) {
         dessert_debug("invalid package - discarding");
         return DESSERT_MSG_DROP;
@@ -710,7 +710,7 @@ int dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* pro
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP always
  **/
-int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     char buf[1024];
 
     dessert_msg_proc_dump(msg, len, proc, buf, 1024);
@@ -726,7 +726,7 @@ int dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP always
  **/
-int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     dessert_ext_t* ext;
 
     /* abort if message has no trace extension */
@@ -740,7 +740,7 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* pro
     }
 
     /* we cannot add header to sparse messages */
-    if(msg->flags & DESSERT_FLAG_SPARSE) {
+    if(msg->flags & DESSERT_RX_FLAG_SPARSE) {
         return DESSERT_MSG_NEEDNOSPARSE;
     }
 
@@ -770,7 +770,7 @@ int dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* pro
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP or DESSERT_MSG_NEEDMSGPROC
  **/
-int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* riface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* riface, dessert_frameid_t id) {
     dessert_meshif_t* iface;
     struct ether_header* l25h;
 
@@ -783,67 +783,67 @@ int dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t
     l25h = dessert_msg_getl25ether(msg);
 
     /* clear flags */
-    proc->lflags &= ~(DESSERT_LFLAG_DST_SELF
-                      | DESSERT_LFLAG_SRC_SELF
-                      | DESSERT_LFLAG_NEXTHOP_SELF
-                      | DESSERT_LFLAG_PREVHOP_SELF
-                      | DESSERT_LFLAG_NEXTHOP_BROADCAST
-                      | DESSERT_LFLAG_DST_SELF_OVERHEARD
-                      | DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD);
+    proc->lflags &= ~(DESSERT_RX_FLAG_L25_DST
+                      | DESSERT_RX_FLAG_L25_SRC
+                      | DESSERT_RX_FLAG_L2_DST
+                      | DESSERT_RX_FLAG_L2_SRC
+                      | DESSERT_RX_FLAG_L2_BROADCAST
+                      | DESSERT_RX_FLAG_L25_OVERHEARD
+                      | DESSERT_RX_FLAG_L2_OVERHEARD);
 
     /* checks against defaults */
     if(l25h != NULL && memcmp(l25h->ether_dhost, ether_broadcast, ETHER_ADDR_LEN) == 0) {
-        proc->lflags |= DESSERT_LFLAG_DST_BROADCAST;
+        proc->lflags |= DESSERT_RX_FLAG_L25_BROADCAST;
     }
     else if(l25h != NULL && l25h->ether_dhost[0] & 0x01) {    /* broadcast also has this bit set */
-        proc->lflags |= DESSERT_LFLAG_DST_MULTICAST;
+        proc->lflags |= DESSERT_RX_FLAG_L25_MULTICAST;
     }
 
     if(l25h != NULL && memcmp(l25h->ether_dhost, dessert_l25_defsrc, ETHER_ADDR_LEN) == 0) {
-        proc->lflags |= DESSERT_LFLAG_DST_SELF;
+        proc->lflags |= DESSERT_RX_FLAG_L25_DST;
     }
 
     if(l25h != NULL && memcmp(l25h->ether_shost, dessert_l25_defsrc, ETHER_ADDR_LEN) == 0) {
-        proc->lflags |= DESSERT_LFLAG_SRC_SELF;
+        proc->lflags |= DESSERT_RX_FLAG_L25_SRC;
     }
 
     if(memcmp(msg->l2h.ether_dhost, dessert_l25_defsrc, ETHER_ADDR_LEN) == 0) {
-        proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF;
+        proc->lflags |= DESSERT_RX_FLAG_L2_DST;
     }
 
     if(memcmp(msg->l2h.ether_shost, dessert_l25_defsrc, ETHER_ADDR_LEN) == 0) {
-        proc->lflags |= DESSERT_LFLAG_PREVHOP_SELF;
+        proc->lflags |= DESSERT_RX_FLAG_L2_SRC;
     }
 
     if(memcmp(msg->l2h.ether_dhost, ether_broadcast, ETHER_ADDR_LEN) == 0) {
-        proc->lflags |= DESSERT_LFLAG_NEXTHOP_BROADCAST;
+        proc->lflags |= DESSERT_RX_FLAG_L2_BROADCAST;
     }
 
     /* checks against interfaces in list */
     pthread_rwlock_rdlock(&dessert_cfglock);
     DL_FOREACH(dessert_meshiflist_get(), iface) {
         if(l25h != NULL && memcmp(l25h->ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_DST_SELF;
+            proc->lflags |= DESSERT_RX_FLAG_L25_DST;
 
             if(memcmp(l25h->ether_dhost, riface->hwaddr, ETHER_ADDR_LEN) != 0) {
-                proc->lflags |= DESSERT_LFLAG_DST_SELF_OVERHEARD;
+                proc->lflags |= DESSERT_RX_FLAG_L25_OVERHEARD;
             }
         }
 
         if(l25h != NULL && memcmp(l25h->ether_shost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_SRC_SELF;
+            proc->lflags |= DESSERT_RX_FLAG_L25_SRC;
         }
 
         if(memcmp(msg->l2h.ether_dhost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF;
+            proc->lflags |= DESSERT_RX_FLAG_L2_DST;
 
             if(memcmp(msg->l2h.ether_dhost, riface->hwaddr, ETHER_ADDR_LEN) != 0) {
-                proc->lflags |= DESSERT_LFLAG_NEXTHOP_SELF_OVERHEARD;
+                proc->lflags |= DESSERT_RX_FLAG_L2_OVERHEARD;
             }
         }
 
         if(memcmp(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN) == 0) {
-            proc->lflags |= DESSERT_LFLAG_PREVHOP_SELF;
+            proc->lflags |= DESSERT_RX_FLAG_L2_SRC;
         }
     }
     pthread_rwlock_unlock(&dessert_cfglock);
