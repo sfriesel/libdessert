@@ -133,27 +133,26 @@
 /** size of local message processing buffer; 1 kbyte should be enough for everybody (?) */
 #define DESSERT_LBUF_LEN 1024
 
-/** return code for many dessert_* functions */
-#define DESSERT_OK                  0
-
-/** return code for many dessert_* functions */
-#define DESSERT_ERR                 1
-
 /******************************************************************************
  * typedefs
  ******************************************************************************/
 
-typedef enum _dessert_return_code {
-    dessert_ok  = DESSERT_OK,
-    dessert_err = DESSERT_ERR
+typedef enum _dessert_results {
+    DESSERT_OK = 0,
+    DESSERT_ERR = 1
 } dessert_result;
 
-typedef enum dessert_return_codes {
+typedef enum _dessert_cb_results {
     DESSERT_MSG_DROP            = -1, ///< stop handling the packet and drop it
     DESSERT_MSG_KEEP            =  0, ///< continue to handle the packet in the following callback
     DESSERT_MSG_NEEDNOSPARSE    =  1, ///< forces to copy the message and call again
     DESSERT_MSG_NEEDMSGPROC     =  2, ///< forces to generate processing info and call again
 } dessert_cb_result;
+
+typedef enum _dessert_periodic_results {
+    DESSERT_PER_KEEP = 0,
+    DESSERT_PER_UNREGISTER = 1
+} dessert_per_result;
 
 /** runtime-unique frame id */
 typedef uint64_t dessert_frameid_t;
@@ -224,7 +223,7 @@ typedef struct __attribute__((__packed__)) dessert_ext {
     uint8_t    len;
 
     /** pointer to the data - real length is len-2 bytes */
-    uint8_t       data[DESSERT_MAXEXTDATALEN];
+    uint8_t    data[DESSERT_MAXEXTDATALEN];
 } dessert_ext_t;
 
 /** an interface used for dessert_msg frames */
@@ -259,6 +258,14 @@ typedef struct dessert_meshif {
     struct monitor_neighbour* neighbours;
     /** non-zero if interface is being monitored */
     uint8_t             monitor_active;
+    struct {
+        /** bytes that can be send **/
+        uint64_t    tokens;
+        /** limit of the bucket **/
+        uint64_t    max_tokens;
+        /** rate to fill the bucket **/
+        uint64_t    tokens_per_msec;
+    } token_bucket;
     /** pointer to prev interface */
     struct dessert_meshif*    prev;
 } dessert_meshif_t;
@@ -349,9 +356,9 @@ typedef dessert_cb_result dessert_sysrxcb_t(dessert_msg_t* msg, size_t len, dess
  * @arg *data void pointer to pass to the callback
  * @arg scheduled when this call was scheduled
  * @arg interval how often this call should be scheduled
- * @return should be 0, otherwise the callback is unregistered
+ * @return should be DESSERT_PER_KEEP, otherwise the callback is unregistered
  */
-typedef int dessert_periodiccallback_t(void* data, struct timeval* scheduled, struct timeval* interval);
+typedef dessert_per_result dessert_periodiccallback_t(void* data, struct timeval* scheduled, struct timeval* interval);
 
 /** definition of a periodic tasklist entry */
 typedef struct dessert_periodic {
@@ -368,7 +375,7 @@ typedef struct dessert_periodic {
 } dessert_periodic_t;
 
 /** callback function type to handle signals **/
-typedef int dessert_signalcb_t(int signal);
+typedef dessert_result dessert_signalcb_t(int signal);
 
 /***************************************************************************//**
  * @}
@@ -414,10 +421,10 @@ extern char        dessert_proto[DESSERT_PROTO_STRLEN+1];
 extern size_t dessert_maxlen;
 
 /** version int used in dessert_msg frames */
-extern u_int8_t    dessert_ver;
+extern uint8_t    dessert_ver;
 
 /** default src address used for local generated dessert_msg frames */
-extern u_int8_t    dessert_l25_defsrc[ETHER_ADDR_LEN];
+extern uint8_t    dessert_l25_defsrc[ETHER_ADDR_LEN];
 
 /** constant holding ethernet broadcast address after dessert_init */
 extern u_char      ether_broadcast[ETHER_ADDR_LEN];
@@ -1222,7 +1229,7 @@ enum dessert_filter {
     DESSERT_BLACKLIST
 };
 
-bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def* cli);
+bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, double p, enum dessert_filter list, struct cli_def* cli);
 bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def* cli);
 
 dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);

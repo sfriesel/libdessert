@@ -226,7 +226,7 @@ void* dessert_signal_thread(void* param) {
     return NULL;
 }
 
-int _dessert_signals_init() {
+dessert_result _dessert_signals_init() {
     sigset_t signal_mask_block;
     sigemptyset(&signal_mask_block);
     sigaddset(&signal_mask_block, SIGTERM);
@@ -239,5 +239,5 @@ int _dessert_signals_init() {
     }
 
     pthread_create(&_dessert_signal_thread, NULL, dessert_signal_thread, NULL);
-    return 0;
+    return DESSERT_OK;
 }

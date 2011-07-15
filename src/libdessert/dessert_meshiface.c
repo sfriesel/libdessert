@@ -768,7 +768,7 @@ dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, de
     dessert_msg_t* msg = msg_in;
     dessert_msg_proc_t* proc = proc_in;
     dessert_meshrxcbe_t* cb;
-    int res = 0;
+    int res = DESSERT_MSG_KEEP;
     dessert_meshrxcb_t** cbl = NULL;
     int cbllen = 0;
     int cblcur = -1;
@@ -798,7 +798,7 @@ dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, de
     pthread_rwlock_unlock(&dessert_cfglock);
 
     /* call the interested */
-    res = 0;
+    res = DESSERT_MSG_KEEP;
     cblcur = 0;
 
     while(res > DESSERT_MSG_DROP && cblcur < cbllen) {
@@ -973,7 +973,11 @@ static void _dessert_packet_process(u_int8_t* args, const struct pcap_pkthdr* he
     meshif->ibytes += header->caplen;
     pthread_mutex_unlock(&(meshif->cnt_mutex));
 
+    if(dessert_mesh_filter(msg, len, &proc, meshif, id) != DESSERT_MSG_KEEP) {
+        return;
+    }
     _dessert_meshrxcb_runall(msg, len, &proc, meshif, id);
+    /* do not free the packet's memory as it is managed by libpcap! */
 }
 
 /** Internal routine called before interface thread finishes.

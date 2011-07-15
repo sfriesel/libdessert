@@ -26,13 +26,14 @@
 #include "dessert_internal.h"
 #include "dessert.h"
 
-#define print_ifname(e) \
-    e->iface ? e->iface->if_name : "*"
+#define print_default \
+    _default_rule == DESSERT_MSG_KEEP ? _whitelist_str : _blacklist_str
 
 pthread_rwlock_t dessert_filterlock = PTHREAD_RWLOCK_INITIALIZER;
 
 typedef struct mac_entry {
     char mac[6];
+    double p;
     dessert_meshif_t* iface;
     struct mac_entry* prev;
     struct mac_entry* next;
@@ -40,14 +41,19 @@ typedef struct mac_entry {
 
 static mac_entry_t* _dessert_whitelist = NULL;
 static mac_entry_t* _dessert_blacklist = NULL;
+static const char* _whitelist_str = "accept";
+static const char* _blacklist_str = "drop";
+static dessert_cb_result _default_rule = DESSERT_MSG_KEEP;
 
 static mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t* list) {
     mac_entry_t* elt = NULL;
     DL_FOREACH(list, elt) {
-        if((elt->iface == NULL || elt->iface == iface)
-           && (memcmp(elt->mac, mac, 6) == 0 || memcmp(elt->mac, "*", 1) == 0)) {
-            dessert_debug("matching rule: " MAC ", %6s", elt->mac, print_ifname(elt));
-            return elt;
+        if(elt->iface == iface && memcmp(elt->mac, mac, 6) == 0) {
+            dessert_debug("matching rule: " MAC ", %6s", elt->mac, elt->iface->if_name);
+            if(random() < (((long double) elt->p)*((long double) RAND_MAX))) {
+                return elt;
+            }
+            return NULL;
         }
     }
     return NULL;
@@ -85,7 +91,7 @@ static dessert_meshif_t* ifname2iface(char* ifname) {
  *
  * @return true if rule added, else false
  */
-bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def* cli) {
+bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, double p, enum dessert_filter list, struct cli_def* cli) {
     mac_entry_t** cur = NULL;
     mac_entry_t** other = NULL;
 
@@ -124,6 +130,7 @@ bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, enum dessert_fi
 
     memcpy(new_entry->mac, mac, sizeof(new_entry->mac));
     new_entry->iface = iface;
+    new_entry->p = p;
 
     DL_APPEND(*cur, new_entry);
 
@@ -186,52 +193,83 @@ fail:
 int _dessert_cli_cmd_show_rules(struct cli_def* cli, char* command, char* argv[], int argc) {
     pthread_rwlock_rdlock(&dessert_filterlock);
     mac_entry_t* elt = NULL;
-    cli_print(cli, "\n\t[whitelist]");
-    cli_print(cli, "\t----------------------------------------");
-    cli_print(cli, "\t# \tMAC \t\t\tmeshif");
-    cli_print(cli, "\t----------------------------------------");
+    cli_print(cli, "\n\t[%s]", _whitelist_str);
+    cli_print(cli, "\t-----------------------------------------------------");
+    cli_print(cli, "\t# \tMAC \t\t\tmeshif\t\tp");
+    cli_print(cli, "\t-----------------------------------------------------");
     uint16_t i = 0;
     DL_FOREACH(_dessert_whitelist, elt) {
-        cli_print(cli, "\t%d\t" MAC "\t%s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
+        cli_print(cli, "\t%d\t" MAC "\t%s\t\t%.3f", i, EXPLODE_ARRAY6(elt->mac), elt->iface->if_name, elt->p);
         i++;
     }
-    cli_print(cli, "\n\t[blacklist]");
-    cli_print(cli, "\t----------------------------------------");
-    cli_print(cli, "\t# \tMAC \t\t\tmeshif");
-    cli_print(cli, "\t----------------------------------------");
+    cli_print(cli, "\n\t[%s]", _blacklist_str);
+    cli_print(cli, "\t-----------------------------------------------------");
+    cli_print(cli, "\t# \tMAC \t\t\tmeshif\t\tp");
+    cli_print(cli, "\t-----------------------------------------------------");
     i = 0;
     DL_FOREACH(_dessert_blacklist, elt) {
-        cli_print(cli, "\t%d\t" MAC "\t%s", i, EXPLODE_ARRAY6(elt->mac), elt->iface ? elt->iface->if_name : "*");
+        cli_print(cli, "\t%d\t" MAC "\t%s\t\t%.3f", i, EXPLODE_ARRAY6(elt->mac), elt->iface->if_name, elt->p);
         i++;
     }
+
+    cli_print(cli, "\n\t[default]: %s", print_default);
     pthread_rwlock_unlock(&dessert_filterlock);
     return CLI_OK;
 }
 
-enum { PARAM_LIST = 0, PARAM_MAC, PARAM_IFNAME };
+enum { PARAM_LIST = 0, PARAM_MAC, PARAM_IFNAME, PARAM_P, PARAM_NUM };
+
+/**
+ * CLI command to set default rule
+ */
+int _dessert_cli_cmd_rule_default(struct cli_def* cli, char* command, char* argv[], int argc) {
+    if(argc != 1) {
+        cli_print(cli, "usage: rule default [accept|drop]");
+        goto fail;
+    }
+
+    pthread_rwlock_rdlock(&dessert_filterlock);
+    if(strncmp(_whitelist_str, argv[0], sizeof(_whitelist_str)) == 0) {
+        _default_rule = DESSERT_MSG_KEEP;
+    }
+    else {
+        if(strncmp(_blacklist_str, argv[0], sizeof(_blacklist_str)) == 0) {
+            _default_rule = DESSERT_MSG_DROP;
+        }
+        else {
+            print_twice(LOG_ERR, cli, "could not parse default rule: %s", argv[0]);
+            goto fail;
+        }
+    }
+
+    pthread_rwlock_unlock(&dessert_filterlock);
+    return CLI_OK;
+
+fail:
+    pthread_rwlock_unlock(&dessert_filterlock);
+    cli_print(cli, "failed to set default rule");
+    return CLI_ERROR;
+}
 
 /**
  * CLI command to add a filter rule
  */
 int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], int argc) {
-    if(argc < 2 || argc > 3) {
-        cli_print(cli, "usage: filter add whitelist|blacklist] [MAC] [MESHIF]");
+    if(argc != PARAM_NUM) {
+        cli_print(cli, "usage: rule add accept|drop] [MAC] [MESHIF] [PROBABILITY]");
         goto fail;
     }
 
     char mac[6] = "      ";
+    double p = 1.0;
     dessert_meshif_t* iface = NULL;
     enum dessert_filter list = -1;
 
-    char* s = "whitelist";
-
-    if(strncmp(s, argv[PARAM_LIST], sizeof(s)) == 0) {
+    if(strncmp(_whitelist_str, argv[PARAM_LIST], sizeof(_whitelist_str)) == 0) {
         list = DESSERT_WHITELIST;
     }
     else {
-        s = "blacklist";
-
-        if(strncmp(s, argv[PARAM_LIST], sizeof(s)) == 0) {
+        if(strncmp(_blacklist_str, argv[PARAM_LIST], sizeof(_blacklist_str)) == 0) {
             list = DESSERT_BLACKLIST;
         }
         else {
@@ -241,20 +279,27 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
     }
 
     if(sscanf(argv[PARAM_MAC], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        if(strcmp(argv[PARAM_MAC], "*") != 0) {
-            print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
-            goto fail;
-        }
-
-        mac[0] = '*';
+        print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
+        goto fail;
     }
 
-    if(argc == 3) {
-        iface = ifname2iface(argv[PARAM_IFNAME]);
+    iface = ifname2iface(argv[PARAM_IFNAME]);
+    if(iface == NULL) {
+        print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
+        goto fail;
     }
 
-    if(dessert_filter_rule_add(mac, iface, list, cli)) {
-        cli_print(cli, "added " MAC " to %s", EXPLODE_ARRAY6(mac), s);
+    if(sscanf(argv[PARAM_P], "%lf", &p) != 1) {
+        print_twice(LOG_ERR, cli, "could not parse probability: %17s", argv[PARAM_P]);
+        goto fail;
+    }
+    if(p <= 0.0 || p > 1.0) {
+        print_twice(LOG_ERR, cli, "invalid probability: %lf", p);
+        goto fail;
+    }
+
+    if(dessert_filter_rule_add(mac, iface, p, list, cli)) {
+        cli_print(cli, "added " MAC " to %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
         return CLI_OK;
     }
 
@@ -267,8 +312,8 @@ fail:
  * CLI command to remove a filter rule
  */
 int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], int argc) {
-    if(argc < 2) {
-        cli_print(cli, "usage: filter rm [whitelist|blacklist] [MAC] [MESHIF]");
+    if(argc != PARAM_NUM) {
+        cli_print(cli, "usage: rule rm [accept|drop] [MAC] [MESHIF]");
         goto fail;
     }
 
@@ -276,15 +321,11 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
     dessert_meshif_t* iface = NULL;
     enum dessert_filter list = -1;
 
-    char* s = "whitelist";
-
-    if(strncmp(s, argv[PARAM_LIST], sizeof(s)) == 0) {
+    if(strncmp(_whitelist_str, argv[PARAM_LIST], sizeof(_whitelist_str)) == 0) {
         list = DESSERT_WHITELIST;
     }
     else {
-        s = "blacklist";
-
-        if(strncmp(s, argv[PARAM_LIST], sizeof(s)) == 0) {
+        if(strncmp(_blacklist_str, argv[PARAM_LIST], sizeof(_blacklist_str)) == 0) {
             list = DESSERT_BLACKLIST;
         }
         else {
@@ -294,20 +335,18 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
     }
 
     if(sscanf(argv[PARAM_MAC], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        if(strcmp(argv[PARAM_MAC], "*") != 0) {
-            print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
-            goto fail;
-        }
-
-        mac[0] = '*';
+        print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
+        goto fail;
     }
 
-    if(argc == 3) {
-        iface = ifname2iface(argv[PARAM_IFNAME]);
+    iface = ifname2iface(argv[PARAM_IFNAME]);
+    if(iface == NULL) {
+        print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
+        goto fail;
     }
 
     if(dessert_filter_rule_rm(mac, iface, list, cli)) {
-        cli_print(cli, "removed " MAC " from %s", EXPLODE_ARRAY6(mac), s);
+        cli_print(cli, "removed " MAC " from %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
         return CLI_OK;
     }
 
@@ -321,8 +360,8 @@ fail:
  *
  * Filter frames based on the layer 2 source address and the mesh interface where the frame was received.
  * The rules are checked in the following order:
- * 1) whitelist -> accept
- * 2) blacklist -> drop
+ * 1) accept -> accept
+ * 2) drop -> drop
  * 3) wildcard -> accept or drop
  * 4) default -> accept
  *
@@ -335,20 +374,18 @@ dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_ms
     pthread_rwlock_rdlock(&dessert_filterlock);
 
     if(find_in_list(mac, iface, _dessert_whitelist)) {
-        goto ok;
+        dessert_debug("accepting frame from " MAC, EXPLODE_ARRAY6(mac));
+        pthread_rwlock_unlock(&dessert_filterlock);
+        return DESSERT_MSG_KEEP;
     }
 
     if(find_in_list(mac, iface, _dessert_blacklist)) {
-        goto drop;
+        dessert_debug("dropped frame from " MAC, EXPLODE_ARRAY6(mac));
+        pthread_rwlock_unlock(&dessert_filterlock);
+        return DESSERT_MSG_DROP;
     }
 
-ok:
-    dessert_debug("accepting frame from " MAC, EXPLODE_ARRAY6(mac));
+    dessert_debug("using default (%s) for frame from " MAC, print_default, EXPLODE_ARRAY6(mac));
     pthread_rwlock_unlock(&dessert_filterlock);
-    return DESSERT_MSG_KEEP;
-
-drop:
-    dessert_debug("dropped frame from " MAC, EXPLODE_ARRAY6(mac));
-    pthread_rwlock_unlock(&dessert_filterlock);
-    return DESSERT_MSG_DROP;
+    return _default_rule;
 }

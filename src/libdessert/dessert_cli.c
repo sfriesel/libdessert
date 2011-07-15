@@ -288,6 +288,14 @@ int _dessert_cli_init() {
         "Remove MAC from filter.");
 
     cli_register_command(dessert_cli,
+        dessert_cli_filter,
+        "default",
+        _dessert_cli_cmd_rule_default,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set default rule.");
+
+    cli_register_command(dessert_cli,
         dessert_cli_show,
         "rules",
         _dessert_cli_cmd_show_rules,
