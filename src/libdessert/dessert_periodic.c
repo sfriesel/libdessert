@@ -146,9 +146,10 @@ dessert_periodic_t* dessert_periodic_add_delayed(dessert_periodiccallback_t* c, 
     return (dessert_periodic_add(c, data, &at, NULL));
 }
 
-/** Removes a delayed/periodic task from the task list.
+/** Removes a periodic task from the task list.
  *
  * @param[in] p pointer to task description
+ * @param[in] data data pointer given to dessert_periodic_add*
  *
  * @return -1 on failure, 0 if the task was removed
  *

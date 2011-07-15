@@ -152,13 +152,40 @@ typedef enum _dessert_cb_results {
 typedef enum _dessert_periodic_results {
     DESSERT_PER_KEEP = 0,
     DESSERT_PER_UNREGISTER = 1
-} dessert_per_result;
+} dessert_per_result_t;
 
 /** runtime-unique frame id */
 typedef uint64_t dessert_frameid_t;
 
 /** ethernet address */
 typedef uint8_t mac_addr[ETHER_ADDR_LEN];
+
+/** callbacks type to call in a periodic task
+ *
+ * The callbacks are invoked with no locks hold by the thread,
+ * YOU MUST make sure the thread holds no locks after the callback exits.
+ * YOU MUST also make sure not to do anything blocking in a callback!
+ *
+ * @arg *data void pointer to pass to the callback
+ * @arg scheduled when this call was scheduled
+ * @arg interval how often this call should be scheduled
+ * @return should be DESSERT_PER_KEEP, otherwise the callback is unregistered
+ */
+typedef dessert_per_result_t dessert_periodiccallback_t(void* data, struct timeval* scheduled, struct timeval* interval);
+
+/** definition of a periodic tasklist entry */
+typedef struct dessert_periodic {
+    /** callback to call */
+    dessert_periodiccallback_t* c;
+    /** when to call next */
+    struct timeval scheduled;
+    /** call every */
+    struct timeval interval;
+    /** data pointer to pass to callback */
+    void* data;
+    /** internal pointer for task list */
+    struct dessert_periodic*  next;
+} dessert_periodic_t;
 
 /** Structure of the DES-SERT Message
  *
@@ -226,6 +253,21 @@ typedef struct __attribute__((__packed__)) dessert_ext {
     uint8_t    data[DESSERT_MAXEXTDATALEN];
 } dessert_ext_t;
 
+
+typedef struct {
+    /** bytes that can be send **/
+    uint64_t    tokens;
+    /** limit of the bucket **/
+    uint64_t    max_tokens;
+    /** rate to fill the bucket **/
+    uint64_t    tokens_per_sec;
+    /** handle for the periodic task to dispense tokens into the bucket
+     * null if token bucket is disabled
+     **/
+    dessert_periodic_t* periodic;
+    pthread_mutex_t     mutex;
+} token_bucket_t;
+
 /** an interface used for dessert_msg frames */
 typedef struct dessert_meshif {
     /** pointer to next interface */
@@ -258,14 +300,7 @@ typedef struct dessert_meshif {
     struct monitor_neighbour* neighbours;
     /** non-zero if interface is being monitored */
     uint8_t             monitor_active;
-    struct {
-        /** bytes that can be send **/
-        uint64_t    tokens;
-        /** limit of the bucket **/
-        uint64_t    max_tokens;
-        /** rate to fill the bucket **/
-        uint64_t    tokens_per_msec;
-    } token_bucket;
+    token_bucket_t token_bucket;
     /** pointer to prev interface */
     struct dessert_meshif*    prev;
 } dessert_meshif_t;
@@ -346,33 +381,6 @@ typedef dessert_cb_result dessert_meshrxcb_t(dessert_msg_t* msg, size_t len, des
  *
 */
 typedef dessert_cb_result dessert_sysrxcb_t(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
-
-/** callbacks type to call in a periodic task
- *
- * The callbacks are invoked with no locks hold by the thread,
- * YOU MUST make sure the thread holds no locks after the callback exits.
- * YOU MUST also make sure not to do anything blocking in a callback!
- *
- * @arg *data void pointer to pass to the callback
- * @arg scheduled when this call was scheduled
- * @arg interval how often this call should be scheduled
- * @return should be DESSERT_PER_KEEP, otherwise the callback is unregistered
- */
-typedef dessert_per_result dessert_periodiccallback_t(void* data, struct timeval* scheduled, struct timeval* interval);
-
-/** definition of a periodic tasklist entry */
-typedef struct dessert_periodic {
-    /** callback to call */
-    dessert_periodiccallback_t* c;
-    /** when to call next */
-    struct timeval scheduled;
-    /** call every */
-    struct timeval interval;
-    /** data pointer to pass to callback */
-    void* data;
-    /** internal pointer for task list */
-    struct dessert_periodic*  next;
-} dessert_periodic_t;
 
 /** callback function type to handle signals **/
 typedef dessert_result dessert_signalcb_t(int signal);
@@ -672,6 +680,8 @@ dessert_cb_result dessert_mesh_ipttl(dessert_msg_t* msg, size_t len, dessert_msg
 dessert_meshif_t* dessert_meshif_get_name(const char* dev);
 dessert_meshif_t* dessert_meshif_get_hwaddr(const uint8_t hwaddr[ETHER_ADDR_LEN]);
 dessert_meshif_t* dessert_meshiflist_get(void);
+dessert_meshif_t* dessert_ifname2meshif(char* ifname);
+
 /*\}*/
 /***************************************************************************//**
  * @}
@@ -1213,6 +1223,14 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
 #else
 #define assert(e) \
     (__builtin_expect(!(e), 0) ? __dessert_assert(__FUNCTION__, __FILE__, __LINE__, #e) : (void)0)
+#endif
+
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
 /***************************************************************************//**

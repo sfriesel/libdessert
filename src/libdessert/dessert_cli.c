@@ -458,6 +458,14 @@ int _dessert_cli_init() {
         "Set TCP port for the CLI's telnet interface.");
 
     cli_register_command(dessert_cli,
+        dessert_cli_set,
+        "tb",
+        _dessert_cli_cmd_tokenbucket,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Activate, deactivate, or modify token bucket.");
+
+    cli_register_command(dessert_cli,
         NULL,
         "pid",
         _dessert_cli_cmd_pid,

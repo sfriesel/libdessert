@@ -134,6 +134,7 @@ int _dessert_cli_cmd_show_rules(struct cli_def* cli, char* command, char* argv[]
 int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_rule_default(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc);
 
 /******************************************************************************
  *

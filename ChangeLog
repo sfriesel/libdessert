@@ -4,6 +4,7 @@
     - Replaced int return values by enum types
     - Added enum for periodics return codes
     - The filter is now called always before the mesh callbacks are invoked
+    - Added min, max macros (if they are not already defined)
 
 20110712 - 1.04
     - Added CLI show function for monitor configuration

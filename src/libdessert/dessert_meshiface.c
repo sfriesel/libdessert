@@ -535,6 +535,26 @@ int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio) {
  * mesh interface handling
  ******************************************************************************/
 
+/**
+ * Find dessert_meshif_t with matching name
+ *
+ * @param ifname name of the interface
+ * @return pointer to the dessert_meshif if found, else null
+ */
+dessert_meshif_t* dessert_ifname2meshif(char* ifname) {
+    dessert_meshif_t* iface;
+    bool b = false;
+    MESHIFLIST_ITERATOR_START(iface)
+
+    if(strcmp(iface->if_name, ifname) == 0) {
+        b = true;
+        break;
+    }
+
+    MESHIFLIST_ITERATOR_STOP;
+    return b ? iface : NULL;
+}
+
 /** Returns the head of the list of mesh interfaces (_desert_meshiflist).
  *
  * @retval pointer  if list is not empty
@@ -638,6 +658,15 @@ int dessert_meshif_del(const char* dev) {
     return DESSERT_OK;
 }
 
+
+void _dessert_init_tb(token_bucket_t* tb) {
+    tb->tokens = 0;
+    tb->max_tokens = UINT64_MAX;
+    tb->tokens_per_sec = 0;
+    tb->periodic = NULL;
+    pthread_mutex_init(&(tb->mutex), NULL);
+}
+
 /** Initializes given mesh interface, starts up the packet processor thread.
 
  * @param[in] *dev interface name
@@ -645,8 +674,6 @@ int dessert_meshif_del(const char* dev) {
  *
  * @retval DESSERT_OK   on success
  * @retval DESSERT_ERR  on error
- *
- *
  *
  * %DESCRIPTION:
  *
@@ -671,6 +698,7 @@ int dessert_meshif_add(const char* dev, uint8_t flags) {
     strncpy(meshif->if_name, dev, IF_NAMESIZE);
     meshif->if_name[IF_NAMESIZE - 1] = '\0';
     meshif->if_index = if_nametoindex(dev);
+    _dessert_init_tb(&(meshif->token_bucket));
     pthread_mutex_init(&(meshif->cnt_mutex), NULL);
 
     /* check if interface exists */
@@ -887,7 +915,7 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t* meshif) {
  * @param[in] *msg the message to send
  * @param[in] *iface the interface the message should be send via
  *
- * @retval DESSERT_OK on success
+ * @retval DESSERT_OK on success or if packet was dropped due to traffic shaping
  * @retval EINVAL if *iface is NULL
  * @retval EIO if there was a problem sending the message
  *
@@ -902,6 +930,20 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
         dessert_err("NULL-pointer given as interface - programming error!");
         return EINVAL;
     }
+
+    // traffic shaping with token bucket
+    pthread_mutex_lock(&(iface->token_bucket.mutex)); //// [LOCK]
+    if(iface->token_bucket.periodic != NULL) {
+        if(iface->token_bucket.tokens >= msglen) {
+            dessert_debug("consuming %ld bytes for %s",  msglen, iface->if_name);
+            iface->token_bucket.tokens -= msglen;
+        }
+        else {
+            pthread_mutex_unlock(&(iface->token_bucket.mutex)); //// [UNLOCK]
+            return DESSERT_OK;
+        }
+    }
+    pthread_mutex_unlock(&(iface->token_bucket.mutex)); //// [UNLOCK]
 
     /* send packet - temporally setting DESSERT_RX_FLAG_SPARSE */
     uint8_t oldflags = msg->flags;
@@ -1120,6 +1162,73 @@ static inline void permutation(int k, int len, dessert_meshif_t** a) {
     }
 }
 
+dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval) {
+    dessert_meshif_t* meshif = (dessert_meshif_t*) data;
+    token_bucket_t* tb = &(meshif->token_bucket);
+    pthread_mutex_lock(&(tb->mutex)); //// [LOCK]
+    uint64_t tokens = min(max(tb->max_tokens - (tb->tokens + tb->tokens_per_sec/1000), 0), tb->tokens_per_sec/1000);
+    dessert_trace("adding %ld tokens to %s (%ld/%ld)", tokens, meshif->if_name, tb->tokens, tb->max_tokens);
+    tb->tokens += tokens;
+    pthread_mutex_unlock(&(tb->mutex)); //// [UNLOCK]
+    return DESSERT_PER_KEEP;
+}
+
+int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
+    enum { PARAM_MESHIF=0, PARAM_SIZE, PARAM_RATE, NUM_PARAMS};
+
+    if(argc != NUM_PARAMS) {
+        cli_print(cli, "usage: %s [MESHIF] [BUCKETSIZE (bytes)] [RATE (bytes/s)]", command);
+        return CLI_ERROR;
+    }
+
+    dessert_meshif_t* meshif = dessert_ifname2meshif(argv[PARAM_MESHIF]);
+    if(meshif == NULL) {
+        cli_print(cli, "could not find interface: %s", argv[PARAM_MESHIF]);
+        return CLI_ERROR;
+    }
+
+    uint64_t size = strtoul(argv[PARAM_SIZE], NULL, 10);
+    uint64_t rate = strtoul(argv[PARAM_RATE], NULL, 10);
+
+    pthread_mutex_lock(&(meshif->token_bucket.mutex)); //// [LOCK]
+    /* deaktivate token bucket */
+    if(size == 0 || rate == 0) {
+        if(meshif->token_bucket.periodic != NULL) {
+            if(dessert_periodic_del(meshif->token_bucket.periodic) == -1) {
+                cli_print(cli, "token bucket not activated for interface: %s", argv[PARAM_MESHIF]);
+            }
+            meshif->token_bucket.periodic = NULL;
+            cli_print(cli, "deactivated token bucket for interface: %s", argv[PARAM_MESHIF]);
+        }
+        else {
+            cli_print(cli, "no active token bucket for: %s", argv[PARAM_MESHIF]);
+        }
+        goto out;
+    }
+
+    /* modify tocken bucket */
+    meshif->token_bucket.max_tokens = size;
+    meshif->token_bucket.tokens_per_sec = rate;
+
+    /* activate token bucket */
+    if(meshif->token_bucket.periodic == NULL) {
+        struct timeval interval;
+        interval.tv_sec = 0;
+        interval.tv_usec = 1000;
+        dessert_periodic_t* per = dessert_periodic_add(_dessert_token_dispenser, meshif, NULL, &interval);
+        meshif->token_bucket.tokens = meshif->token_bucket.tokens_per_sec;
+        meshif->token_bucket.periodic = per;
+        cli_print(cli, "activated token bucket for interface: %s", argv[PARAM_MESHIF]);
+        goto out;
+    }
+
+    cli_print(cli, "updated token bucket for interface: %s", argv[PARAM_MESHIF]);
+
+out:
+    pthread_mutex_unlock(&(meshif->token_bucket.mutex)); //// [UNLOCK]
+    return CLI_OK;
+}
+
 /** Add mesh mesh interface
  *
  * Adds an interface as mesh interface to the daemon. libpcap is
@@ -1143,7 +1252,7 @@ int dessert_cli_cmd_addmeshif(struct cli_def* cli, char* command, char* argv[], 
     int i;
 
     if(argc != 1) {
-        cli_print(cli, "usage %s [mesh-interface]\n", command);
+        cli_print(cli, "usage: %s [mesh-interface]\n", command);
         return CLI_ERROR;
     }
 

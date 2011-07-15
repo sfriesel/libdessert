@@ -323,7 +323,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
  *
  * @return DESSERT_PER_KEEP (do not unregister)
  */
-dessert_per_result dessert_flush_log(void* data, struct timeval* scheduled, struct timeval* interval) {
+dessert_per_result_t dessert_flush_log(void* data, struct timeval* scheduled, struct timeval* interval) {
     if(dessert_logfd != NULL) {
         pthread_mutex_lock(&_dessert_logfile_mutex);
         fflush(dessert_logfd);

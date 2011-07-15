@@ -59,23 +59,6 @@ static mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t
     return NULL;
 }
 
-/**
- * Find dessert_meshif_t with matching name
- */
-static dessert_meshif_t* ifname2iface(char* ifname) {
-    dessert_meshif_t* iface;
-    bool b = false;
-    MESHIFLIST_ITERATOR_START(iface)
-
-    if(strcmp(iface->if_name, ifname) == 0) {
-        b = true;
-        break;
-    }
-
-    MESHIFLIST_ITERATOR_STOP;
-    return b ? iface : NULL;
-}
-
 #define print_twice(level, cli, ...) \
     { _dessert_log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__); \
       if(cli) { cli_print(cli, __VA_ARGS__); } \
@@ -283,7 +266,7 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
         goto fail;
     }
 
-    iface = ifname2iface(argv[PARAM_IFNAME]);
+    iface = dessert_ifname2meshif(argv[PARAM_IFNAME]);
     if(iface == NULL) {
         print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
         goto fail;
@@ -339,7 +322,7 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
         goto fail;
     }
 
-    iface = ifname2iface(argv[PARAM_IFNAME]);
+    iface = dessert_ifname2meshif(argv[PARAM_IFNAME]);
     if(iface == NULL) {
         print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
         goto fail;
