@@ -457,7 +457,7 @@ int _dessert_cli_init() {
         MODE_CONFIG,
         "Set TCP port for the CLI's telnet interface.");
 
-    cli_register_command(dessert_cli,
+    struct cli_command* dessert_cli_tb = cli_register_command(dessert_cli,
         dessert_cli_set,
         "tb",
         _dessert_cli_cmd_tokenbucket,
@@ -465,6 +465,14 @@ int _dessert_cli_init() {
         MODE_CONFIG,
         "Activate, deactivate, or modify token bucket.");
 
+    cli_register_command(dessert_cli,
+        dessert_cli_tb,
+        "policy",
+        _dessert_cli_cmd_tokenbucket_policy,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set token bucket policy.");
+    
     cli_register_command(dessert_cli,
         dessert_cli_show,
         "tb",

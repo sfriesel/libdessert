@@ -1282,6 +1282,42 @@ static uint32_t eval_multiplier(char* c, struct cli_def* cli) {
     return 1;
 }
 
+int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char* argv[], int argc) {
+    const char* drop = "drop";
+    const char* queue_ordered = "queue_ordered";
+    const char* queue_unordered = "queue_unordered";
+    if(argc != 2) {
+        cli_print(cli, "usage: %s [MESHIF] [%s, %s, %s]", command, drop, queue_ordered, queue_unordered);
+        return CLI_ERROR;
+    }
+
+    dessert_meshif_t* meshif = dessert_ifname2meshif(argv[0]);
+    if(meshif == NULL) {
+        cli_print(cli, "could not find interface: %s", argv[0]);
+        return CLI_ERROR;
+    }
+
+    dessert_tb_policy_t policy;
+    if(strcmp(drop, argv[1]) == 0) {
+        policy = DESSERT_TB_DROP;
+    }
+    else if(strcmp(queue_ordered, argv[1]) == 0) {
+        policy = DESSERT_TB_QUEUE_ORDERED;
+    }
+    else if(strcmp(queue_unordered, argv[1]) == 0) {
+        policy = DESSERT_TB_QUEUE_UNORDERED;
+    }
+    else {
+        cli_print(cli, "unsupported policy: %s", argv[1]);
+        return CLI_ERROR;
+    }
+
+    _dessert_lock_bucket(meshif); //// [LOCK]
+    meshif->token_bucket.policy = policy;
+    cli_print(cli, "set policy: %s", argv[1]);
+    _dessert_unlock_bucket(meshif); //// [LOCK]
+}
+
 int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
     enum { PARAM_MESHIF=0, PARAM_SIZE, PARAM_RATE, NUM_PARAMS};
 
