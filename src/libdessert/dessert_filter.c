@@ -313,7 +313,7 @@ fail:
  * CLI command to remove a filter rule
  */
 int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], int argc) {
-    if(argc != PARAM_NUM-1  ) {
+    if(argc != PARAM_NUM-1) {
         cli_print(cli, "usage: rule rm [accept|drop] [MAC] [MESHIF]");
         goto fail;
     }

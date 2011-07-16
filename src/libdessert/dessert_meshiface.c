@@ -662,8 +662,10 @@ int dessert_meshif_del(const char* dev) {
 void _dessert_init_tb(token_bucket_t* tb) {
     tb->tokens = 0;
     tb->max_tokens = UINT64_MAX;
-    tb->tokens_per_sec = 0;
+    tb->tokens_per_msec = 0;
     tb->periodic = NULL;
+    tb->policy = DESSERT_TB_DROP;
+    tb->queue = NULL;
     pthread_mutex_init(&(tb->mutex), NULL);
 }
 
@@ -947,6 +949,28 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
             iface->token_bucket.tokens -= msglen;
         }
         else {
+            switch(iface->token_bucket.policy) {
+                case DESSERT_TB_QUEUE_ORDERED:
+                case DESSERT_TB_QUEUE_UNORDERED: {
+                    dessert_msg_t* cloned = NULL;
+                    int r = dessert_msg_clone(&cloned, msg, 1);
+                    if(r != DESSERT_OK) {
+                        dessert_crit("could not clone msg");
+                        break;
+                    }
+                    dessert_msg_queue_t* q = malloc(sizeof(dessert_msg_queue_t));
+                    if(q == NULL) {
+                        dessert_crit("could not allocate memory");
+                        break;
+                    }
+                    q->msg = cloned;
+                    q->len = msglen;
+                    LL_APPEND(iface->token_bucket.queue, q);
+                    break; }
+                case DESSERT_TB_DROP:
+                default:
+                    ; // do nothing
+            }
             _dessert_unlock_bucket(iface); //// [UNLOCK]
             return DESSERT_OK;
         }
@@ -1170,14 +1194,56 @@ static inline void permutation(int k, int len, dessert_meshif_t** a) {
     }
 }
 
-dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval) {
+static void _send_queued_msgs(dessert_meshif_t* meshif) {
+    // copy msgs  
+    _dessert_lock_bucket(meshif);
+    uint64_t tokens = meshif->token_bucket.tokens;
+    dessert_msg_queue_t* queue = (dessert_msg_queue_t*) &(meshif->token_bucket.queue);
+    dessert_msg_queue_t *elt, *tmp, *copy = NULL;
+    // copy all packets that can be sent with the tokens
+    LL_FOREACH_SAFE(queue, elt, tmp) {
+        if(tokens >= elt->len) {
+            LL_DELETE(queue, elt);
+            LL_APPEND(copy, elt);
+            tokens -= elt->len;
+        }
+        else {
+            if(tokens == 0) { // TODO: what is the minimum packet size?
+                break;
+            }
+            switch(meshif->token_bucket.policy) {
+                case DESSERT_TB_QUEUE_ORDERED:
+                    break;
+                case DESSERT_TB_QUEUE_UNORDERED:
+                    continue;
+                default:
+                    dessert_warning("unknown token bucket policy");
+                    break;
+            }
+        }
+    }
+    _dessert_unlock_bucket(meshif);
+    LL_FOREACH_SAFE(copy, elt, tmp) {
+        LL_DELETE(queue, elt);
+        _dessert_meshsend_if2(elt->msg, meshif);
+        dessert_msg_destroy(elt->msg);
+        free(elt);
+    }
+}
+
+static dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval) {
     dessert_meshif_t* meshif = (dessert_meshif_t*) data;
     token_bucket_t* tb = &(meshif->token_bucket);
+    
     pthread_mutex_lock(&(tb->mutex)); //// [LOCK]
-    uint64_t tokens = min(max(tb->max_tokens - (tb->tokens + tb->tokens_per_sec/1000), 0), tb->tokens_per_sec/1000);
+    uint64_t tokens = min(max(tb->max_tokens - (tb->tokens + tb->tokens_per_msec), 0), tb->tokens_per_msec);
     dessert_trace("adding %ld tokens to %s (%ld/%ld)", tokens, meshif->if_name, tb->tokens, tb->max_tokens);
     tb->tokens += tokens;
     pthread_mutex_unlock(&(tb->mutex)); //// [UNLOCK]
+    
+    if(tb->policy != DESSERT_TB_DROP) {
+        _send_queued_msgs(meshif); // spend tokens immediately on queued packets
+    }
     return DESSERT_PER_KEEP;
 }
 
@@ -1190,14 +1256,30 @@ int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* 
             cli_print(cli, "interface not found: %s", argv[0]);
             return CLI_ERROR;
         }
-        cli_print(cli, "%s: size=%ld, rate=%ld [%s]", argv[0], meshif->token_bucket.max_tokens, meshif->token_bucket.tokens_per_sec, meshif->token_bucket.periodic == NULL ? "disabled" : "enabled");
+        cli_print(cli, "%s: size=%ld, rate=%ld [%s]", argv[0], meshif->token_bucket.max_tokens, meshif->token_bucket.tokens_per_msec*1000, meshif->token_bucket.periodic == NULL ? "disabled" : "enabled");
         return CLI_OK;
     }
 
     MESHIFLIST_ITERATOR_START(meshif)
-    cli_print(cli, "%s: size=%ld, rate=%ld [%s]", meshif->if_name, meshif->token_bucket.max_tokens, meshif->token_bucket.tokens_per_sec, meshif->token_bucket.periodic == NULL ? "disabled" : "enabled");
+    cli_print(cli, "%s: size=%ld, rate=%ld [%s]", meshif->if_name, meshif->token_bucket.max_tokens, meshif->token_bucket.tokens_per_msec*1000, meshif->token_bucket.periodic == NULL ? "disabled" : "enabled");
     MESHIFLIST_ITERATOR_STOP;
     return CLI_OK;
+}
+
+static uint32_t eval_multiplier(char* c, struct cli_def* cli) {
+    if(c != NULL) {
+        switch(*c) {
+            case 'k':
+            case 'K':
+                return 1000;
+            case 'm':
+            case 'M':
+                return 1000*1000;
+            default:
+                cli_print(cli, "unsupported multiplier: %s (%x)", c, c[0]);
+        }
+    }
+    return 1;
 }
 
 int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
@@ -1214,8 +1296,15 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
         return CLI_ERROR;
     }
 
-    uint64_t size = strtoul(argv[PARAM_SIZE], NULL, 10);
-    uint64_t rate = strtoul(argv[PARAM_RATE], NULL, 10);
+    char *next_char = NULL;
+    uint64_t size = strtoul(argv[PARAM_SIZE], &next_char, 10);
+    if(size && *next_char != '\0') {
+        size *= eval_multiplier(next_char, cli);
+    }
+    uint64_t rate = strtoul(argv[PARAM_RATE], &next_char, 10);
+    if(rate && *next_char != '\0') {
+        rate *= eval_multiplier(next_char, cli);
+    }
 
     _dessert_lock_bucket(meshif); //// [LOCK]
     /* deaktivate token bucket */
@@ -1235,7 +1324,10 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
 
     /* modify tocken bucket */
     meshif->token_bucket.max_tokens = size;
-    meshif->token_bucket.tokens_per_sec = rate;
+    meshif->token_bucket.tokens_per_msec = min(rate/1000, size);
+    if(rate != meshif->token_bucket.tokens_per_msec*1000) {
+        cli_print(cli, "rate set to: %ld", meshif->token_bucket.tokens_per_msec);
+    }
 
     /* activate token bucket */
     if(meshif->token_bucket.periodic == NULL) {
@@ -1243,7 +1335,7 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
         interval.tv_sec = 0;
         interval.tv_usec = 1000;
         dessert_periodic_t* per = dessert_periodic_add(_dessert_token_dispenser, meshif, NULL, &interval);
-        meshif->token_bucket.tokens = meshif->token_bucket.tokens_per_sec;
+        meshif->token_bucket.tokens = meshif->token_bucket.tokens_per_msec;
         meshif->token_bucket.periodic = per;
         cli_print(cli, "activated token bucket for interface: %s", argv[PARAM_MESHIF]);
         goto out;

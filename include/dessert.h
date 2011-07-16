@@ -154,6 +154,12 @@ typedef enum _dessert_periodic_results {
     DESSERT_PER_UNREGISTER = 1
 } dessert_per_result_t;
 
+typedef enum _dessert_tb_policy {
+    DESSERT_TB_DROP = 0,
+    DESSERT_TB_QUEUE_ORDERED,
+    DESSERT_TB_QUEUE_UNORDERED
+} dessert_tb_policy_t;
+
 /** runtime-unique frame id */
 typedef uint64_t dessert_frameid_t;
 
@@ -253,6 +259,7 @@ typedef struct __attribute__((__packed__)) dessert_ext {
     uint8_t    data[DESSERT_MAXEXTDATALEN];
 } dessert_ext_t;
 
+extern struct msg_queue* queue;
 
 typedef struct {
     /** bytes that can be send **/
@@ -260,11 +267,14 @@ typedef struct {
     /** limit of the bucket **/
     uint64_t    max_tokens;
     /** rate to fill the bucket **/
-    uint64_t    tokens_per_sec;
+    uint64_t    tokens_per_msec;
     /** handle for the periodic task to dispense tokens into the bucket
      * null if token bucket is disabled
      **/
     dessert_periodic_t* periodic;
+    dessert_tb_policy_t policy;
+    struct msg_queue* queue;
+    /** to ensure thread safety **/
     pthread_mutex_t     mutex;
 } token_bucket_t;
 
