@@ -268,8 +268,13 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
 
     iface = dessert_ifname2meshif(argv[PARAM_IFNAME]);
     if(iface == NULL) {
-        print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
-        goto fail;
+        if(argv[PARAM_IFNAME][0] == '*') {
+           ;
+        }
+        else {
+            print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
+            goto fail;
+        }
     }
 
     if(sscanf(argv[PARAM_P], "%lf", &p) != 1) {
@@ -281,10 +286,23 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
         goto fail;
     }
 
-    if(dessert_filter_rule_add(mac, iface, p, list, cli)) {
-        cli_print(cli, "added " MAC " to %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
-        return CLI_OK;
+    // single interface
+    if(iface) {
+        if(dessert_filter_rule_add(mac, iface, p, list, cli)) {
+            cli_print(cli, "added " MAC " to %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
+        }
+        else {
+            goto fail;
+        }
     }
+    else {
+        MESHIFLIST_ITERATOR_START(iface)
+        if(dessert_filter_rule_add(mac, iface, p, list, cli)) {
+            cli_print(cli, "added " MAC " to %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
+        }
+        MESHIFLIST_ITERATOR_STOP;
+    }
+    return CLI_OK;
 
 fail:
     cli_print(cli, "failed to add");
@@ -295,7 +313,7 @@ fail:
  * CLI command to remove a filter rule
  */
 int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], int argc) {
-    if(argc != PARAM_NUM) {
+    if(argc != PARAM_NUM-1  ) {
         cli_print(cli, "usage: rule rm [accept|drop] [MAC] [MESHIF]");
         goto fail;
     }
@@ -324,14 +342,32 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
 
     iface = dessert_ifname2meshif(argv[PARAM_IFNAME]);
     if(iface == NULL) {
-        print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
-        goto fail;
+        if(argv[PARAM_IFNAME][0] == '*') {
+            ;
+        }
+        else {
+            print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
+            goto fail;
+        }
     }
 
-    if(dessert_filter_rule_rm(mac, iface, list, cli)) {
-        cli_print(cli, "removed " MAC " from %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
-        return CLI_OK;
+    // single interface
+    if(iface) {
+        if(dessert_filter_rule_rm(mac, iface, list, cli)) {
+            cli_print(cli, "removed " MAC " from %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
+        }
+        else {
+            goto fail;
+        }
     }
+    else {
+        MESHIFLIST_ITERATOR_START(iface)
+        if(dessert_filter_rule_rm(mac, iface, list, cli)) {
+            cli_print(cli, "removed " MAC " from %s", EXPLODE_ARRAY6(mac), list==DESSERT_WHITELIST ? _whitelist_str : _blacklist_str);
+        }
+        MESHIFLIST_ITERATOR_STOP;
+    }
+    return CLI_OK;
 
 fail:
     cli_print(cli, "failed to remove");

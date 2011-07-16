@@ -542,7 +542,7 @@ int dessert_meshrxcb_add(dessert_meshrxcb_t* c, int prio) {
  * @return pointer to the dessert_meshif if found, else null
  */
 dessert_meshif_t* dessert_ifname2meshif(char* ifname) {
-    dessert_meshif_t* iface;
+    dessert_meshif_t* iface = NULL;
     bool b = false;
     MESHIFLIST_ITERATOR_START(iface)
 
@@ -908,6 +908,14 @@ int _dessert_meshif_gethwaddr(dessert_meshif_t* meshif) {
  *
  ******************************************************************************/
 
+static inline void _dessert_lock_bucket(dessert_meshif_t* meshif) {
+    pthread_mutex_lock(&(meshif->token_bucket.mutex));
+}
+
+static inline void _dessert_unlock_bucket(dessert_meshif_t* meshif) {
+    pthread_mutex_unlock(&(meshif->token_bucket.mutex));
+}
+
 /** Function to send packet via a single interface.
  *
  * @internal
@@ -932,18 +940,18 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
     }
 
     // traffic shaping with token bucket
-    pthread_mutex_lock(&(iface->token_bucket.mutex)); //// [LOCK]
+    _dessert_lock_bucket(iface); //// [LOCK]
     if(iface->token_bucket.periodic != NULL) {
         if(iface->token_bucket.tokens >= msglen) {
             dessert_debug("consuming %ld bytes for %s",  msglen, iface->if_name);
             iface->token_bucket.tokens -= msglen;
         }
         else {
-            pthread_mutex_unlock(&(iface->token_bucket.mutex)); //// [UNLOCK]
+            _dessert_unlock_bucket(iface); //// [UNLOCK]
             return DESSERT_OK;
         }
     }
-    pthread_mutex_unlock(&(iface->token_bucket.mutex)); //// [UNLOCK]
+    _dessert_unlock_bucket(iface); //// [UNLOCK]
 
     /* send packet - temporally setting DESSERT_RX_FLAG_SPARSE */
     uint8_t oldflags = msg->flags;
@@ -1173,6 +1181,25 @@ dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* schedu
     return DESSERT_PER_KEEP;
 }
 
+int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
+    dessert_meshif_t* meshif = NULL;
+    if(argc == 1) {
+        meshif = dessert_ifname2meshif(argv[0]);
+        
+        if(meshif == NULL) {
+            cli_print(cli, "interface not found: %s", argv[0]);
+            return CLI_ERROR;
+        }
+        cli_print(cli, "%s: size=%ld, rate=%ld [%s]", argv[0], meshif->token_bucket.max_tokens, meshif->token_bucket.tokens_per_sec, meshif->token_bucket.periodic == NULL ? "disabled" : "enabled");
+        return CLI_OK;
+    }
+
+    MESHIFLIST_ITERATOR_START(meshif)
+    cli_print(cli, "%s: size=%ld, rate=%ld [%s]", meshif->if_name, meshif->token_bucket.max_tokens, meshif->token_bucket.tokens_per_sec, meshif->token_bucket.periodic == NULL ? "disabled" : "enabled");
+    MESHIFLIST_ITERATOR_STOP;
+    return CLI_OK;
+}
+
 int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
     enum { PARAM_MESHIF=0, PARAM_SIZE, PARAM_RATE, NUM_PARAMS};
 
@@ -1190,7 +1217,7 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
     uint64_t size = strtoul(argv[PARAM_SIZE], NULL, 10);
     uint64_t rate = strtoul(argv[PARAM_RATE], NULL, 10);
 
-    pthread_mutex_lock(&(meshif->token_bucket.mutex)); //// [LOCK]
+    _dessert_lock_bucket(meshif); //// [LOCK]
     /* deaktivate token bucket */
     if(size == 0 || rate == 0) {
         if(meshif->token_bucket.periodic != NULL) {
@@ -1225,7 +1252,7 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
     cli_print(cli, "updated token bucket for interface: %s", argv[PARAM_MESHIF]);
 
 out:
-    pthread_mutex_unlock(&(meshif->token_bucket.mutex)); //// [UNLOCK]
+    _dessert_unlock_bucket(meshif); //// [UNLOCK]
     return CLI_OK;
 }
 

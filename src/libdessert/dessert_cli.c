@@ -466,6 +466,14 @@ int _dessert_cli_init() {
         "Activate, deactivate, or modify token bucket.");
 
     cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "tb",
+        _dessert_cli_cmd_show_tokenbucket,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show token bucket configuration.");
+    
+    cli_register_command(dessert_cli,
         NULL,
         "pid",
         _dessert_cli_cmd_pid,
@@ -734,5 +742,6 @@ static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def* cli, desse
     cli_print(cli, "    Packets send          : [%"PRIi64"]", meshif->opkts);
     cli_print(cli, "    Bytes received        : [%"PRIi64"]", meshif->ibytes);
     cli_print(cli, "    Bytes send            : [%"PRIi64"]", meshif->obytes);
+    cli_print(cli, "    Token bucket          : [%s]", meshif->token_bucket.periodic == NULL ? "disabled" : "enabled");
     return;
 }
