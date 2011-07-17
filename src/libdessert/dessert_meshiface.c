@@ -1245,6 +1245,15 @@ static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
     }
 }
 
+/** Fill token bucket
+ *
+ * Periodic task that puts new tokens in a token bucket. Ensures that the bucket capacity
+ * it not exceeded. When a queueing policy is used and packets are in the queue, they
+ * are immediately scheduled for transmission.
+ *
+ * @param data pointer to the meshif to handle
+ * @return DESSERT_PER_KEEP always
+ */
 static dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval) {
     dessert_meshif_t* meshif = (dessert_meshif_t*) data;
     token_bucket_t* tb = &(meshif->token_bucket);
@@ -1292,6 +1301,14 @@ int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* 
     return CLI_OK;
 }
 
+/** Convert unit symbol to multiplier
+ *
+ * Example: 'k' = 1000
+ * 
+ * @param c character to convert
+ * @param cli cli for error message
+ * @return multiplier
+ */
 static uint32_t eval_multiplier(char* c, struct cli_def* cli) {
     if(c != NULL) {
         switch(*c) {
@@ -1308,6 +1325,9 @@ static uint32_t eval_multiplier(char* c, struct cli_def* cli) {
     return 1;
 }
 
+/** Set tocken bucket policy
+ *
+ */
 int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char* argv[], int argc) {
     if(argc != 2) {
         cli_print(cli, "usage: %s [MESHIF] [%s, %s, %s]", command, _dessert_policy2str[DESSERT_TB_DROP], _dessert_policy2str[DESSERT_TB_QUEUE_ORDERED], _dessert_policy2str[DESSERT_TB_QUEUE_UNORDERED]);
@@ -1341,6 +1361,9 @@ int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char
     _dessert_unlock_bucket(meshif); //// [LOCK]
 }
 
+/** Activate, modify, or deactive token bucket
+ *
+ */
 int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
     enum { PARAM_MESHIF=0, PARAM_SIZE, PARAM_RATE, NUM_PARAMS};
 
