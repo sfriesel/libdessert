@@ -154,10 +154,14 @@ typedef enum _dessert_periodic_results {
     DESSERT_PER_UNREGISTER = 1
 } dessert_per_result_t;
 
+/** Token bucket policy
+ *
+ * Defines how to handle packets when not enough tokens are availble.
+ */
 typedef enum _dessert_tb_policy {
-    DESSERT_TB_DROP = 0,
-    DESSERT_TB_QUEUE_ORDERED,
-    DESSERT_TB_QUEUE_UNORDERED
+    DESSERT_TB_DROP = 0, ///< drop packets
+    DESSERT_TB_QUEUE_ORDERED, ///< put packets in queue and try to ensure sending in order -> head of line blocking
+    DESSERT_TB_QUEUE_UNORDERED ///< put packets in queue and send in order but also try to spend all remaining tokens -> no head of line blocking
 } dessert_tb_policy_t;
 
 /** runtime-unique frame id */
@@ -261,8 +265,9 @@ typedef struct __attribute__((__packed__)) dessert_ext {
 
 extern struct msg_queue* queue;
 
+/** token bucket for traffic shaping of a meshif */
 typedef struct {
-    /** bytes that can be send **/
+    /** bytes that can be send: 1 token == 1 byte **/
     uint64_t    tokens;
     /** limit of the bucket **/
     uint64_t    max_tokens;
@@ -272,6 +277,7 @@ typedef struct {
      * null if token bucket is disabled
      **/
     dessert_periodic_t* periodic;
+    /** defines how to handle packets when no tokens are available **/
     dessert_tb_policy_t policy;
     struct msg_queue* queue;
     /** to ensure thread safety **/

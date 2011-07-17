@@ -1,10 +1,11 @@
-20110713 - 1.05
+XXXXXXXX - 1.05
     - Fixed bugs in packet filter
     - Removed legacy defines that are replaced by enums
     - Replaced int return values by enum types
     - Added enum for periodics return codes
     - The filter is now called always before the mesh callbacks are invoked
     - Added min, max macros (if they are not already defined)
+    - Added token bucket implementation with 3 policies
 
 20110712 - 1.04
     - Added CLI show function for monitor configuration

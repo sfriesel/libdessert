@@ -163,6 +163,12 @@ typedef struct msg_queue {
     struct msg_queue* next;
 } dessert_msg_queue_t;
 
+static char* _dessert_policy2str[] = {
+    "drop",
+    "queue_ordered",
+    "queue_unordered"
+};
+
 int _dessert_meshif_gethwaddr(dessert_meshif_t* meshif);
 int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, const dessert_meshif_t* meshif, dessert_frameid_t id);
 
