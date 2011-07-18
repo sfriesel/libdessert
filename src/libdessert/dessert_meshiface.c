@@ -666,6 +666,8 @@ void _dessert_init_tb(token_bucket_t* tb) {
     tb->periodic = NULL;
     tb->policy = DESSERT_TB_DROP;
     tb->queue = NULL;
+    tb->queue_len = 0;
+    tb->max_queue_len = 0;
     pthread_mutex_init(&(tb->mutex), NULL);
 }
 
@@ -942,6 +944,7 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
     }
 
     // traffic shaping with token bucket
+    /// \todo maybe we should move the lock into the if's body?
     _dessert_lock_bucket(iface); //// [LOCK]
     if(iface->token_bucket.periodic != NULL) {
         if(iface->token_bucket.tokens >= msglen) {
@@ -952,6 +955,11 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
             switch(iface->token_bucket.policy) {
                 case DESSERT_TB_QUEUE_ORDERED:
                 case DESSERT_TB_QUEUE_UNORDERED: {
+                    if(iface->token_bucket.max_queue_len != 0
+                        && iface->token_bucket.queue_len >= iface->token_bucket.max_queue_len) {
+                        dessert_debug("queue full");
+                        break;
+                    }
                     dessert_msg_t* cloned = NULL;
                     if(dessert_msg_clone(&cloned, msg, 1) != DESSERT_OK) {
                         dessert_crit("could not clone msg");
@@ -965,6 +973,7 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
                     q->msg = cloned;
                     q->len = msglen;
                     LL_APPEND(iface->token_bucket.queue, q);
+                    iface->token_bucket.queue_len++;
                     break; }
                 case DESSERT_TB_DROP:
                 default:
@@ -1205,11 +1214,11 @@ static inline void permutation(int k, int len, dessert_meshif_t** a) {
  *
  * As _dessert_meshsend_if2 is required to lock the token bucket mutex, we have to
  * release it in this function at some point.
- * 
+ *
  * @param meshif interface whose queue shall be handled
  */
 static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
-    // copy msgs  
+    // copy msgs
     _dessert_lock_bucket(meshif);
     uint64_t tokens = meshif->token_bucket.tokens;
     dessert_msg_queue_t* queue = (dessert_msg_queue_t*) meshif->token_bucket.queue;
@@ -1220,6 +1229,7 @@ static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
             LL_DELETE(queue, elt);
             LL_APPEND(copy, elt);
             tokens -= elt->len;
+            meshif->token_bucket.queue_len--;
         }
         else {
             if(tokens <= 0) { // TODO: what is the minimum packet size?
@@ -1257,13 +1267,13 @@ static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
 static dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval) {
     dessert_meshif_t* meshif = (dessert_meshif_t*) data;
     token_bucket_t* tb = &(meshif->token_bucket);
-    
+
     pthread_mutex_lock(&(tb->mutex)); //// [LOCK]
     uint64_t tokens = min(max(tb->max_tokens - (tb->tokens), 0), tb->tokens_per_msec);
     dessert_trace("adding %ld tokens to %s (%ld/%ld)", tokens, meshif->if_name, tb->tokens, tb->max_tokens);
     tb->tokens += tokens;
     pthread_mutex_unlock(&(tb->mutex)); //// [UNLOCK]
-    
+
     if(tb->policy != DESSERT_TB_DROP) {
         _dessert_send_queued_msgs(meshif); // spend tokens immediately on queued packets
     }
@@ -1274,27 +1284,29 @@ int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* 
     dessert_meshif_t* meshif = NULL;
     if(argc == 1) {
         meshif = dessert_ifname2meshif(argv[0]);
-        
+
         if(meshif == NULL) {
             cli_print(cli, "interface not found: %s", argv[0]);
             return CLI_ERROR;
         }
-        cli_print(cli, "%s: size=%ld, rate=%ld, policy=%s [%s]",
+        cli_print(cli, "%s: size=%ld, rate=%ld, policy=%s, queue_max=%d [%s]",
                   meshif->if_name,
                   meshif->token_bucket.max_tokens,
                   meshif->token_bucket.tokens_per_msec*1000,
                   _dessert_policy2str[meshif->token_bucket.policy],
+                  meshif->token_bucket.max_queue_len,
                   meshif->token_bucket.periodic == NULL ? "disabled" : "enabled"
                  );
         return CLI_OK;
     }
 
     MESHIFLIST_ITERATOR_START(meshif)
-        cli_print(cli, "%s: size=%ld, rate=%ld, policy=%s [%s]",
+        cli_print(cli, "%s: size=%ld, rate=%ld, policy=%s, queue_max=%d [%s]",
                 meshif->if_name,
                 meshif->token_bucket.max_tokens,
                 meshif->token_bucket.tokens_per_msec*1000,
                 _dessert_policy2str[meshif->token_bucket.policy],
+                meshif->token_bucket.max_queue_len,
                 meshif->token_bucket.periodic == NULL ? "disabled" : "enabled"
         );
     MESHIFLIST_ITERATOR_STOP;
@@ -1304,7 +1316,7 @@ int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* 
 /** Convert unit symbol to multiplier
  *
  * Example: 'k' = 1000
- * 
+ *
  * @param c character to convert
  * @param cli cli for error message
  * @return multiplier
@@ -1358,6 +1370,36 @@ int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char
     _dessert_lock_bucket(meshif); //// [LOCK]
     meshif->token_bucket.policy = policy;
     cli_print(cli, "INFO: set policy: %s", argv[1]);
+    _dessert_unlock_bucket(meshif); //// [LOCK]
+}
+
+/** Set tocken bucket policy
+ *
+ */
+int _dessert_cli_cmd_tokenbucket_max(struct cli_def* cli, char* command, char* argv[], int argc) {
+    if(argc != 2) {
+        cli_print(cli, "usage: %s [MESHIF] [MAX_LEN]", command);
+        return CLI_ERROR;
+    }
+
+    dessert_meshif_t* meshif = dessert_ifname2meshif(argv[0]);
+    if(meshif == NULL) {
+        cli_print(cli, "ERROR: could not find interface: %s", argv[0]);
+        return CLI_ERROR;
+    }
+
+    char *next_char = NULL;
+    uint32_t max_len = strtoul(argv[1], &next_char, 10);
+    if(max_len && *next_char != '\0') {
+        max_len *= eval_multiplier(next_char, cli);
+    }
+
+    _dessert_lock_bucket(meshif); //// [LOCK]
+    meshif->token_bucket.max_queue_len = max_len;
+    cli_print(cli, "INFO: set maximum queue length: %d", max_len);
+    if(max_len < meshif->token_bucket.queue_len) {
+        cli_print(cli, "WARING: there are currently more packet in the queue: %d", meshif->token_bucket.queue_len);
+    }
     _dessert_unlock_bucket(meshif); //// [LOCK]
 }
 

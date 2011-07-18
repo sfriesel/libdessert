@@ -265,7 +265,13 @@ typedef struct __attribute__((__packed__)) dessert_ext {
 
 extern struct msg_queue* queue;
 
-/** token bucket for traffic shaping of a meshif */
+/** token bucket for traffic shaping of a meshif
+ *
+ * When no tokens are available, the policy determines how to handle the packets.
+ * The can either be dropped or queued. The queue can be unlimited or limited to
+ * a specific size. In the latter case, packets will be dropped when the queue is
+ * full: tail drop queue.
+ */
 typedef struct {
     /** bytes that can be send: 1 token == 1 byte **/
     uint64_t    tokens;
@@ -279,7 +285,12 @@ typedef struct {
     dessert_periodic_t* periodic;
     /** defines how to handle packets when no tokens are available **/
     dessert_tb_policy_t policy;
+    /** stores packets (for sepcific policies) when no tokens are available **/
     struct msg_queue* queue;
+    /** number of packets in queue **/
+    uint32_t queue_len;
+    /** max. number of packets in queue **/
+    uint32_t max_queue_len;
     /** to ensure thread safety **/
     pthread_mutex_t     mutex;
 } token_bucket_t;

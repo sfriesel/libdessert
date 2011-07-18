@@ -137,6 +137,7 @@ int _dessert_cli_cmd_rule_default(struct cli_def* cli, char* command, char* argv
 int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cli_cmd_tokenbucket_max(struct cli_def* cli, char* command, char* argv[], int argc);
 
 /******************************************************************************
  *

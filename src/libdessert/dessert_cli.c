@@ -472,7 +472,15 @@ int _dessert_cli_init() {
         PRIVILEGE_PRIVILEGED,
         MODE_CONFIG,
         "Set token bucket policy.");
-    
+
+    cli_register_command(dessert_cli,
+        dessert_cli_tb,
+        "queue_max",
+        _dessert_cli_cmd_tokenbucket_max,
+        PRIVILEGE_PRIVILEGED,
+        MODE_CONFIG,
+        "Set token bucket maximum queue length [packets] (0 = unlimited).");
+
     cli_register_command(dessert_cli,
         dessert_cli_show,
         "tb",
@@ -480,7 +488,7 @@ int _dessert_cli_init() {
         PRIVILEGE_UNPRIVILEGED,
         MODE_EXEC,
         "Show token bucket configuration.");
-    
+
     cli_register_command(dessert_cli,
         NULL,
         "pid",
