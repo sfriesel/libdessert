@@ -658,8 +658,8 @@ int dessert_meshif_del(const char* dev) {
     return DESSERT_OK;
 }
 
-
-void _dessert_init_tb(token_bucket_t* tb) {
+/** initialize a token bucket with default values **/
+static void _dessert_init_tb(token_bucket_t* tb) {
     tb->tokens = 0;
     tb->max_tokens = UINT64_MAX;
     tb->tokens_per_msec = 0;
@@ -1055,7 +1055,7 @@ static void _dessert_packet_process(u_int8_t* args, const struct pcap_pkthdr* he
     meshif->ibytes += header->caplen;
     pthread_mutex_unlock(&(meshif->cnt_mutex));
 
-    if(dessert_mesh_filter(msg, len, &proc, meshif, id) != DESSERT_MSG_KEEP) {
+    if(dessert_mesh_filter(msg, meshif) != DESSERT_MSG_KEEP) {
         return;
     }
     _dessert_meshrxcb_runall(msg, len, &proc, meshif, id);
@@ -1280,6 +1280,22 @@ static dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval*
     return DESSERT_PER_KEEP;
 }
 
+/** print tocken bucket information to cli **/
+static void _dessert_print_tb(struct cli_def* cli, dessert_meshif_t* meshif) {
+    if(meshif == NULL) {
+        return;
+    }
+
+    cli_print(cli, "%s: size=%llu [B], rate=%llu [B/s], policy=%s, queue_max=%d, state=%s",
+        meshif->if_name,
+        (long long unsigned int) meshif->token_bucket.max_tokens,
+        (long long unsigned int) meshif->token_bucket.tokens_per_msec*1000,
+        _dessert_policy2str[meshif->token_bucket.policy],
+        meshif->token_bucket.max_queue_len,
+        meshif->token_bucket.periodic == NULL ? "disabled" : "enabled"
+        );
+}
+
 int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
     dessert_meshif_t* meshif = NULL;
     if(argc == 1) {
@@ -1289,26 +1305,12 @@ int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* 
             cli_print(cli, "interface not found: %s", argv[0]);
             return CLI_ERROR;
         }
-        cli_print(cli, "%s: size=%ld, rate=%ld, policy=%s, queue_max=%d [%s]",
-                  meshif->if_name,
-                  meshif->token_bucket.max_tokens,
-                  meshif->token_bucket.tokens_per_msec*1000,
-                  _dessert_policy2str[meshif->token_bucket.policy],
-                  meshif->token_bucket.max_queue_len,
-                  meshif->token_bucket.periodic == NULL ? "disabled" : "enabled"
-                 );
+        _dessert_print_tb(cli, meshif);
         return CLI_OK;
     }
 
     MESHIFLIST_ITERATOR_START(meshif)
-        cli_print(cli, "%s: size=%ld, rate=%ld, policy=%s, queue_max=%d [%s]",
-                meshif->if_name,
-                meshif->token_bucket.max_tokens,
-                meshif->token_bucket.tokens_per_msec*1000,
-                _dessert_policy2str[meshif->token_bucket.policy],
-                meshif->token_bucket.max_queue_len,
-                meshif->token_bucket.periodic == NULL ? "disabled" : "enabled"
-        );
+        _dessert_print_tb(cli, meshif);
     MESHIFLIST_ITERATOR_STOP;
     return CLI_OK;
 }
@@ -1319,7 +1321,7 @@ int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* 
  *
  * @param c character to convert
  * @param cli cli for error message
- * @return multiplier
+ * @return multiplier, 1 on error
  */
 static uint32_t eval_multiplier(char* c, struct cli_def* cli) {
     if(c != NULL) {
@@ -1342,7 +1344,7 @@ static uint32_t eval_multiplier(char* c, struct cli_def* cli) {
  */
 int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char* argv[], int argc) {
     if(argc != 2) {
-        cli_print(cli, "usage: %s [MESHIF] [%s, %s, %s]", command, _dessert_policy2str[DESSERT_TB_DROP], _dessert_policy2str[DESSERT_TB_QUEUE_ORDERED], _dessert_policy2str[DESSERT_TB_QUEUE_UNORDERED]);
+        cli_print(cli, "USAGE: %s [MESHIF] [%s, %s, %s]", command, _dessert_policy2str[DESSERT_TB_DROP], _dessert_policy2str[DESSERT_TB_QUEUE_ORDERED], _dessert_policy2str[DESSERT_TB_QUEUE_UNORDERED]);
         return CLI_ERROR;
     }
 
@@ -1378,7 +1380,7 @@ int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char
  */
 int _dessert_cli_cmd_tokenbucket_max(struct cli_def* cli, char* command, char* argv[], int argc) {
     if(argc != 2) {
-        cli_print(cli, "usage: %s [MESHIF] [MAX_LEN]", command);
+        cli_print(cli, "USAGE: %s [MESHIF] [MAX_LEN]", command);
         return CLI_ERROR;
     }
 
@@ -1410,7 +1412,7 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
     enum { PARAM_MESHIF=0, PARAM_SIZE, PARAM_RATE, NUM_PARAMS};
 
     if(argc != NUM_PARAMS) {
-        cli_print(cli, "usage: %s [MESHIF] [BUCKETSIZE (bytes)] [RATE (bytes/s)]", command);
+        cli_print(cli, "USAGE: %s [MESHIF] [BUCKETSIZE (bytes)] [RATE (bytes/s)]", command);
         return CLI_ERROR;
     }
 
@@ -1503,7 +1505,7 @@ int dessert_cli_cmd_addmeshif(struct cli_def* cli, char* command, char* argv[], 
     int i;
 
     if(argc != 1) {
-        cli_print(cli, "usage: %s [mesh-interface]\n", command);
+        cli_print(cli, "USAGE: %s [mesh-interface]\n", command);
         return CLI_ERROR;
     }
 

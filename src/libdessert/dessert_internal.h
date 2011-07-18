@@ -119,9 +119,6 @@ dessert_result _dessert_signals_init(void);
 /** maximum size of a log line */
 #define DESSERT_LOGLINE_MAX 4096
 
-/** logfile file pointer to use with DESSERT_OPT_LOGFILE */
-extern FILE* dessert_logfd;
-
 int _dessert_cli_cmd_set_loglevel(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_show_loglevel(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_logging(struct cli_def* cli, char* command, char* argv[], int argc);
@@ -172,6 +169,7 @@ static char* _dessert_policy2str[] = {
 
 int _dessert_meshif_gethwaddr(dessert_meshif_t* meshif);
 int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, const dessert_meshif_t* meshif, dessert_frameid_t id);
+dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface);
 
 /******************************************************************************
  *

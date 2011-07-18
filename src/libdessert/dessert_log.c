@@ -33,9 +33,10 @@
 #endif
 
 /* data storage */
-FILE* dessert_logfd = NULL;
+/** logfile file pointer to use with DESSERT_OPT_LOGFILE */
+static FILE* _dessert_logfd = NULL;
 #ifdef HAVE_LIBZ
-gzFile* dessert_logfdgz = NULL;
+static gzFile* _dessert_logfdgz = NULL;
 #endif
 
 #define _DESSERT_LOGFLAG_SYSLOG   0x01
@@ -48,18 +49,18 @@ gzFile* dessert_logfdgz = NULL;
 #   define LOG_STYLE_OLD 0
 #endif
 
-int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
-int _dessert_loglevel = LOG_INFO;
-dessert_periodic_t* _dessert_log_flush_periodic = NULL;
+static int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
+static int _dessert_loglevel = LOG_INFO;
+static dessert_periodic_t* _dessert_log_flush_periodic = NULL;
 
 /* the logging ringbuffer */
-char* _dessert_logrbuf = NULL; /* pointer to begin */
-int _dessert_logrbuf_len = 0; /* length in lines (DESSERT_LOGLINE_MAX*_dessert_logrbuf_len*sizeof(char) would be in bytes) */
-int _dessert_logrbuf_cur = 0; /* current position */
-int _dessert_logrbuf_used = 0; /* used slots */
-pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; /* for resizing */
-pthread_mutex_t _dessert_logrbuf_mutex = PTHREAD_MUTEX_INITIALIZER; /* for moving _dessert_logrbuf_cur */
-pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to prevent simultaneous accesses from threads */
+static char* _dessert_logrbuf = NULL; /* pointer to begin */
+static int _dessert_logrbuf_len = 0; /* length in lines (DESSERT_LOGLINE_MAX*_dessert_logrbuf_len*sizeof(char) would be in bytes) */
+static int _dessert_logrbuf_cur = 0; /* current position */
+static int _dessert_logrbuf_used = 0; /* used slots */
+static pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; /* for resizing */
+static pthread_mutex_t _dessert_logrbuf_mutex = PTHREAD_MUTEX_INITIALIZER; /* for moving _dessert_logrbuf_cur */
+static pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to prevent simultaneous accesses from threads */
 
 /* internal functions forward declarations \todo cleanup */
 
@@ -124,17 +125,17 @@ int dessert_logcfg(uint16_t opts) {
 #endif
 
     if((opts & DESSERT_LOG_FILE) && !(opts & DESSERT_LOG_NOFILE)
-       && (dessert_logfd != NULL
+       && (_dessert_logfd != NULL
 #ifdef HAVE_LIBZ
-           || dessert_logfdgz != NULL
+           || _dessert_logfdgz != NULL
 #endif
           )) {
         _dessert_logflags |= _DESSERT_LOGFLAG_LOGFILE;
     }
     else if((!(opts & DESSERT_LOG_FILE) && (opts & DESSERT_LOG_NOFILE))
-            || (dessert_logfd == NULL
+            || (_dessert_logfd == NULL
 #ifdef HAVE_LIBZ
-                && dessert_logfdgz == NULL
+                && _dessert_logfdgz == NULL
 #endif
                )) {
         _dessert_logflags &= ~_DESSERT_LOGFLAG_LOGFILE;
@@ -268,20 +269,20 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
         if(_dessert_logflags & _DESSERT_LOGFLAG_LOGFILE) {
             pthread_mutex_lock(&_dessert_logfile_mutex);
 
-            if(dessert_logfd != NULL) {
+            if(_dessert_logfd != NULL) {
 #if LOG_STYLE_OLD
-                fprintf(dessert_logfd, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
+                fprintf(_dessert_logfd, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
 #else
-                fprintf(dessert_logfd, "%s %s %s %s\n", timestamp, log_type, msg, pos);
+                fprintf(_dessert_logfd, "%s %s %s %s\n", timestamp, log_type, msg, pos);
 #endif
             }
 
 #ifdef HAVE_LIBZ
-            else if(dessert_logfdgz != NULL) {
+            else if(_dessert_logfdgz != NULL) {
 #if LOG_STYLE_OLD
-                gzprintf(dessert_logfdgz, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
+                gzprintf(_dessert_logfdgz, "%s %s %s\n%80s\n", timestamp, log_type, msg, pos);
 #else
-                gzprintf(dessert_logfdgz, "%s %s %s %s\n", timestamp, log_type, msg, pos);
+                gzprintf(_dessert_logfdgz, "%s %s %s %s\n", timestamp, log_type, msg, pos);
 #endif
             }
 
@@ -324,17 +325,17 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
  * @return DESSERT_PER_KEEP (do not unregister)
  */
 dessert_per_result_t dessert_flush_log(void* data, struct timeval* scheduled, struct timeval* interval) {
-    if(dessert_logfd != NULL) {
+    if(_dessert_logfd != NULL) {
         pthread_mutex_lock(&_dessert_logfile_mutex);
-        fflush(dessert_logfd);
+        fflush(_dessert_logfd);
         pthread_mutex_unlock(&_dessert_logfile_mutex);
     }
 
 #ifdef HAVE_LIBZ
 
-    if(dessert_logfdgz != NULL) {
+    if(_dessert_logfdgz != NULL) {
         pthread_mutex_lock(&_dessert_logfile_mutex);
-        int r = gzflush(dessert_logfdgz, Z_SYNC_FLUSH);
+        int r = gzflush(_dessert_logfdgz, Z_SYNC_FLUSH);
         pthread_mutex_unlock(&_dessert_logfile_mutex);
 
         if(r != Z_OK) {
@@ -436,29 +437,29 @@ int _dessert_cli_logging_file(struct cli_def* cli, char* command, char* argv[], 
     }
 
     /* clean up old logfile first */
-    if(dessert_logfd != NULL) {
+    if(_dessert_logfd != NULL) {
         dessert_logcfg(DESSERT_LOG_NOFILE);
-        fclose(dessert_logfd);
+        fclose(_dessert_logfd);
     }
 
 #ifdef HAVE_LIBZ
 
-    if(dessert_logfdgz != NULL) {
+    if(_dessert_logfdgz != NULL) {
         dessert_logcfg(DESSERT_LOG_NOFILE);
-        gzclose(dessert_logfdgz);
+        gzclose(_dessert_logfdgz);
     }
 
 #endif
 
     if(newlogfd) {
-        dessert_logfd = newlogfd;
+        _dessert_logfd = newlogfd;
         dessert_logcfg(DESSERT_LOG_FILE | DESSERT_LOG_NOGZ);
     }
 
 #ifdef HAVE_LIBZ
 
     if(newlogfdgz) {
-        dessert_logfdgz = newlogfdgz;
+        _dessert_logfdgz = newlogfdgz;
         dessert_logcfg(DESSERT_LOG_FILE | DESSERT_LOG_GZ);
     }
 
@@ -478,16 +479,16 @@ int _dessert_closeLogFile() {
     pthread_mutex_lock(&_dessert_logfile_mutex);
     dessert_logcfg(DESSERT_LOG_NOFILE);
 
-    if(dessert_logfd != NULL) {
-        fclose(dessert_logfd);
-        dessert_logfd = NULL;
+    if(_dessert_logfd != NULL) {
+        fclose(_dessert_logfd);
+        _dessert_logfd = NULL;
     }
 
 #ifdef HAVE_LIBZ
 
-    if(dessert_logfdgz != NULL) {
-        gzclose(dessert_logfdgz);
-        dessert_logfdgz = NULL;
+    if(_dessert_logfdgz != NULL) {
+        gzclose(_dessert_logfdgz);
+        _dessert_logfdgz = NULL;
     }
 
 #endif

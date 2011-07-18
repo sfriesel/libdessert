@@ -490,7 +490,7 @@ void dessert_msg_proc_destroy(dessert_msg_proc_t* proc) {
  * @arg len the length of the payload
  * @return DESSERT_OK on success, DESSERT_ERR otherwise
  **/
-int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len) {
+dessert_result dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len) {
     /* check payload */
     if((unsigned int) len > dessert_maxlen - ntohs(msg->hlen)) {
         return DESSERT_ERR; /* too big */
@@ -500,6 +500,31 @@ int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len) {
     *payload = ((uint8_t*) msg + ntohs(msg->hlen));
     msg->plen = htons(len);
 
+    return DESSERT_OK;
+}
+
+/** Append dummy payload
+ *
+ * Force a minumum size of the packet. This function should be called only
+ * when all extensions have already been appended. Do not call this function
+ * when there is already a payload! If the packet is aready large enough,
+ * no payload is appended.
+ *
+ * @param msg packet that shall have a minimum size
+ * @param min_size minimum size
+ * @return DESSERT_ERR on error, else DESSERT_OK
+ */
+dessert_result dessert_msg_dummy_payload(dessert_msg_t* msg, size_t min_size) {
+    void* payload;
+    size_t msglen = ntohs(msg->hlen) + ntohs(msg->plen);
+    size_t size = max(min_size - msglen, 0);
+    if(dessert_msg_addpayload(msg, &payload, size) == DESSERT_OK) {
+        memset(payload, 0xA, size);
+    }
+    else {
+        dessert_warn("could not append dummy payload");
+        return DESSERT_ERR;
+    }
     return DESSERT_OK;
 }
 
@@ -580,9 +605,9 @@ int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, si
 /** remove an extension record from a dessert_msg
  * @arg *msg  the message the extension should be added to
  * @arg *ext (out) the extension pointer to the extension to be removed
- * @return DESSERT_OK on success,
+ * @return DESSERT_OK on success, else DESSERT_ERR
  **/
-int dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext) {
+dessert_result dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext) {
 
     /* check ext */
     if((((uint8_t*) ext) < ((uint8_t*) msg))

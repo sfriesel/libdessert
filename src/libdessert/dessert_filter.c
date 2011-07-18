@@ -379,32 +379,31 @@ fail:
  *
  * Filter frames based on the layer 2 source address and the mesh interface where the frame was received.
  * The rules are checked in the following order:
- * 1) accept -> accept
- * 2) drop -> drop
- * 3) wildcard -> accept or drop
- * 4) default -> accept
+ * 1) whitelist (accept)
+ * 2) blacklist (drop)
+ * 3) default rule
  *
  * Please note that the filter is fairly simple and that the first matching rule is used.
  * Therefore a less specific rule can overwrite a more specific one.
  */
-dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface) {
     char* mac = msg->l2h.ether_shost;
 
     pthread_rwlock_rdlock(&dessert_filterlock);
 
     if(find_in_list(mac, iface, _dessert_whitelist)) {
-        dessert_debug("accepting frame from " MAC, EXPLODE_ARRAY6(mac));
+        dessert_trace("accepting frame from " MAC, EXPLODE_ARRAY6(mac));
         pthread_rwlock_unlock(&dessert_filterlock);
         return DESSERT_MSG_KEEP;
     }
 
     if(find_in_list(mac, iface, _dessert_blacklist)) {
-        dessert_debug("dropped frame from " MAC, EXPLODE_ARRAY6(mac));
+        dessert_trace("dropped frame from " MAC, EXPLODE_ARRAY6(mac));
         pthread_rwlock_unlock(&dessert_filterlock);
         return DESSERT_MSG_DROP;
     }
 
-    dessert_debug("using default (%s) for frame from " MAC, print_default, EXPLODE_ARRAY6(mac));
+    dessert_trace("using default (%s) for frame from " MAC, print_default, EXPLODE_ARRAY6(mac));
     pthread_rwlock_unlock(&dessert_filterlock);
     return _default_rule;
 }

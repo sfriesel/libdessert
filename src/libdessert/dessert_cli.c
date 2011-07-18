@@ -48,14 +48,14 @@ struct cli_command* dessert_cli_cfg_no_logging;
 /* nothing here - yet */
 
 /* local data storage*/
-int _dessert_cli_sock;
+static int _dessert_cli_sock;
 /// \todo _dessert_cli_addr* is not used anywhere but in a single function; global vars should be removed
-struct sockaddr_in6 _dessert_cli_addr6;
-struct sockaddr_in _dessert_cli_addr4;
-char _dessert_cli_hostname[HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1];
-pthread_t _dessert_cli_worker;
-int _dessert_cli_running = 0;
-uint16_t _cli_port = 4519; // should be default port number
+static struct sockaddr_in6 _dessert_cli_addr6;
+static struct sockaddr_in _dessert_cli_addr4;
+static char _dessert_cli_hostname[HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1];
+static pthread_t _dessert_cli_worker;
+static int _dessert_cli_running = 0;
+static uint16_t _cli_port = 4519; // should be default port number
 
 /* internal functions forward declarations*/
 static void* _dessert_cli_accept_thread(void* arg);
@@ -69,8 +69,8 @@ static int _dessert_cli_cmd_pid(struct cli_def* cli, char* command, char* argv[]
 #ifndef ANDROID
 static int _dessert_cli_monitoring_start(struct cli_def* cli, char* command, char* argv[], int argc);
 static int _dessert_cli_monitor_conf(struct cli_def* cli, char* command, char* argv[], int argc);
-#endif
 static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def* cli, dessert_meshif_t* meshif);
+#endif
 /******************************************************************************
  *
  * EXTERNAL / PUBLIC

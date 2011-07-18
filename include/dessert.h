@@ -274,11 +274,11 @@ extern struct msg_queue* queue;
  */
 typedef struct {
     /** bytes that can be send: 1 token == 1 byte **/
-    uint64_t    tokens;
+    uint64_t            tokens;
     /** limit of the bucket **/
-    uint64_t    max_tokens;
+    uint64_t            max_tokens;
     /** rate to fill the bucket **/
-    uint64_t    tokens_per_msec;
+    uint64_t            tokens_per_msec;
     /** handle for the periodic task to dispense tokens into the bucket
      * null if token bucket is disabled
      **/
@@ -286,16 +286,22 @@ typedef struct {
     /** defines how to handle packets when no tokens are available **/
     dessert_tb_policy_t policy;
     /** stores packets (for sepcific policies) when no tokens are available **/
-    struct msg_queue* queue;
+    struct msg_queue*   queue;
     /** number of packets in queue **/
-    uint32_t queue_len;
-    /** max. number of packets in queue **/
-    uint32_t max_queue_len;
+    uint32_t            queue_len;
+    /** max. number of packets in queue (0 = unlimited) **/
+    uint32_t            max_queue_len;
     /** to ensure thread safety **/
     pthread_mutex_t     mutex;
 } token_bucket_t;
 
-/** an interface used for dessert_msg frames */
+/** A interface registered to send and receive dessert_msg frames over the network
+ *
+ * \note Please make sure first fields are equal to dessert_sysif to re-use
+ * _dessert_meshif_gethwaddr().
+ *
+ * \todo replace custom list with utlist
+ */
 typedef struct dessert_meshif {
     /** pointer to next interface */
     struct dessert_meshif*    next;
@@ -315,6 +321,7 @@ typedef struct dessert_meshif {
     uint64_t            ibytes;
     /** packet counter out */
     uint64_t            obytes;
+    /* do not modify anything above this line */
     /** libpcap descriptor for the interface */
     pcap_t*              pcap;
     /** libpcap error message buffer */
@@ -327,16 +334,18 @@ typedef struct dessert_meshif {
     struct monitor_neighbour* neighbours;
     /** non-zero if interface is being monitored */
     uint8_t             monitor_active;
-    token_bucket_t token_bucket;
+    /** all parameters and data to enable traffic shaping **/
+    token_bucket_t      token_bucket;
     /** pointer to prev interface */
     struct dessert_meshif*    prev;
 } dessert_meshif_t;
 
-/** A tun/tap interface used to inject packets to dessert implemented daemons.
+/** A tun/tap interface used for communication with user space processes
  *
  * \note Please make sure first fields are equal to dessert_meshif to re-use
  * _dessert_meshif_gethwaddr().
  *
+ * \todo replace custom list with utlist
  */
 typedef struct dessert_sysif {
     /** pointer to next interface */
@@ -357,6 +366,7 @@ typedef struct dessert_sysif {
     uint64_t            ibytes;
     /** packet counter out */
     uint64_t            obytes;
+    /* do not modify anything above this line */
     /** file descriptor to read/write from/to */
     int                 fd;
     /** if it is a tun or tap interface */
@@ -837,10 +847,11 @@ int dessert_msg_proc_clone(dessert_msg_proc_t** procnew, const dessert_msg_proc_
 void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_msg_proc_t* proc, char* buf, size_t blen);
 void dessert_msg_proc_destroy(dessert_msg_proc_t* proc);
 
-int dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len);
+dessert_result dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len);
+dessert_result dessert_msg_dummy_payload(dessert_msg_t* msg, size_t min_size);
 int dessert_msg_getpayload(dessert_msg_t* msg, void** payload);
 int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, size_t len);
-int dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext);
+dessert_result dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext);
 int dessert_msg_resizeext(dessert_msg_t* msg, dessert_ext_t* ext, size_t new_len);
 int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index);
 int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type);
@@ -1276,8 +1287,6 @@ enum dessert_filter {
 
 bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, double p, enum dessert_filter list, struct cli_def* cli);
 bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_filter list, struct cli_def* cli);
-
-dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
 #define dessert_whitelist_rm(mac) \
     dessert_filter_rm(mac, DESSERT_WHITELIST, NULL)

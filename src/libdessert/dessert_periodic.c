@@ -29,11 +29,11 @@
 /* global data storage // P U B L I C */
 
 /* global data storage // P R I V A T E */
-dessert_periodic_t* _tasklist = NULL;
-pthread_mutex_t _dessert_periodic_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t _dessert_periodic_changed = PTHREAD_COND_INITIALIZER;
-pthread_t _dessert_periodic_worker;
-int _dessert_periodic_worker_running = 0;
+static dessert_periodic_t* _tasklist = NULL;
+static pthread_mutex_t _dessert_periodic_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t _dessert_periodic_changed = PTHREAD_COND_INITIALIZER;
+static pthread_t _dessert_periodic_worker;
+static int _dessert_periodic_worker_running = 0;
 
 /* local data storage*/
 
