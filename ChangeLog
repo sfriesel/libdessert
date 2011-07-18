@@ -6,6 +6,7 @@ XXXXXXXX - 1.05
     - The filter is now called always before the mesh callbacks are invoked
     - Added min, max macros (if they are not already defined)
     - Added token bucket implementation with 3 policies
+    - Token bucket support unlimited or tail drop queueing of packets
 
 20110712 - 1.04
     - Added CLI show function for monitor configuration
