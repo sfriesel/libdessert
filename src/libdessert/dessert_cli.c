@@ -66,10 +66,10 @@ static int _dessert_cli_cmd_showmondb(struct cli_def* cli, char* command, char* 
 static int _dessert_cli_cmd_dessertinfo(struct cli_def* cli, char* command, char* argv[], int argc);
 static int _dessert_cli_cmd_setport(struct cli_def* cli, char* command, char* argv[], int argc);
 static int _dessert_cli_cmd_pid(struct cli_def* cli, char* command, char* argv[], int argc);
+static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def* cli, dessert_meshif_t* meshif);
 #ifndef ANDROID
 static int _dessert_cli_monitoring_start(struct cli_def* cli, char* command, char* argv[], int argc);
 static int _dessert_cli_monitor_conf(struct cli_def* cli, char* command, char* argv[], int argc);
-static void _dessert_cli_cmd_showmeshifs_print_helper(struct cli_def* cli, dessert_meshif_t* meshif);
 #endif
 /******************************************************************************
  *
