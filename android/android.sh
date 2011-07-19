@@ -275,7 +275,7 @@ echo "As last step you have to set the following environment variables:"
 echo "  export ANDROID_TOOLCHAIN=$ANDROID_TOOLCHAIN"
 echo "  export DESSERT_LIB=$INSTALL_DIR/dessert-lib"
 echo "  export ANDROID_NDK_HOME=$INSTALL_DIR/$NDK_DIR"
-echo "  export PATH=\$PATH:$INSTALL_DIR/BIN"
+echo "  export PATH=\$PATH:$INSTALL_DIR/bin"
 echo "=================================================================="
 echo "You can now do: make android from any dessert daemon source dir!"
 
