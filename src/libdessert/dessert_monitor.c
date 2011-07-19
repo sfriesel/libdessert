@@ -535,12 +535,9 @@ static void* monitoring(void* node) {
  *  If amount is not NULL, it will contain the number of samples used to
  *  calculate the average after calling this function
  */
-avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, const char* dest_dev) {
-    dessert_meshif_t* interface;
+avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, dessert_meshif_t* interface) {
     struct monitor_neighbour neighbour_needle, *neighbour_result;
     memcpy(neighbour_needle.addr, hwaddr, sizeof(mac_addr));
-
-    interface = dessert_meshif_get_name(dest_dev);
 
     if(interface) {
         DL_SEARCH(interface->neighbours, neighbour_result, &neighbour_needle, neighbour_cmp);
@@ -560,7 +557,7 @@ avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, const char* dest_dev) 
 /** This function is called for the startup of the monitoring and rssi reporting
  *  If the monitoring is already running -1 is returned, 0 represents succeed
  */
-int dessert_monitoring_start(int max_rssi_vals, int max_age) {
+int dessert_monitoring_start(int max_rssi_vals, int max_age, int maintenance_interval) {
     dessert_info("Monitoring started....");
 
     if(max_rssi_vals) {
@@ -569,6 +566,10 @@ int dessert_monitoring_start(int max_rssi_vals, int max_age) {
 
     if(max_age) {
         MAX_AGE = max_age;
+    }
+    
+    if(maintenance_interval) {
+        MAINTENANCE_INTERVAL = maintenance_interval;
     }
 
     /* create the global skfd-socket for ioctl channel requests */

@@ -552,6 +552,7 @@ static int _dessert_cli_monitor_conf(struct cli_def* cli, char* command, char* a
 static int _dessert_cli_monitoring_start(struct cli_def* cli, char* command, char* argv[], int argc) {
     int max_rssi_vals = 0;
     int max_age = 0;
+    int maintenance_interval = 0;
 
     if(argc >= 1) {
         max_rssi_vals = atoi(argv[0]);
@@ -571,7 +572,16 @@ static int _dessert_cli_monitoring_start(struct cli_def* cli, char* command, cha
         }
     }
 
-    dessert_monitoring_start(max_rssi_vals, max_age); // starts capt. RSSI values
+    if(argc >= 3) {
+        maintenance_interval = atoi(argv[2]);
+
+        if(maintenance_interval <= 0) {
+            maintenance_interval = 0;
+            dessert_warn("maintenanceinterval is not positive, using default %d", max_age);
+        }
+    }
+
+    dessert_monitoring_start(max_rssi_vals, max_age, maintenance_interval); // starts capt. RSSI values
     return CLI_OK;
 }
 #endif

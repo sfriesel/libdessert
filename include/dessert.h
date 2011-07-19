@@ -627,9 +627,9 @@ struct monitor_neighbour {
  ******************************************************************************/
 
 /* monitoring frames*/
-int dessert_monitoring_start(int max_rssi_vals, int max_age);
+int dessert_monitoring_start(int max_rssi_vals, int max_age, int maintenance_interval);
 int dessert_monitoring_stop();
-avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, const char* dest_dev);
+avg_node_result_t dessert_rssi_avg(const mac_addr hwaddr, dessert_meshif_t* interface);
 char** dessert_monitored_interface_names(void);
 void   dessert_monitored_interface_names_free(char** p);
 int dessert_print_monitored_database();
