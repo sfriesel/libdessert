@@ -547,6 +547,7 @@ static int _dessert_cli_monitor_conf(struct cli_def* cli, char* command, char* a
     extern int MAX_AGE;
     extern int MAX_RSSI_VALS;
     cli_print(cli, "max_values=%d, max_age=%d", MAX_RSSI_VALS, MAX_AGE);
+    return CLI_OK;
 }
 
 static int _dessert_cli_monitoring_start(struct cli_def* cli, char* command, char* argv[], int argc) {

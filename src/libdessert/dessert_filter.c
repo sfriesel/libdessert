@@ -387,7 +387,7 @@ fail:
  * Therefore a less specific rule can overwrite a more specific one.
  */
 dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface) {
-    char* mac = msg->l2h.ether_shost;
+    char* mac = (char *) msg->l2h.ether_shost;
 
     pthread_rwlock_rdlock(&dessert_filterlock);
 

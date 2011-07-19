@@ -796,7 +796,7 @@ dessert_meshif_add_err:
  * %DESCRIPTION:
  *
  */
-dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, const dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, dessert_meshif_t* meshif, dessert_frameid_t id) {
     dessert_msg_t* msg = msg_in;
     dessert_msg_proc_t* proc = proc_in;
     dessert_meshrxcbe_t* cb;
@@ -1373,6 +1373,7 @@ int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char
     meshif->token_bucket.policy = policy;
     cli_print(cli, "INFO: set policy: %s", argv[1]);
     _dessert_unlock_bucket(meshif); //// [LOCK]
+    return CLI_OK;
 }
 
 /** Set tocken bucket policy
@@ -1403,6 +1404,7 @@ int _dessert_cli_cmd_tokenbucket_max(struct cli_def* cli, char* command, char* a
         cli_print(cli, "WARING: there are currently more packet in the queue: %d", meshif->token_bucket.queue_len);
     }
     _dessert_unlock_bucket(meshif); //// [LOCK]
+    return CLI_OK;
 }
 
 /** Activate, modify, or deactive token bucket

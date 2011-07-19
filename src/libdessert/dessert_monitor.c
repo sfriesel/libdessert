@@ -340,7 +340,7 @@ int dessert_print_monitored_database() {
 int dessert_log_monitored_neighbour(const mac_addr hwaddr) {
     dessert_meshif_t* interface;
     MESHIFLIST_ITERATOR_START(interface)
-    struct avg_node_result avg = dessert_rssi_avg(hwaddr, interface->if_name);
+    struct avg_node_result avg = dessert_rssi_avg(hwaddr, interface);
 
     if(avg.amount != 0) {
         log_neighbour(hwaddr, interface, avg);
