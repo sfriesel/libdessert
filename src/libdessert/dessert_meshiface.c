@@ -877,14 +877,14 @@ dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, de
  *
  * @param *meshif pointer to dessert_meshif_t to query
  *
- * @retval DESSERT_OK on success
+ * @retval DESSERT_OK on success, else DESSERT_ERR
  *
  * \warning This is a platform depended function!
  *
  * %DESCRIPTION:
  *
  **/
-int _dessert_meshif_gethwaddr(dessert_meshif_t* meshif) {
+dessert_result _dessert_meshif_gethwaddr(dessert_meshif_t* meshif) {
     /* we need some socket to do that */
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 

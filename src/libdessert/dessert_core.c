@@ -23,8 +23,8 @@
  http://www.des-testbed.net/
  *******************************************************************************/
 
-#include "dessert_internal.h"
 #include "dessert.h"
+#include "dessert_internal.h"
 #include <sys/stat.h>
 
 /* global data storage // P U B L I C */

@@ -44,7 +44,7 @@
 
 /** creates a new dessert_msg_t and initializes it.
  * @arg **msgout (out) pointer to return message address
- * @return 0 on success, -errno on error
+ * @return DESSERT_OK on success, -errno on error
  **/
 int dessert_msg_new(dessert_msg_t** msgout) {
     dessert_msg_t* msg = calloc(dessert_maxlen, 1);
@@ -113,7 +113,7 @@ int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, uint8
  * @return -2 if the message was not intended to this daemon
  * @return -3 if some extension is not consistent
  * %DESCRIPTION:
- ***********************************************************************/
+ */
 int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
     /* is the message large enough to at least carry the header */
     if(len < DESSERT_MSGLEN) {
@@ -330,8 +330,7 @@ struct ether_header* dessert_msg_getl25ether(const dessert_msg_t* msg) {
  * @arg *procold pointer to the message to clone
  * @return DESSERT_OK on success, -errno otherwise
  **/
-int dessert_msg_proc_clone(dessert_msg_proc_t** procnew,
-                           const dessert_msg_proc_t* procold) {
+int dessert_msg_proc_clone(dessert_msg_proc_t** procnew, const dessert_msg_proc_t* procold) {
     if(procold == NULL) {
         *procnew = (dessert_msg_proc_t*) procold;
         return (DESSERT_OK);
@@ -703,7 +702,7 @@ int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t ty
     return (i);
 }
 
-/** get an specific or all extensions
+/** Get a specific or all extensions
  *
  * @arg *msg the message
  * @arg type type of the ext to retrieve - use DESSERT_EXT_ANY to get any ext

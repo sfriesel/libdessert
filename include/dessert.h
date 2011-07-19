@@ -563,7 +563,7 @@ enum dessert_logcfg_flags {
  ******************************************************************************/
 #define LOG_TRACE (LOG_DEBUG+1)
 
-int dessert_logcfg(uint16_t opts);
+dessert_result dessert_logcfg(uint16_t opts);
 void _dessert_log(int level, const char* func, const char* file, int line, const char* fmt, ...);
 /** log at TRACE level */
 #define dessert_trace(...) _dessert_log(LOG_TRACE, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)

@@ -74,12 +74,12 @@ static pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to
 
 /** Configure dessert logging framework and sets up logging.
  *
- * @arg opts OR'd flags - @see DESSERT_LOG_*
+ * @param opts OR'd flags - @see DESSERT_LOG_*
+ * @return DESSERT_OK
  *
  * %DESCRIPTION:
- *
  **/
-int dessert_logcfg(uint16_t opts) {
+dessert_result dessert_logcfg(uint16_t opts) {
     char dessert_logprefix[32];
     snprintf(dessert_logprefix, sizeof(dessert_logprefix), "dessert/%s", dessert_proto);
 
@@ -150,7 +150,7 @@ int dessert_logcfg(uint16_t opts) {
 
     pthread_rwlock_unlock(&dessert_cfglock);
 
-    return 0;
+    return DESSERT_OK;
 }
 
 /******************************************************************************
