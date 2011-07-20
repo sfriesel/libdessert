@@ -60,6 +60,11 @@ static int _dessert_pid(char* pidfile);
  *
  ******************************************************************************/
 
+static void _dessert_register_ptr_names() {
+    dessert_register_ptr_name(_dessert_flush_log, "dessert_flush_log");
+    dessert_register_ptr_name(_dessert_token_dispenser, "_dessert_token_dispenser");
+}
+
 /** Initializes dessert framework and sets up logging
  * @arg *proto 4 char string for protocol name
  * @arg version version number of protocol
@@ -93,6 +98,8 @@ int dessert_init(const char* proto, int version, uint16_t opts) {
 
     /* start periodic thread */
     _dessert_periodic_init();
+
+    _dessert_register_ptr_names();
 
 #ifdef WITH_NET_SNMP
     /* initialize net-snmp subagent */

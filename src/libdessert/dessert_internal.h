@@ -119,6 +119,8 @@ dessert_result _dessert_signals_init(void);
 /** maximum size of a log line */
 #define DESSERT_LOGLINE_MAX 4096
 
+dessert_per_result_t _dessert_flush_log(void* data, struct timeval* scheduled, struct timeval* interval);
+
 int _dessert_cli_cmd_set_loglevel(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_show_loglevel(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_logging(struct cli_def* cli, char* command, char* argv[], int argc);
@@ -135,6 +137,7 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
 int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char* argv[], int argc);
 int _dessert_cli_cmd_tokenbucket_max(struct cli_def* cli, char* command, char* argv[], int argc);
+int _dessert_cmd_print_tasks(struct cli_def* cli, char* command, char* argv[], int argc);
 
 /******************************************************************************
  *
@@ -170,6 +173,7 @@ static char* _dessert_policy2str[] = {
 dessert_result _dessert_meshif_gethwaddr(dessert_meshif_t* meshif);
 int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, dessert_meshif_t* meshif, dessert_frameid_t id);
 dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface);
+dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval);
 
 /******************************************************************************
  *
@@ -219,6 +223,14 @@ extern dessert_sysif_t* _dessert_sysif;
  ******************************************************************************/
 
 void _dessert_periodic_init(void);
+
+typedef struct {
+    void* ptr;
+    char* name;
+    UT_hash_handle hh;
+} dessert_ptr2name_t;
+
+dessert_ptr2name_t* _dessert_func2name;
 
 /******************************************************************************
  *

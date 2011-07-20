@@ -7,6 +7,8 @@ XXXXXXXX - 1.05
     - Added min, max macros (if they are not already defined)
     - Added token bucket implementation with 3 policies
     - Token bucket support unlimited or tail drop queueing of packets
+    - "show tasks" CLI command to show the currently registered (periodic) tasks
+    - pointer to name hash map to print function names of registered tasks
 
 20110712 - 1.04
     - Added CLI show function for monitor configuration

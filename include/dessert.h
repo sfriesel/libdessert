@@ -877,6 +877,8 @@ int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, in
 dessert_periodic_t* dessert_periodic_add(dessert_periodiccallback_t* c, void* data, const struct timeval* scheduled, const struct timeval* interval);
 dessert_periodic_t* dessert_periodic_add_delayed(dessert_periodiccallback_t* c, void* data, int delay);
 int dessert_periodic_del(dessert_periodic_t* p);
+void dessert_register_ptr_name(void* ptr, const char* name);
+const char* dessert_ptr2name(void* ptr);
 
 /***************************************************************************//**
  * @}

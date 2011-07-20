@@ -324,7 +324,7 @@ void _dessert_log(int level, const char* func, const char* file, int line, const
  *
  * @return DESSERT_PER_KEEP (do not unregister)
  */
-dessert_per_result_t dessert_flush_log(void* data, struct timeval* scheduled, struct timeval* interval) {
+dessert_per_result_t _dessert_flush_log(void* data, struct timeval* scheduled, struct timeval* interval) {
     if(_dessert_logfd != NULL) {
         pthread_mutex_lock(&_dessert_logfile_mutex);
         fflush(_dessert_logfd);
@@ -377,7 +377,7 @@ int _dessert_cli_log_interval(struct cli_def* cli, char* command, char* argv[], 
         gettimeofday(&schedule, NULL);
         TIMEVAL_ADD(&schedule, i, 0);
 
-        _dessert_log_flush_periodic = dessert_periodic_add(dessert_flush_log, NULL, &schedule, &interval);
+        _dessert_log_flush_periodic = dessert_periodic_add(_dessert_flush_log, NULL, &schedule, &interval);
         cli_print(cli, "log flush interval set to %d seconds\n", i);
         dessert_notice("log flush interval set to %d seconds", i);
     }
@@ -475,7 +475,7 @@ int _dessert_closeLogFile() {
         _dessert_log_flush_periodic = NULL;
     }
 
-    dessert_flush_log(NULL, NULL, NULL);
+    _dessert_flush_log(NULL, NULL, NULL);
     pthread_mutex_lock(&_dessert_logfile_mutex);
     dessert_logcfg(DESSERT_LOG_NOFILE);
 

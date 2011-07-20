@@ -36,6 +36,7 @@ static pthread_t _dessert_periodic_worker;
 static int _dessert_periodic_worker_running = 0;
 
 /* local data storage*/
+dessert_ptr2name_t* _dessert_func2name = NULL;
 
 /* local functions forward declarations*/
 static int _dessert_periodic_add_periodic_t(dessert_periodic_t* task);
@@ -257,6 +258,77 @@ static int _dessert_periodic_add_periodic_t(dessert_periodic_t* task) {
     }
 
     return 0;
+}
+
+/** Inserts a name in the function2name hash map
+ *
+ * @param ptr pointer to the function
+ * @param name name of the function
+ */
+void dessert_register_ptr_name(void* ptr, const char* name) {
+    dessert_ptr2name_t* f = (dessert_ptr2name_t*) malloc(sizeof(dessert_ptr2name_t));
+    if(f == NULL) {
+        dessert_crit("could not alloc memory");
+        return;
+    }
+    char* s = malloc(strlen(name));
+    if(s == NULL) {
+        free(f);
+        dessert_crit("could not alloc memory");
+        return;
+    }
+    f->ptr = ptr;
+    strcpy(s, name);
+    f->name = s;
+    HASH_ADD_PTR(_dessert_func2name, ptr, f);
+}
+
+const char* dessert_ptr2name(void* ptr) {
+    dessert_ptr2name_t* e;
+    dessert_info("find %p", ptr);
+    HASH_FIND_PTR(_dessert_func2name, &ptr, e);
+    if(e==NULL) {
+        dessert_ptr2name_t* s;
+        for(s=_dessert_func2name; s != NULL; s=s->hh.next) {
+            dessert_info("%p: %s\n", s->ptr, s->name);
+        }
+    }
+    return (e == NULL ? NULL : e->name);
+}
+
+int _dessert_cmd_print_tasks(struct cli_def* cli, char* command, char* argv[], int argc) {
+    pthread_mutex_lock(&_dessert_periodic_mutex);
+    dessert_periodic_t* cur = _tasklist;
+    uint16_t i = 0;
+    cli_print(cli, "%4s\t%32s\t%16s\t%10s\t\%10s", "#", "func", "scheduled [s]", "interval [s]", "data");
+    struct timeval timestamp;
+    gettimeofday(&timestamp, NULL);
+    double curtime = timestamp.tv_sec + timestamp.tv_usec/(1000.0*1000.0);
+    while(cur) {
+        const char* name = dessert_ptr2name(cur->c);
+        if(name) {
+            cli_print(cli, "%4d\t%32s\t%16.3f\t%10.3f\t\%10p",
+                i,
+                name,
+                cur->scheduled.tv_sec + cur->scheduled.tv_usec/(1000.0*1000.0) - curtime,
+                cur->interval.tv_sec + cur->interval.tv_usec/(1000.0*1000.0),
+                cur->data
+            );
+        }
+        else {
+            cli_print(cli, "%4d\t%32p\t%16.3f\t%10.3f\t\%10p",
+                i,
+                cur->c,
+                cur->scheduled.tv_sec + cur->scheduled.tv_usec/(1000.0*1000.0),
+                cur->interval.tv_sec + cur->interval.tv_usec/(1000.0*1000.0),
+                cur->data
+            );
+        }
+        cur = cur->next;
+        i++;
+    }
+    pthread_mutex_unlock(&_dessert_periodic_mutex);
+    return CLI_OK;
 }
 
 /* internal worker for the task list */

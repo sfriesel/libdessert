@@ -329,6 +329,14 @@ int _dessert_cli_init() {
 
     cli_register_command(dessert_cli,
         dessert_cli_show,
+        "tasks",
+        _dessert_cmd_print_tasks,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Show registered tasks.");
+
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
         "meshifs",
         _dessert_cli_cmd_showmeshifs,
         PRIVILEGE_UNPRIVILEGED,

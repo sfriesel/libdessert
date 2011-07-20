@@ -1264,7 +1264,7 @@ static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
  * @param data pointer to the meshif to handle
  * @return DESSERT_PER_KEEP always
  */
-static dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval) {
+dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval) {
     dessert_meshif_t* meshif = (dessert_meshif_t*) data;
     token_bucket_t* tb = &(meshif->token_bucket);
 
