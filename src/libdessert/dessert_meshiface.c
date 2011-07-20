@@ -933,7 +933,7 @@ static inline void _dessert_unlock_bucket(dessert_meshif_t* meshif) {
  *
  */
 static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* iface) {
-    int msglen = ntohs(msg->hlen) + ntohs(msg->plen);
+    int msglen = (int) (ntohs(msg->hlen) + ntohs(msg->plen));
 
     /* check for null meshInterface */
     if(iface == NULL) {
@@ -945,7 +945,7 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
     /// \todo maybe we should move the lock into the if's body?
     _dessert_lock_bucket(iface); //// [LOCK]
     if(iface->token_bucket.periodic != NULL) {
-        if(iface->token_bucket.tokens >= msglen) {
+        if(iface->token_bucket.tokens >= (uint64_t) msglen) {
             dessert_debug("consuming %ld bytes for %s",  msglen, iface->if_name);
             iface->token_bucket.tokens -= msglen;
         }
