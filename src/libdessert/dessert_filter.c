@@ -59,11 +59,6 @@ static mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t
     return NULL;
 }
 
-#define print_twice(level, cli, ...) \
-    { _dessert_log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__); \
-      if(cli) { cli_print(cli, __VA_ARGS__); } \
-    }
-
 /**
  * Adds a rule to a list
  *
@@ -95,19 +90,19 @@ bool dessert_filter_rule_add(char* mac, dessert_meshif_t* iface, double p, enum 
     pthread_rwlock_wrlock(&dessert_filterlock);
 
     if(find_in_list(mac, iface, *cur)) {
-        print_twice(LOG_WARNING, cli, MAC " is already in the list", EXPLODE_ARRAY6(mac));
+        print_log(LOG_WARNING, cli, MAC " is already in the list", EXPLODE_ARRAY6(mac));
         goto fail;
     }
 
 //     if(find_in_list(mac, iface, *other)) {
-//         print_twice(LOG_WARNING, cli, MAC " is already in the other list. Please remove it first", EXPLODE_ARRAY6(mac));
+//         print_log(LOG_WARNING, cli, MAC " is already in the other list. Please remove it first", EXPLODE_ARRAY6(mac));
 //         goto fail;
 //     }
 
     mac_entry_t* new_entry = malloc(sizeof(mac_entry_t));
 
     if(new_entry == NULL) {
-        print_twice(LOG_CRIT, cli, "could not allocate memory");
+        print_log(LOG_CRIT, cli, "could not allocate memory");
         goto fail;
     }
 
@@ -155,7 +150,7 @@ bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_fil
     mac_entry_t* del = find_in_list(mac, iface, *cur);
 
     if(del == NULL) {
-        print_twice(LOG_CRIT, cli, MAC " not found in list", EXPLODE_ARRAY6(mac));
+        print_log(LOG_CRIT, cli, MAC " not found in list", EXPLODE_ARRAY6(mac));
         goto fail;
     }
 
@@ -220,7 +215,7 @@ int _dessert_cli_cmd_rule_default(struct cli_def* cli, char* command, char* argv
             _default_rule = DESSERT_MSG_DROP;
         }
         else {
-            print_twice(LOG_ERR, cli, "could not parse default rule: %s", argv[0]);
+            print_log(LOG_ERR, cli, "could not parse default rule: %s", argv[0]);
             goto fail;
         }
     }
@@ -256,13 +251,13 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
             list = DESSERT_BLACKLIST;
         }
         else {
-            print_twice(LOG_ERR, cli, "could not parse list: %s", argv[0]);
+            print_log(LOG_ERR, cli, "could not parse list: %s", argv[0]);
             goto fail;
         }
     }
 
     if(sscanf(argv[PARAM_MAC], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
+        print_log(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
         goto fail;
     }
 
@@ -272,17 +267,17 @@ int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], 
            ;
         }
         else {
-            print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
+            print_log(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
             goto fail;
         }
     }
 
     if(sscanf(argv[PARAM_P], "%lf", &p) != 1) {
-        print_twice(LOG_ERR, cli, "could not parse probability: %17s", argv[PARAM_P]);
+        print_log(LOG_ERR, cli, "could not parse probability: %17s", argv[PARAM_P]);
         goto fail;
     }
     if(p <= 0.0 || p > 1.0) {
-        print_twice(LOG_ERR, cli, "invalid probability: %lf", p);
+        print_log(LOG_ERR, cli, "invalid probability: %lf", p);
         goto fail;
     }
 
@@ -330,13 +325,13 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
             list = DESSERT_BLACKLIST;
         }
         else {
-            print_twice(LOG_ERR, cli, "could not parse list: %s", argv[PARAM_LIST]);
+            print_log(LOG_ERR, cli, "could not parse list: %s", argv[PARAM_LIST]);
             goto fail;
         }
     }
 
     if(sscanf(argv[PARAM_MAC], MAC, &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]) != 6) {
-        print_twice(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
+        print_log(LOG_ERR, cli, "could not parse MAC: %17s", argv[PARAM_MAC]);
         goto fail;
     }
 
@@ -346,7 +341,7 @@ int _dessert_cli_cmd_rule_rm(struct cli_def* cli, char* command, char* argv[], i
             ;
         }
         else {
-            print_twice(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
+            print_log(LOG_ERR, cli, "could not parse iterface name: %17s", argv[PARAM_IFNAME]);
             goto fail;
         }
     }

@@ -1,4 +1,4 @@
-XXXXXXXX - 1.05
+20110720 - 1.05
     - Fixed bugs in packet filter
     - Removed legacy defines that are replaced by enums
     - Replaced int return values by enum types
@@ -9,6 +9,8 @@ XXXXXXXX - 1.05
     - Token bucket support unlimited or tail drop queueing of packets
     - "show tasks" CLI command to show the currently registered (periodic) tasks
     - pointer to name hash map to print function names of registered tasks
+    - libtool version = 1.11.1
+
 
 20110712 - 1.04
     - Added CLI show function for monitor configuration

@@ -285,14 +285,7 @@ void dessert_register_ptr_name(void* ptr, const char* name) {
 
 const char* dessert_ptr2name(void* ptr) {
     dessert_ptr2name_t* e;
-    dessert_info("find %p", ptr);
     HASH_FIND_PTR(_dessert_func2name, &ptr, e);
-    if(e==NULL) {
-        dessert_ptr2name_t* s;
-        for(s=_dessert_func2name; s != NULL; s=s->hh.next) {
-            dessert_info("%p: %s\n", s->ptr, s->name);
-        }
-    }
     return (e == NULL ? NULL : e->name);
 }
 
@@ -300,14 +293,14 @@ int _dessert_cmd_print_tasks(struct cli_def* cli, char* command, char* argv[], i
     pthread_mutex_lock(&_dessert_periodic_mutex);
     dessert_periodic_t* cur = _tasklist;
     uint16_t i = 0;
-    cli_print(cli, "%4s\t%32s\t%16s\t%10s\t\%10s", "#", "func", "scheduled [s]", "interval [s]", "data");
+    cli_print(cli, "%4s\t%32s\t%16s\t%16s\t\%10s", "#", "function", "scheduled [s]", "interval [s]", "data");
     struct timeval timestamp;
     gettimeofday(&timestamp, NULL);
     double curtime = timestamp.tv_sec + timestamp.tv_usec/(1000.0*1000.0);
     while(cur) {
         const char* name = dessert_ptr2name(cur->c);
         if(name) {
-            cli_print(cli, "%4d\t%32s\t%16.3f\t%10.3f\t\%10p",
+            cli_print(cli, "%4d\t%32s\t%16.3f\t%16.3f\t\%10p",
                 i,
                 name,
                 cur->scheduled.tv_sec + cur->scheduled.tv_usec/(1000.0*1000.0) - curtime,
@@ -316,7 +309,7 @@ int _dessert_cmd_print_tasks(struct cli_def* cli, char* command, char* argv[], i
             );
         }
         else {
-            cli_print(cli, "%4d\t%32p\t%16.3f\t%10.3f\t\%10p",
+            cli_print(cli, "%4d\t%32p\t%16.3f\t%16.3f\t\%10p",
                 i,
                 cur->c,
                 cur->scheduled.tv_sec + cur->scheduled.tv_usec/(1000.0*1000.0),

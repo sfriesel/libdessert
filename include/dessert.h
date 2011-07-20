@@ -1273,6 +1273,11 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#define print_log(level, cli, ...) \
+    { _dessert_log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__); \
+      if(cli) { cli_print(cli, __VA_ARGS__); } \
+    }
+
 /***************************************************************************//**
  * @ingroup filter
  * @defgroup filter MAC Filter
