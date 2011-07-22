@@ -47,7 +47,7 @@ int _dessert_meshrxcblistver = 0;
 /* internal functions forward declarations*/
 static void _dessert_packet_process(u_int8_t* args, const struct pcap_pkthdr* header, const u_int8_t* packet);
 static void* _dessert_meshif_add_thread(void* arg);
-static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* iface);
+static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* iface, dessert_msg_queue_t* qe);
 static void _dessert_meshif_cleanup(dessert_meshif_t* meshif);
 static void _dessert_meshiflist_update_permutations(void);
 static inline void list2array(dessert_meshif_t* l, dessert_meshif_t** a, int len);
@@ -222,7 +222,7 @@ int dessert_meshsend_fast(dessert_msg_t* msg, dessert_meshif_t* iface) {
             /* set shost */
             memcpy(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN);
             /* send */
-            res = _dessert_meshsend_if2(msg, iface);
+            res = _dessert_meshsend_if2(msg, iface, NULL);
 
             if(res) {
                 break;
@@ -234,7 +234,7 @@ int dessert_meshsend_fast(dessert_msg_t* msg, dessert_meshif_t* iface) {
         /* set shost */
         memcpy(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN);
         /* send */
-        res = _dessert_meshsend_if2(msg, iface);
+        res = _dessert_meshsend_if2(msg, iface, NULL);
     }
 
     return (res);
@@ -267,7 +267,7 @@ int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, dessert_meshif_t* iface)
             /* set shost */
             memcpy(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN);
             /* send */
-            res = _dessert_meshsend_if2(msg, iface);
+            res = _dessert_meshsend_if2(msg, iface, NULL);
 
             if(res) {
                 break;
@@ -287,7 +287,7 @@ int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, dessert_meshif_t* iface)
             /* set shost */
             memcpy(msg->l2h.ether_shost, iface->hwaddr, ETHER_ADDR_LEN);
             /* send */
-            res = _dessert_meshsend_if2(msg, iface);
+            res = _dessert_meshsend_if2(msg, iface, NULL);
 
             if(res) {
                 break;
@@ -332,7 +332,7 @@ int dessert_meshsend_fast_hwaddr(dessert_msg_t* msg, const uint8_t hwaddr[ETHER_
         /* set shost */
         memcpy(msg->l2h.ether_shost, meshif->hwaddr, ETHER_ADDR_LEN);
         /* send */
-        res = _dessert_meshsend_if2(msg, meshif);
+        res = _dessert_meshsend_if2(msg, meshif, NULL);
     }
     else {
         dessert_err("No such interface - aborting");
@@ -402,7 +402,7 @@ int dessert_meshsend_raw(dessert_msg_t* msg, dessert_meshif_t* iface) {
     if(iface == NULL) {
         pthread_rwlock_rdlock(&dessert_cfglock);
         DL_FOREACH(_dessert_meshiflist, iface) {
-            res = _dessert_meshsend_if2(msg, iface);
+            res = _dessert_meshsend_if2(msg, iface, NULL);
 
             if(res) {
                 break;
@@ -411,7 +411,7 @@ int dessert_meshsend_raw(dessert_msg_t* msg, dessert_meshif_t* iface) {
         pthread_rwlock_unlock(&dessert_cfglock);
     }
     else {
-        res = _dessert_meshsend_if2(msg, iface);
+        res = _dessert_meshsend_if2(msg, iface, NULL);
     }
 
     return (res);
@@ -924,20 +924,22 @@ static inline void _dessert_unlock_bucket(dessert_meshif_t* meshif) {
  *
  * @param[in] *msg the message to send
  * @param[in] *iface the interface the message should be send via
+ * @param[in] *eq queue element if the message was scheduled for transmission by the token bucket
  *
  * @retval DESSERT_OK on success or if packet was dropped due to traffic shaping
  * @retval EINVAL if *iface is NULL
  * @retval EIO if there was a problem sending the message
+ * @retval ENOSR if the message had to be queued
  *
  * %DESCRIPTION:
  *
  */
-static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* iface) {
+static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* iface, dessert_msg_queue_t* qe) {
     int msglen = (int) (ntohs(msg->hlen) + ntohs(msg->plen));
 
     /* check for null meshInterface */
     if(iface == NULL) {
-        dessert_err("NULL-pointer given as interface - programming error!");
+        dessert_err("NULL-pointer specified as interface - programming error!");
         return EINVAL;
     }
 
@@ -952,28 +954,37 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
         else {
             switch(iface->token_bucket.policy) {
                 case DESSERT_TB_QUEUE_ORDERED:
+                    ; // fall through
                 case DESSERT_TB_QUEUE_UNORDERED: {
                     if(iface->token_bucket.max_queue_len != 0
                         && iface->token_bucket.queue_len >= iface->token_bucket.max_queue_len) {
-                        dessert_debug("queue full");
                         break;
                     }
-                    dessert_msg_t** cloned = NULL;
-                    if(dessert_msg_clone(cloned, msg, 1) != DESSERT_OK) {
-                        dessert_crit("could not clone msg");
-                        break;
+                    if(qe == NULL) { // packet was not scheduled by the token bucket
+                        dessert_msg_t* cloned = NULL;
+                        if(dessert_msg_clone(&cloned, msg, 1) != DESSERT_OK) {
+                            dessert_crit("could not clone msg");
+                            break;
+                        }
+                        qe = malloc(sizeof(dessert_msg_queue_t));
+                        if(qe == NULL) {
+                            dessert_crit("could not allocate memory");
+                            break;
+                        }
+                        qe->msg = &(*cloned);
+                        qe->len = msglen;
+                        qe->next = NULL;
+                        LL_APPEND(iface->token_bucket.queue, qe);
                     }
-                    dessert_msg_queue_t* q = malloc(sizeof(dessert_msg_queue_t));
-                    if(q == NULL) {
-                        dessert_crit("could not allocate memory");
-                        break;
+                    else {
+                        LL_PREPEND(iface->token_bucket.queue, qe); // prepend if the packet was aready queued
                     }
-                    q->msg = *cloned;
-                    q->len = msglen;
-                    LL_APPEND(iface->token_bucket.queue, q);
                     iface->token_bucket.queue_len++;
-                    break; }
+                    _dessert_unlock_bucket(iface); //// [UNLOCK]
+                    return ENOSR;
+                }
                 case DESSERT_TB_DROP:
+                    ; // fall through
                 default:
                     ; // do nothing
             }
@@ -1216,23 +1227,21 @@ static inline void permutation(int k, int len, dessert_meshif_t** a) {
  * @param meshif interface whose queue shall be handled
  */
 static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
-    // copy msgs
-    _dessert_lock_bucket(meshif);
+    _dessert_lock_bucket(meshif); //// [LOCK]
     uint64_t tokens = meshif->token_bucket.tokens;
-    dessert_msg_queue_t* queue = (dessert_msg_queue_t*) meshif->token_bucket.queue;
-    dessert_msg_queue_t *elt = NULL;
-    dessert_msg_queue_t *tmp = NULL;
-    dessert_msg_queue_t *scheduled = NULL;
+    dessert_msg_queue_t* elt = NULL;
+    dessert_msg_queue_t* tmp = NULL;
+    dessert_msg_queue_t* scheduled = NULL;
     // copy all packets that can be sent with the tokens
-    LL_FOREACH_SAFE(queue, elt, tmp) {
+    LL_FOREACH_SAFE(meshif->token_bucket.queue, elt, tmp) {
         if(tokens >= elt->len) {
+            LL_DELETE(meshif->token_bucket.queue, elt); // always first delete entries!!!
             LL_APPEND(scheduled, elt);
-            LL_DELETE(queue, elt);
             tokens -= elt->len;
             meshif->token_bucket.queue_len--;
         }
         else {
-            if(tokens <= 0) { // TODO: what is the minimum packet size?
+            if(tokens <= _DESSERT_MIN_PACKET_SIZE) {
                 break;
             }
             switch(meshif->token_bucket.policy) {
@@ -1246,12 +1255,14 @@ static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
             }
         }
     }
-    _dessert_unlock_bucket(meshif);
+    _dessert_unlock_bucket(meshif); //// [UNLOCK]
     LL_FOREACH_SAFE(scheduled, elt, tmp) {
-        _dessert_meshsend_if2(elt->msg, meshif);
-        LL_DELETE(scheduled, elt);
-        dessert_msg_destroy(elt->msg);
-        free(elt);
+        LL_DELETE(scheduled, elt); // always first delete entries!!!
+        dessert_cb_result r = _dessert_meshsend_if2(elt->msg, meshif, elt);
+        if(r == DESSERT_OK) {
+            dessert_msg_destroy(elt->msg);
+            free(elt);
+        }
     }
 }
 
@@ -1274,7 +1285,7 @@ dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* schedu
 
     _dessert_lock_bucket(meshif); //// [LOCK]
     uint64_t tokens = min(max(tb->max_tokens - (tb->tokens), 0), tb->tokens_per_msec);
-    dessert_trace("adding %"PRIi64" tokens to %s (%"PRIi64"/%"PRIi64")", tokens, meshif->if_name, tb->tokens, tb->max_tokens);
+    //dessert_trace("adding %"PRIi64" tokens to %s (%"PRIi64"/%"PRIi64")", tokens, meshif->if_name, tb->tokens, tb->max_tokens);
     tb->tokens += tokens;
     _dessert_unlock_bucket(meshif); //// [UNLOCK]
 
@@ -1285,16 +1296,18 @@ dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* schedu
 }
 
 /** print tocken bucket information to cli **/
-static void _dessert_print_tb(struct cli_def* cli, dessert_meshif_t* meshif) {
+static void _dessert_print_tb(struct cli_def* cli, uint8_t i, dessert_meshif_t* meshif) {
     if(meshif == NULL) {
         return;
     }
 
-    cli_print(cli, "%s: size=%llu [B], rate=%llu [B/s], policy=%s, queue_max=%d, state=%s",
+    cli_print(cli, "%5d\t%10s\t%20llu\t%20llu\t%16s\t%6d/%-6d\t%10s",
+        i,
         meshif->if_name,
         (long long unsigned int) meshif->token_bucket.max_tokens,
         (long long unsigned int) meshif->token_bucket.tokens_per_msec*1000,
         _dessert_policy2str[meshif->token_bucket.policy],
+        meshif->token_bucket.queue_len,
         meshif->token_bucket.max_queue_len,
         meshif->token_bucket.periodic == NULL ? "disabled" : "enabled"
         );
@@ -1302,19 +1315,22 @@ static void _dessert_print_tb(struct cli_def* cli, dessert_meshif_t* meshif) {
 
 int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
     dessert_meshif_t* meshif = NULL;
-    if(argc == 1) {
-        meshif = dessert_ifname2meshif(argv[0]);
+//     if(argc == 1) {
+//         meshif = dessert_ifname2meshif(argv[0]);
+//
+//         if(meshif == NULL) {
+//             cli_print(cli, "interface not found: %s", argv[0]);
+//             return CLI_ERROR;
+//         }
+//         _dessert_print_tb(cli, meshif);
+//         return CLI_OK;
+//     }
 
-        if(meshif == NULL) {
-            cli_print(cli, "interface not found: %s", argv[0]);
-            return CLI_ERROR;
-        }
-        _dessert_print_tb(cli, meshif);
-        return CLI_OK;
-    }
-
+    cli_print(cli, "%5s\t%10s\t%20s\t%20s\t%16s\t%13s\t%10s", "#", "meshif", "size [B]", "rate [B/s]", "policy", "queue length", "state");
+    uint8_t i = 0;
     MESHIFLIST_ITERATOR_START(meshif)
-        _dessert_print_tb(cli, meshif);
+        _dessert_print_tb(cli, i, meshif);
+        i++;
     MESHIFLIST_ITERATOR_STOP;
     return CLI_OK;
 }
@@ -1376,7 +1392,7 @@ int _dessert_cli_cmd_tokenbucket_policy(struct cli_def* cli, char* command, char
     _dessert_lock_bucket(meshif); //// [LOCK]
     meshif->token_bucket.policy = policy;
     cli_print(cli, "INFO: set policy: %s", argv[1]);
-    _dessert_unlock_bucket(meshif); //// [LOCK]
+    _dessert_unlock_bucket(meshif); //// [UNLOCK]
     return CLI_OK;
 }
 
@@ -1405,9 +1421,9 @@ int _dessert_cli_cmd_tokenbucket_max(struct cli_def* cli, char* command, char* a
     meshif->token_bucket.max_queue_len = max_len;
     cli_print(cli, "INFO: set maximum queue length: %d", max_len);
     if(max_len < meshif->token_bucket.queue_len) {
-        cli_print(cli, "WARING: there are currently more packet in the queue: %d", meshif->token_bucket.queue_len);
+        cli_print(cli, "WARNING: there are currently more packets in the queue: %d", meshif->token_bucket.queue_len);
     }
-    _dessert_unlock_bucket(meshif); //// [LOCK]
+    _dessert_unlock_bucket(meshif); //// [UNLOCK]
     return CLI_OK;
 }
 
@@ -1458,11 +1474,11 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
     /* enforce minimum rate of 1kByte/s */
     if(size < 1000) {
         cli_print(cli, "ERROR: size smaller than 1000: %ld", size);
-        return CLI_ERROR;
+        goto fail;
     }
     if(rate < 1000) {
         cli_print(cli, "ERROR: rate smaller than 1000: %ld", size);
-        return CLI_ERROR;
+        goto fail;
     }
 
     /* modify tocken bucket */
@@ -1490,6 +1506,10 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
 out:
     _dessert_unlock_bucket(meshif); //// [UNLOCK]
     return CLI_OK;
+
+fail:
+    _dessert_unlock_bucket(meshif); //// [UNLOCK]
+    return CLI_ERROR;
 }
 
 /** Add mesh mesh interface

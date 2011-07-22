@@ -171,26 +171,22 @@ fail:
 int _dessert_cli_cmd_show_rules(struct cli_def* cli, char* command, char* argv[], int argc) {
     pthread_rwlock_rdlock(&dessert_filterlock);
     mac_entry_t* elt = NULL;
-    cli_print(cli, "\n\t[%s]", _whitelist_str);
-    cli_print(cli, "\t-----------------------------------------------------");
-    cli_print(cli, "\t# \tMAC \t\t\tmeshif\t\tp");
-    cli_print(cli, "\t-----------------------------------------------------");
+    cli_print(cli, "\n[%s]", _whitelist_str);
+    cli_print(cli, "%4s\t%17s\t%10s\t%5s", "#", "MAC", "meshif", "p");
     uint16_t i = 0;
     DL_FOREACH(_dessert_whitelist, elt) {
-        cli_print(cli, "\t%d\t" MAC "\t%s\t\t%.3f", i, EXPLODE_ARRAY6(elt->mac), elt->iface->if_name, elt->p);
+        cli_print(cli, "%4d\t"MAC"\t%10s\t%.3f", i, EXPLODE_ARRAY6(elt->mac), elt->iface->if_name, elt->p);
         i++;
     }
-    cli_print(cli, "\n\t[%s]", _blacklist_str);
-    cli_print(cli, "\t-----------------------------------------------------");
-    cli_print(cli, "\t# \tMAC \t\t\tmeshif\t\tp");
-    cli_print(cli, "\t-----------------------------------------------------");
+    cli_print(cli, "\n[%s]", _blacklist_str);
+    cli_print(cli, "%4s\t%17s\t%10s\t%5s", "#", "MAC", "meshif", "p");
     i = 0;
     DL_FOREACH(_dessert_blacklist, elt) {
-        cli_print(cli, "\t%d\t" MAC "\t%s\t\t%.3f", i, EXPLODE_ARRAY6(elt->mac), elt->iface->if_name, elt->p);
+        cli_print(cli, "%4d\t"MAC"\t%10s\t%.3f", i, EXPLODE_ARRAY6(elt->mac), elt->iface->if_name, elt->p);
         i++;
     }
 
-    cli_print(cli, "\n\t[default]: %s", print_default);
+    cli_print(cli, "\n[default]: %s", print_default);
     pthread_rwlock_unlock(&dessert_filterlock);
     return CLI_OK;
 }

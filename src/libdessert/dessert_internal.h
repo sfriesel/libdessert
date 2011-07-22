@@ -71,6 +71,11 @@
 /** flag for _dessert_status - program is daemon */
 #define _DESSERT_STATUS_DAEMON   0x1
 
+/** Minimum size of packets; used to optimize token bucket
+ *  \TODO What is the minimum packet size? This value is only a rough guess!
+ */
+#define _DESSERT_MIN_PACKET_SIZE 10
+
 /** global status flag holder */
 extern int         _dessert_status;
 

@@ -312,7 +312,7 @@ int _dessert_cmd_print_tasks(struct cli_def* cli, char* command, char* argv[], i
             cli_print(cli, "%4d\t%32p\t%16.3f\t%16.3f\t\%10p",
                 i,
                 cur->c,
-                cur->scheduled.tv_sec + cur->scheduled.tv_usec/(1000.0*1000.0),
+                cur->scheduled.tv_sec + cur->scheduled.tv_usec/(1000.0*1000.0) - curtime,
                 cur->interval.tv_sec + cur->interval.tv_usec/(1000.0*1000.0),
                 cur->data
             );
@@ -333,10 +333,11 @@ static void* _dessert_periodic_thread(void* arg) {
 
     pthread_mutex_lock(&_dessert_periodic_mutex);
 
-    while(1) {
-        gettimeofday(&now, NULL);
-
+    /* loops endless if no error */
+    while(true) {
+        // no tasks -> sleep
         if(_tasklist == NULL) {
+            // sleep until task is added
             if(pthread_cond_wait(&_dessert_periodic_changed, &_dessert_periodic_mutex) == EINVAL) {
                 dessert_err("sleeping failed in periodic scheduler - scheduler died");
                 break;
@@ -344,25 +345,28 @@ static void* _dessert_periodic_thread(void* arg) {
 
             continue;
         }
-        else if(now.tv_sec < _tasklist->scheduled.tv_sec
-                || (now.tv_sec == _tasklist->scheduled.tv_sec
-                    && now.tv_usec < _tasklist->scheduled.tv_usec)) {
-            ts.tv_sec = _tasklist->scheduled.tv_sec;
-            ts.tv_nsec = _tasklist->scheduled.tv_usec * 1000;
+        // sleep until the next task has to be run
+        else {
+            gettimeofday(&now, NULL);
+            if(now.tv_sec < _tasklist->scheduled.tv_sec
+                || (now.tv_sec <= _tasklist->scheduled.tv_sec && now.tv_usec < _tasklist->scheduled.tv_usec)) {
+                ts.tv_sec = _tasklist->scheduled.tv_sec;
+                ts.tv_nsec = _tasklist->scheduled.tv_usec * 1000;
 
-            if(pthread_cond_timedwait(&_dessert_periodic_changed, &_dessert_periodic_mutex, &ts) == EINVAL) {
-                dessert_err("sleeping failed in periodic scheduler - scheduler died");
-                break;
+                if(pthread_cond_timedwait(&_dessert_periodic_changed, &_dessert_periodic_mutex, &ts) == EINVAL) {
+                    dessert_err("sleeping failed in periodic scheduler - scheduler died");
+                    break;
+                }
+
+                continue;
             }
-
-            continue;
         }
 
         /* run next task */
         next_task = _tasklist;
         _tasklist = next_task->next;
 
-        /* safe task to local variable */
+        /* save task to local variable */
         memcpy(&task, next_task, sizeof(dessert_periodic_t));
 
         /* periodic task - re-add */
@@ -370,7 +374,7 @@ static void* _dessert_periodic_thread(void* arg) {
             next_task->scheduled.tv_sec += next_task->interval.tv_sec;
             next_task->scheduled.tv_usec += next_task->interval.tv_usec;
 
-            if(next_task->scheduled.tv_usec >= 1000000) {
+            while(next_task->scheduled.tv_usec >= 1000000) {
                 next_task->scheduled.tv_sec += 1;
                 next_task->scheduled.tv_usec -= 1000000;
             }
@@ -385,8 +389,8 @@ static void* _dessert_periodic_thread(void* arg) {
         /* run the callback */
         pthread_mutex_unlock(&_dessert_periodic_mutex);
 
-        /* call the callback - remove it from list if exits with nonzero code */
-        if(task.c(task.data, &(task.scheduled), &(task.interval))) {
+        /* call the callback */
+        if(task.c(task.data, &(task.scheduled), &(task.interval)) == DESSERT_PER_UNREGISTER) {
             dessert_periodic_del(next_task);
         }
 
@@ -394,7 +398,7 @@ static void* _dessert_periodic_thread(void* arg) {
     }
 
     pthread_mutex_unlock(&_dessert_periodic_mutex);
+    dessert_warn("task scheduler terminating");
     _dessert_periodic_worker_running = 0;
-
     return (NULL);
 }
