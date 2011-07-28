@@ -92,7 +92,7 @@ int dessert_meshsend(const dessert_msg_t* msgin, dessert_meshif_t* iface) {
     }
 
     /* clone message */
-    dessert_msg_clone(&msg, msgin, 1);
+    dessert_msg_clone(&msg, msgin, true);
     res = dessert_meshsend_fast(msg, iface);
     dessert_msg_destroy(msg);
 
@@ -124,7 +124,7 @@ int dessert_meshsend_allbutone(const dessert_msg_t* msgin, dessert_meshif_t* ifa
     }
 
     /* clone message */
-    dessert_msg_clone(&msg, msgin, 1);
+    dessert_msg_clone(&msg, msgin, true);
     res = dessert_meshsend_fast_allbutone(msg, iface);
     dessert_msg_destroy(msg);
 
@@ -158,7 +158,7 @@ int dessert_meshsend_hwaddr(const dessert_msg_t* msgin, const uint8_t hwaddr[ETH
     }
 
     /* clone message */
-    dessert_msg_clone(&msg, msgin, 1);
+    dessert_msg_clone(&msg, msgin, true);
     res = dessert_meshsend_fast_hwaddr(msg, hwaddr);
     dessert_msg_destroy(msg);
 
@@ -190,7 +190,7 @@ int dessert_meshsend_randomized(const dessert_msg_t* msgin) {
     }
 
     /* clone message */
-    dessert_msg_clone(&msg, msgin, 1);
+    dessert_msg_clone(&msg, msgin, true);
     res = dessert_meshsend_fast_randomized(msg);
     dessert_msg_destroy(msg);
 
@@ -836,7 +836,7 @@ dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, de
         res = cbl[cblcur](msg, len, proc, meshif, id);
 
         if(res == DESSERT_MSG_NEEDNOSPARSE && msg == msg_in) {
-            dessert_msg_clone(&msg, msg_in, 0);
+            dessert_msg_clone(&msg, msg_in, false);
             len = dessert_maxlen;
             goto _dessert_packet_process_cbagain;
         }
@@ -962,7 +962,7 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
                     }
                     if(qe == NULL) { // packet was not scheduled by the token bucket
                         dessert_msg_t* cloned = NULL;
-                        if(dessert_msg_clone(&cloned, msg, 1) != DESSERT_OK) {
+                        if(dessert_msg_clone(&cloned, msg, true) != DESSERT_OK) {
                             dessert_crit("could not clone msg");
                             break;
                         }

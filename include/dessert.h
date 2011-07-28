@@ -832,7 +832,7 @@ static inline size_t dessert_ext_getdatalen(dessert_ext_t* ext) {
  ******************************************************************************/
 
 int dessert_msg_new(dessert_msg_t** msgout);
-int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, uint8_t sparse);
+int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, bool sparse);
 int dessert_msg_check(const dessert_msg_t* msg, size_t len);
 void dessert_msg_dump(const dessert_msg_t* msg, size_t len, char* buf, size_t blen);
 void dessert_msg_destroy(dessert_msg_t* msg);

@@ -69,7 +69,7 @@ int dessert_msg_new(dessert_msg_t** msgout) {
  * @arg sparse whether to allocate DESSERT_MAXFRAMELEN or only hlen+plen
  * @return DESSERT_OK on success, -errno otherwise
  **/
-int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, uint8_t sparse) {
+int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, bool sparse) {
     dessert_msg_t* msg;
     size_t msglen = ntohs(msgold->hlen) + ntohs(msgold->plen);
 
