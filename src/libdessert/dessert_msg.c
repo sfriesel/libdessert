@@ -88,6 +88,7 @@ int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, bool 
     }
 
     if(msg == NULL) {
+        dessert_crit("could not allocate memory");
         return (-errno);
     }
 
@@ -102,7 +103,6 @@ int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, bool 
 
     *msgnew = msg;
     return (DESSERT_OK);
-
 }
 
 /** checks whether a dessert_msg is consistent
@@ -145,8 +145,7 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
 
     while((uint8_t*) ext < ((uint8_t*) msg + (size_t) ntohs(msg->hlen))) {
         /* does current extension fit into the header? */
-        if(((uint8_t*) ext + (size_t) ext->len) > ((uint8_t*) msg
-                + (size_t) ntohs(msg->hlen))) {
+        if(((uint8_t*) ext + (size_t) ext->len) > ((uint8_t*) msg + (size_t) ntohs(msg->hlen))) {
             dessert_info("extension %x too long", ext->type);
             return (-3);
         }
@@ -191,7 +190,7 @@ void dessert_msg_destroy(dessert_msg_t* msg) {
 int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert_msg_t** msgout) {
     /* check len */
     if(eth_len > dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
-        dessert_debug("failed to encapsulate ethernet frame of %d bytes (max=%d)", eth_len, dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
+        dessert_crit("failed to encapsulate ethernet frame of %d bytes (max=%d)", eth_len, dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
         return (-EMSGSIZE);
     }
 
@@ -553,15 +552,13 @@ int dessert_msg_getpayload(dessert_msg_t* msg, void** payload) {
  * @arg **ext (out) the extension pointer to the reserved extension space
  * @arg type the type of the extension
  * @arg len  the length of the ext data (without 2 byte extension header)
- * @return DESSERT_OK on success,
- *
- * @todo Remove magic numbers or at least document them!
+ * @return DESSERT_OK on success, -2 if ext too big or message too large (incl. ext), -3 if extension smaller than ext header
  **/
 int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, size_t len) {
 
     /* check if sparse message */
     if((msg->flags & DESSERT_RX_FLAG_SPARSE) > 0) {
-        dessert_debug("tried to add extension to a sparse message - use dessert_msg_clone() first!");
+        dessert_crit("tried to add extension to a sparse message - use dessert_msg_clone() first!");
         return -1;
     }
 
@@ -570,22 +567,21 @@ int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, si
 
     /* check ext */
     if(len > dessert_maxlen - ntohs(msg->hlen) - ntohs(msg->plen)) {
-        dessert_debug("message would be too large after adding extension!");
+        dessert_crit("message would be too large after adding extension!");
         return -2; /* too big */
     }
     else if(len < DESSERT_EXTLEN) {
-        dessert_debug("extension too small!");
+        dessert_crit("extension too small!");
         return -3; /* too small */
     }
-    else if(len > 255) {
-        dessert_debug("extension too big!");
+    else if(len > min(DESSERT_MAXEXTDATALEN + DESSERT_EXTLEN, 256)) { // min() for misconfiguration
+        dessert_crit("extension too big!");
         return -2; /* too big */
     }
 
     /* move payload if necessary */
     if(ntohs(msg->plen) > 0) {
-        memmove(((uint8_t*) msg + ntohs(msg->hlen) + len), ((uint8_t*) msg
-                + ntohs(msg->hlen)), ntohs(msg->plen));
+        memmove(((uint8_t*) msg + ntohs(msg->hlen) + len), ((uint8_t*) msg + ntohs(msg->hlen)), ntohs(msg->plen));
     }
 
     /* get ext addr */
@@ -607,7 +603,6 @@ int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, si
  * @return DESSERT_OK on success, else DESSERT_ERR
  **/
 dessert_result dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext) {
-
     /* check ext */
     if((((uint8_t*) ext) < ((uint8_t*) msg))
        || (((uint8_t*) ext) > (((uint8_t*) msg) + ntohs(msg->hlen)))) {
@@ -629,11 +624,9 @@ dessert_result dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext) {
  * @param[in] *ext the extension record
  * @param[in] new_len the new length of the extension record
  *
- * @retval DESSERT_OK on success
+ * @retval DESSERT_OK on success, -2 if ext too big or message too large (incl. ext), -3 if extension smaller than ext header
  *
  * %DESCRIPTION:
- *
- * @todo Remove magic numbers or at least document them!
  **/
 int dessert_msg_resizeext(dessert_msg_t* msg, dessert_ext_t* ext, size_t new_len) {
     int old_len = ext->len;
@@ -774,12 +767,10 @@ dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_m
         memcpy((ext->data), dessert_l25_defsrc, ETHER_ADDR_LEN);
     }
     else if(dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
-        dessert_msg_addext(msg, &ext, DESSERT_EXT_TRACE_REQ,
-                           DESSERT_MSG_TRACE_IFACE);
+        dessert_msg_addext(msg, &ext, DESSERT_EXT_TRACE_REQ, DESSERT_MSG_TRACE_IFACE);
         memcpy((ext->data), dessert_l25_defsrc, ETHER_ADDR_LEN);
         memcpy((ext->data) + ETHER_ADDR_LEN, iface->hwaddr, ETHER_ADDR_LEN);
-        memcpy((ext->data) + ETHER_ADDR_LEN * 2, msg->l2h.ether_shost,
-               ETHER_ADDR_LEN);
+        memcpy((ext->data) + ETHER_ADDR_LEN * 2, msg->l2h.ether_shost, ETHER_ADDR_LEN);
     }
     else {
         dessert_warn("got packet with %d bytes trace extension - ignoring");
@@ -808,12 +799,12 @@ dessert_cb_result dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dess
 
     /* clear flags */
     proc->lflags &= ~(DESSERT_RX_FLAG_L25_DST
-                      | DESSERT_RX_FLAG_L25_SRC
-                      | DESSERT_RX_FLAG_L2_DST
-                      | DESSERT_RX_FLAG_L2_SRC
-                      | DESSERT_RX_FLAG_L2_BROADCAST
-                      | DESSERT_RX_FLAG_L25_OVERHEARD
-                      | DESSERT_RX_FLAG_L2_OVERHEARD);
+        | DESSERT_RX_FLAG_L25_SRC
+        | DESSERT_RX_FLAG_L2_DST
+        | DESSERT_RX_FLAG_L2_SRC
+        | DESSERT_RX_FLAG_L2_BROADCAST
+        | DESSERT_RX_FLAG_L25_OVERHEARD
+        | DESSERT_RX_FLAG_L2_OVERHEARD);
 
     /* checks against defaults */
     if(l25h != NULL && memcmp(l25h->ether_dhost, ether_broadcast, ETHER_ADDR_LEN) == 0) {
@@ -900,8 +891,7 @@ int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, in
         return 0;
     }
 
-    _dessert_msg_trace_dump_append("\tpacket trace:\n"
-                                   "\t\tfrom " MAC "\n", EXPLODE_ARRAY6(ext->data));
+    _dessert_msg_trace_dump_append("\tpacket trace:\n" "\t\tfrom " MAC "\n", EXPLODE_ARRAY6(ext->data));
 
     if(dessert_ext_getdatalen(ext) == DESSERT_MSG_TRACE_IFACE) {
         _dessert_msg_trace_dump_append("\t\t  received on   " MAC "\n", EXPLODE_ARRAY6(ext->data));

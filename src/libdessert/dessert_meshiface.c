@@ -129,7 +129,6 @@ int dessert_meshsend_allbutone(const dessert_msg_t* msgin, dessert_meshif_t* ifa
     dessert_msg_destroy(msg);
 
     return res;
-
 }
 
 /** Sends a \b dessert \b message via the interface which is identified by the given hardware address.
@@ -238,7 +237,6 @@ int dessert_meshsend_fast(dessert_msg_t* msg, dessert_meshif_t* iface) {
     }
 
     return (res);
-
 }
 
 /** Sends a \b dessert \b message fast via all interfaces, except  the specified interface.
@@ -297,7 +295,6 @@ int dessert_meshsend_fast_allbutone(dessert_msg_t* msg, dessert_meshif_t* iface)
     }
 
     return (res);
-
 }
 
 /** Sends a \b dessert \b message fast via the interface specified by the given
@@ -415,7 +412,6 @@ int dessert_meshsend_raw(dessert_msg_t* msg, dessert_meshif_t* iface) {
     }
 
     return (res);
-
 }
 
 /******************************************************************************
@@ -1125,11 +1121,10 @@ static void _dessert_meshiflist_update_permutations() {
     _dessert_meshiflist_perms = calloc(sizeof(dessert_meshif_t**) * _dessert_meshiflist_perm_count + sizeof(dessert_meshif_t*) * _dessert_meshiflist_perm_count * _dessert_meshiflist_len, 1);
 
     for(i = 0; i < _dessert_meshiflist_perm_count; ++i) {
-        _dessert_meshiflist_perms[i]
-        = (dessert_meshif_t**)(((char*) _dessert_meshiflist_perms)
-                               + sizeof(dessert_meshif_t**)
-                               * _dessert_meshiflist_perm_count + i
-                               * _dessert_meshiflist_len * sizeof(dessert_meshif_t*));
+        _dessert_meshiflist_perms[i] = (dessert_meshif_t**)(((char*) _dessert_meshiflist_perms)
+            + sizeof(dessert_meshif_t**)
+            * _dessert_meshiflist_perm_count + i
+            * _dessert_meshiflist_len * sizeof(dessert_meshif_t*));
     }
 
     for(r = 0; r < _dessert_meshiflist_perm_count; r++) {
@@ -1315,17 +1310,6 @@ static void _dessert_print_tb(struct cli_def* cli, uint8_t i, dessert_meshif_t* 
 
 int _dessert_cli_cmd_show_tokenbucket(struct cli_def* cli, char* command, char* argv[], int argc) {
     dessert_meshif_t* meshif = NULL;
-//     if(argc == 1) {
-//         meshif = dessert_ifname2meshif(argv[0]);
-//
-//         if(meshif == NULL) {
-//             cli_print(cli, "interface not found: %s", argv[0]);
-//             return CLI_ERROR;
-//         }
-//         _dessert_print_tb(cli, meshif);
-//         return CLI_OK;
-//     }
-
     cli_print(cli, "%5s\t%10s\t%20s\t%20s\t%16s\t%13s\t%10s", "#", "meshif", "size [B]", "rate [B/s]", "policy", "queue length", "state");
     uint8_t i = 0;
     MESHIFLIST_ITERATOR_START(meshif)
@@ -1453,7 +1437,6 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
     if(rate && *next_char != '\0') {
         rate *= eval_multiplier(next_char, cli);
     }
-
 
     _dessert_lock_bucket(meshif); //// [LOCK]
     /* deaktivate token bucket */
