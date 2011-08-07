@@ -159,7 +159,7 @@ typedef struct dessertMeshifTable_rowreq_ctx_s {
 	 * flags per row. Currently, the first (lower) 8 bits are reserved
 	 * for the user. See mfd.h for other flags.
 	 */
-	u_int rowreq_flags;
+	uint rowreq_flags;
 
 	/*
 	 * TODO:131:o: |   |-> Add useful data to dessertMeshifTable rowreq context.

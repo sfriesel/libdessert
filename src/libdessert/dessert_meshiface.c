@@ -45,7 +45,7 @@ dessert_meshrxcbe_t* _dessert_meshrxcblist;
 int _dessert_meshrxcblistver = 0;
 
 /* internal functions forward declarations*/
-static void _dessert_packet_process(u_int8_t* args, const struct pcap_pkthdr* header, const u_int8_t* packet);
+static void _dessert_packet_process(uint8_t* args, const struct pcap_pkthdr* header, const uint8_t* packet);
 static void* _dessert_meshif_add_thread(void* arg);
 static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* iface, dessert_msg_queue_t* qe);
 static void _dessert_meshif_cleanup(dessert_meshif_t* meshif);
@@ -993,7 +993,7 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
     /* send packet - temporally setting DESSERT_RX_FLAG_SPARSE */
     uint8_t oldflags = msg->flags;
     msg->flags &= ~DESSERT_RX_FLAG_SPARSE;
-    int res = pcap_inject(iface->pcap, (u_int8_t*) msg, msglen);
+    int res = pcap_inject(iface->pcap, (uint8_t*) msg, msglen);
     msg->flags = oldflags;
 
     if(res != msglen) {
@@ -1026,7 +1026,7 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
  * %DESCRIPTION:
  *
  */
-static void _dessert_packet_process(u_int8_t* args, const struct pcap_pkthdr* header, const u_int8_t* packet) {
+static void _dessert_packet_process(uint8_t* args, const struct pcap_pkthdr* header, const uint8_t* packet) {
     dessert_meshif_t* meshif = (dessert_meshif_t*) args;
     dessert_msg_t* msg = (dessert_msg_t*) packet;
     size_t len = header->caplen;
@@ -1091,7 +1091,7 @@ static void _dessert_meshif_cleanup(dessert_meshif_t* meshif) {
  */
 static void* _dessert_meshif_add_thread(void* arg) {
     dessert_meshif_t* meshif = (dessert_meshif_t*) arg;
-    pcap_loop(meshif->pcap, -1, _dessert_packet_process, (u_int8_t*) meshif);
+    pcap_loop(meshif->pcap, -1, _dessert_packet_process, (uint8_t*) meshif);
     _dessert_meshif_cleanup(meshif);
     return (NULL);
 }

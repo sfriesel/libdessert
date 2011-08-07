@@ -69,7 +69,7 @@ typedef struct dessertAppParamsTable_interface_ctx_s {
 
     netsnmp_baby_steps_access_methods access_multiplexer;
 
-    u_int           table_dirty;
+    uint           table_dirty;
 
 } dessertAppParamsTable_interface_ctx;
 
@@ -111,14 +111,14 @@ dessertAppParamsTable_container_size(void)
     return CONTAINER_SIZE(dessertAppParamsTable_if_ctx.container);
 }
 
-u_int
+uint
 dessertAppParamsTable_dirty_get(void)
 {
     return dessertAppParamsTable_if_ctx.table_dirty;
 }
 
 void
-dessertAppParamsTable_dirty_set(u_int status)
+dessertAppParamsTable_dirty_set(uint status)
 {
     DEBUGMSGTL(("dessertAppParamsTable:dessertAppParamsTable_dirty_set",
                 "called. was %d, now %d\n",
@@ -1479,7 +1479,7 @@ _mfd_dessertAppParamsTable_undo_commit(netsnmp_mib_handler *handler,
     netsnmp_assert(NULL != rowreq_ctx);
 
     if (rowreq_ctx->rowreq_flags & MFD_ROW_DIRTY) {
-        u_int           d = dessertAppParamsTable_dirty_get();
+        uint           d = dessertAppParamsTable_dirty_get();
 
         netsnmp_assert(d != 0);
         if (d)

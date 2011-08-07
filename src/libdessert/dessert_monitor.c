@@ -39,34 +39,34 @@
 #define ALIGN(x,a) (((x)+(a)-1)&~((a)-1))
 
 struct ieee80211_radiotap_header {
-    u_int8_t it_version;
-    u_int8_t it_pad;
-    u_int16_t it_len;
-    u_int32_t it_present;
+    uint8_t it_version;
+    uint8_t it_pad;
+    uint16_t it_len;
+    uint32_t it_present;
 } __attribute__((__packed__));
 
 struct radiotap_header_opt_fields {
-    u_int64_t wr_tsft; //timestamp in microseconds when the first bit of the packet arrived
-    u_int8_t wr_flags;
-    u_int8_t wr_rate;
+    uint64_t wr_tsft; //timestamp in microseconds when the first bit of the packet arrived
+    uint8_t wr_flags;
+    uint8_t wr_rate;
     struct {
-        u_int16_t frequency;
-        u_int16_t flags;
+        uint16_t frequency;
+        uint16_t flags;
     } wr_channel;
     struct {
-        u_int8_t hop_set;
-        u_int8_t hop_pattern;
+        uint8_t hop_set;
+        uint8_t hop_pattern;
     } wr_fhss;
     int8_t wr_ant_signal;
     int8_t wr_ant_noise;
-    u_int16_t wr_lockquality;
-    u_int16_t wr_tx_attenuation;
-    u_int16_t wr_db_tx_attenuation;
+    uint16_t wr_lockquality;
+    uint16_t wr_tx_attenuation;
+    uint16_t wr_db_tx_attenuation;
     int8_t wr_dbm_tx_power;
-    u_int8_t wr_antenna;
-    u_int8_t wr_db_antsignal;
-    u_int8_t wr_db_antnoise;
-    u_int16_t wr_rx_flags;
+    uint8_t wr_antenna;
+    uint8_t wr_db_antsignal;
+    uint8_t wr_db_antnoise;
+    uint16_t wr_rx_flags;
 };
 
 struct wifi_header {
@@ -82,12 +82,12 @@ struct wifi_header {
             int8_t order : 1;
         } flags;
     } frame_control;
-    u_int16_t duration;
+    uint16_t duration;
     mac_addr destination_address;
     mac_addr source_address;
     mac_addr bssid;
-    u_int16_t fragment_number;
-    u_int16_t sequence_number;
+    uint16_t fragment_number;
+    uint16_t sequence_number;
 } __attribute__((__packed__));
 
 /* maximum age of rssi samples in seconds; may be overwritten
@@ -115,7 +115,7 @@ static int neighbour_cmp(const struct monitor_neighbour* left, const struct moni
     return memcmp(left->addr, right->addr, sizeof(left->addr));
 }
 
-static struct radiotap_header_opt_fields parse(const u_int8_t* packet) {
+static struct radiotap_header_opt_fields parse(const uint8_t* packet) {
     struct radiotap_header_opt_fields out;
     struct ieee80211_radiotap_header* radiotap = (struct ieee80211_radiotap_header*) packet;
 
@@ -125,7 +125,7 @@ static struct radiotap_header_opt_fields parse(const u_int8_t* packet) {
     and the radiotap data follows after the it_present word
     that has bit 31 unset. */
 
-    u_int32_t* last_present_field;
+    uint32_t* last_present_field;
 
     for(last_present_field = &radiotap->it_present;
         *last_present_field >> 31;
@@ -133,7 +133,7 @@ static struct radiotap_header_opt_fields parse(const u_int8_t* packet) {
         continue;
     }
 
-    u_int8_t* radiotap_data = (u_int8_t*) ++last_present_field;
+    uint8_t* radiotap_data = (uint8_t*) ++last_present_field;
 
     int i, offset = 0;
 
@@ -354,7 +354,7 @@ int dessert_log_monitored_neighbour(const mac_addr hwaddr) {
 static inline void insert_value_node(struct monitor_neighbour* n,
                                      struct radiotap_header_opt_fields* opts,
                                      time_t delivery_time,
-                                     u_int8_t is_retry) {
+                                     uint8_t is_retry) {
 
     time_t min_time = time(NULL);
     int min_index = 0;
@@ -380,7 +380,7 @@ static inline void insert_value(dessert_meshif_t* iface,
                                 struct radiotap_header_opt_fields* opts,
                                 time_t delivery_time,
                                 mac_addr source_address,
-                                u_int8_t is_retry) {
+                                uint8_t is_retry) {
     struct monitor_neighbour neighbour_needle, *neighbour_result;
     memcpy(neighbour_needle.addr, source_address, sizeof(mac_addr));
 
@@ -399,9 +399,9 @@ static inline void insert_value(dessert_meshif_t* iface,
     pthread_rwlock_unlock(&iface->monitor_neighbour_lock);
 }
 
-static void got_packet(u_int8_t* node,
+static void got_packet(uint8_t* node,
                        const struct pcap_pkthdr* header,
-                       const u_int8_t packet[]) {
+                       const uint8_t packet[]) {
     dessert_meshif_t* iface = (dessert_meshif_t*) node;
     int32_t real_freq = get_dev_freq(iface);
 
@@ -418,7 +418,7 @@ static void got_packet(u_int8_t* node,
 
     struct ieee80211_radiotap_header* radiotap = (struct ieee80211_radiotap_header*) packet;
 
-    u_int input = radiotap->it_len;
+    uint input = radiotap->it_len;
 
     struct wifi_header* wifi = (struct wifi_header*) &packet[input];
 

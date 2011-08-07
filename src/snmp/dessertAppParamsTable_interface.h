@@ -69,8 +69,8 @@ extern          "C" {
     netsnmp_container *dessertAppParamsTable_container_get(void);
     int             dessertAppParamsTable_container_size(void);
 
-    u_int           dessertAppParamsTable_dirty_get(void);
-    void            dessertAppParamsTable_dirty_set(u_int status);
+    uint           dessertAppParamsTable_dirty_get(void);
+    void            dessertAppParamsTable_dirty_set(uint status);
 
     dessertAppParamsTable_rowreq_ctx
         *dessertAppParamsTable_allocate_rowreq_ctx(void);
