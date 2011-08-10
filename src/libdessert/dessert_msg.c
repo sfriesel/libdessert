@@ -71,13 +71,13 @@ int dessert_msg_new(dessert_msg_t** msgout) {
  **/
 int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, bool sparse) {
     dessert_msg_t* msg;
-    size_t msglen = ntohs(msgold->hlen) + ntohs(msgold->plen);
+    uint32_t msglen = ntohs(msgold->hlen) + ntohs(msgold->plen);
 
     if(sparse) {
         msg = malloc(msglen);
     }
     else {
-        size_t len = dessert_maxlen;
+        uint32_t len = dessert_maxlen;
 
         if(len < msglen) {
             dessert_warn("msg has size %d but current dessert_maxlen is %d\n The msg will be fragmented.", msglen, dessert_maxlen);
@@ -114,7 +114,7 @@ int dessert_msg_clone(dessert_msg_t** msgnew, const dessert_msg_t* msgold, bool 
  * @return -3 if some extension is not consistent
  * %DESCRIPTION:
  */
-int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
+int dessert_msg_check(const dessert_msg_t* msg, uint32_t len) {
     /* is the message large enough to at least carry the header */
     if(len < DESSERT_MSGLEN) {
         dessert_info("message too short - shorter than DESSERT_MSGLEN");
@@ -143,9 +143,9 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
     /* now check extensions.... */
     dessert_ext_t* ext = (dessert_ext_t*)((uint8_t*) msg + DESSERT_MSGLEN);
 
-    while((uint8_t*) ext < ((uint8_t*) msg + (size_t) ntohs(msg->hlen))) {
+    while((uint8_t*) ext < ((uint8_t*) msg + (uint32_t) ntohs(msg->hlen))) {
         /* does current extension fit into the header? */
-        if(((uint8_t*) ext + (size_t) ext->len) > ((uint8_t*) msg + (size_t) ntohs(msg->hlen))) {
+        if(((uint8_t*) ext + (uint32_t) ext->len) > ((uint8_t*) msg + (uint32_t) ntohs(msg->hlen))) {
             dessert_info("extension %x too long", ext->type);
             return (-3);
         }
@@ -155,7 +155,7 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
             return (-3);
         }
 
-        ext = (dessert_ext_t*)((uint8_t*) ext + (size_t) ext->len);
+        ext = (dessert_ext_t*)((uint8_t*) ext + (uint32_t) ext->len);
     }
 
     /* message is valid */
@@ -170,7 +170,7 @@ int dessert_msg_check(const dessert_msg_t* msg, size_t len) {
  *
  * \todo remove len parameter
  **/
-void dessert_msg_dump(const dessert_msg_t* msg, size_t len, char* buf, size_t blen) {
+void dessert_msg_dump(const dessert_msg_t* msg, uint32_t len, char* buf, uint32_t blen) {
     dessert_msg_proc_dump(msg, len, NULL, buf, blen);
 }
 
@@ -187,7 +187,7 @@ void dessert_msg_destroy(dessert_msg_t* msg) {
  * @arg **msgout (out) pointer to return message address
  * @return DESSERT_OK on success, -errno otherwise
  **/
-int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert_msg_t** msgout) {
+int dessert_msg_ethencap(const struct ether_header* eth, uint32_t eth_len, dessert_msg_t** msgout) {
     /* check len */
     if(eth_len > dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN)) {
         dessert_crit("failed to encapsulate ethernet frame of %d bytes (max=%d)", eth_len, dessert_maxlen - (DESSERT_MSGLEN + ETHER_HDR_LEN));
@@ -225,10 +225,10 @@ int dessert_msg_ethencap(const struct ether_header* eth, size_t eth_len, dessert
  * @arg **msgout (out) pointer to return message address
  * @return DESSERT_OK on success, -errno otherwise
  **/
-int dessert_msg_ipencap(const uint8_t* ip, size_t len, dessert_msg_t** msgout) {
+int dessert_msg_ipencap(const uint8_t* ip, uint32_t len, dessert_msg_t** msgout) {
     int res;
     void* payload;
-    size_t maxlen = dessert_maxlen;
+    uint32_t maxlen = dessert_maxlen;
 
     /* check len */
     if(len > maxlen - DESSERT_MSGLEN) {
@@ -260,7 +260,7 @@ int dessert_msg_ethdecap(const dessert_msg_t* msg, struct ether_header** ethout)
     int res;
 
     /* create message */
-    size_t eth_len = ntohs(msg->plen) + ETHER_HDR_LEN;
+    uint32_t eth_len = ntohs(msg->plen) + ETHER_HDR_LEN;
     *ethout = malloc(eth_len);
 
     if(*ethout == NULL) {
@@ -290,7 +290,7 @@ int dessert_msg_ethdecap(const dessert_msg_t* msg, struct ether_header** ethout)
  **/
 int dessert_msg_ipdecap(const dessert_msg_t* msg, uint8_t** ip) {
     /* create message */
-    size_t len = ntohs(msg->plen);
+    uint32_t len = ntohs(msg->plen);
     *ip = malloc(len);
 
     if(*ip == NULL) {
@@ -358,7 +358,7 @@ int dessert_msg_proc_clone(dessert_msg_proc_t** procnew, const dessert_msg_proc_
  *
  * \todo remove len parameter
  **/
-void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_msg_proc_t* proc, char* buf, size_t blen) {
+void dessert_msg_proc_dump(const dessert_msg_t* msg, uint32_t len, const dessert_msg_proc_t* proc, char* buf, uint32_t blen) {
     dessert_ext_t* ext;
     int extidx = 0;
 
@@ -409,11 +409,11 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
     /* now other extensions.... */
     ext = (dessert_ext_t*)((uint8_t*) msg + DESSERT_MSGLEN);
 
-    while((uint8_t*) ext < ((uint8_t*) msg + (size_t) ntohs(msg->hlen))) {
+    while((uint8_t*) ext < ((uint8_t*) msg + (uint32_t) ntohs(msg->hlen))) {
         _dessert_msg_check_append("\textension %d:\n", extidx);
 
         /* does current extension fit into the header? */
-        if((((uint8_t*) ext + (size_t) ext->len) > ((uint8_t*) msg + (size_t) ntohs(msg->hlen)))
+        if((((uint8_t*) ext + (uint32_t) ext->len) > ((uint8_t*) msg + (uint32_t) ntohs(msg->hlen)))
            || (ext->len < 2)) {
             _dessert_msg_check_append("\t\tbroken extension - giving up!\n");
             break;
@@ -437,7 +437,7 @@ void dessert_msg_proc_dump(const dessert_msg_t* msg, size_t len, const dessert_m
 
         _dessert_msg_check_append("\n");
 
-        ext = (dessert_ext_t*)((uint8_t*) ext + (size_t) ext->len);
+        ext = (dessert_ext_t*)((uint8_t*) ext + (uint32_t) ext->len);
         extidx++;
     }
 
@@ -512,10 +512,10 @@ dessert_result dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int le
  * @param min_size minimum size
  * @return DESSERT_ERR on error, else DESSERT_OK
  */
-dessert_result dessert_msg_dummy_payload(dessert_msg_t* msg, size_t min_size) {
+dessert_result dessert_msg_dummy_payload(dessert_msg_t* msg, uint32_t min_size) {
     void* payload;
-    size_t msglen = ntohs(msg->hlen) + ntohs(msg->plen);
-    size_t size = max(min_size - msglen, 0);
+    uint32_t msglen = ntohs(msg->hlen) + ntohs(msg->plen);
+    uint32_t size = max(min_size - msglen, 0);
     if(dessert_msg_addpayload(msg, &payload, size) == DESSERT_OK) {
         memset(payload, 0xA, size);
     }
@@ -554,7 +554,7 @@ int dessert_msg_getpayload(dessert_msg_t* msg, void** payload) {
  * @arg len  the length of the ext data (without 2 byte extension header)
  * @return DESSERT_OK on success, -2 if ext too big or message too large (incl. ext), -3 if extension smaller than ext header
  **/
-int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, size_t len) {
+int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, uint32_t len) {
 
     /* check if sparse message */
     if((msg->flags & DESSERT_RX_FLAG_SPARSE) > 0) {
@@ -628,7 +628,7 @@ dessert_result dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext) {
  *
  * %DESCRIPTION:
  **/
-int dessert_msg_resizeext(dessert_msg_t* msg, dessert_ext_t* ext, size_t new_len) {
+int dessert_msg_resizeext(dessert_msg_t* msg, dessert_ext_t* ext, uint32_t new_len) {
     int old_len = ext->len;
 
     /* check ext */
@@ -675,7 +675,7 @@ int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t ty
 
     exti = (dessert_ext_t*)((uint8_t*) msg + DESSERT_MSGLEN);
 
-    while((uint8_t*) exti < ((uint8_t*) msg + (size_t) ntohs(msg->hlen))) {
+    while((uint8_t*) exti < ((uint8_t*) msg + (uint32_t) ntohs(msg->hlen))) {
         /* does current extension fit into the header? */
         if(type == exti->type || type == DESSERT_EXT_ANY) {
             if(i == index && ext != NULL) {
@@ -685,7 +685,7 @@ int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t ty
             i++;
         }
 
-        exti = (dessert_ext_t*)(((uint8_t*) exti) + (size_t) exti->len);
+        exti = (dessert_ext_t*)(((uint8_t*) exti) + (uint32_t) exti->len);
     }
 
     if(i <= index) {
@@ -712,7 +712,7 @@ int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type) {
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP if message is valid, DESSERT_MSG_DROP otherwise
  **/
-dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     if(dessert_msg_check(msg, len)) {
         dessert_debug("invalid package - discarding");
         return DESSERT_MSG_DROP;
@@ -727,7 +727,7 @@ dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, size_t len, dessert_m
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP always
  **/
-dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     char buf[1024];
 
     dessert_msg_proc_dump(msg, len, proc, buf, 1024);
@@ -743,7 +743,7 @@ dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, size_t len, dessert_ms
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP always
  **/
-dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     dessert_ext_t* ext;
 
     /* abort if message has no trace extension */
@@ -785,7 +785,7 @@ dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, size_t len, dessert_m
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP or DESSERT_MSG_NEEDMSGPROC
  **/
-dessert_cb_result dessert_msg_ifaceflags_cb(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* riface, dessert_frameid_t id) {
+dessert_cb_result dessert_msg_ifaceflags_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* riface, dessert_frameid_t id) {
     dessert_meshif_t* iface;
     struct ether_header* l25h;
 

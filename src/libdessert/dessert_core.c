@@ -29,7 +29,7 @@
 
 /* global data storage // P U B L I C */
 char dessert_proto[DESSERT_PROTO_STRLEN + 1];
-size_t dessert_maxlen = ETH_FRAME_LEN;
+uint32_t dessert_maxlen = ETH_FRAME_LEN;
 uint8_t dessert_ver;
 uint8_t dessert_l25_defsrc[ETHER_ADDR_LEN];
 u_char ether_broadcast[ETHER_ADDR_LEN];

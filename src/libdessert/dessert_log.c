@@ -589,7 +589,7 @@ int _dessert_cli_no_logging_ringbuffer(struct cli_def* cli, char* command, char*
 }
 
 /** just a helper function */
-static int _dessert_loglevel_to_string(uint8_t level, char* buffer, size_t len) {
+static int _dessert_loglevel_to_string(uint8_t level, char* buffer, uint32_t len) {
     switch(level) {
         case LOG_TRACE:
             snprintf(buffer, len, "%s", "trace");

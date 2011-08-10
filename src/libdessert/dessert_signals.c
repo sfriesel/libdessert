@@ -43,7 +43,7 @@ typedef struct sig_handler {
 sig_handler_t* _sig_handlers_map = NULL;
 
 static uint8_t _signal_supported(int signal) {
-    size_t i;
+    uint32_t i;
 
     for(i = 0; i < sizeof(dessert_supported_signals) / sizeof(int); i++) {
         if(dessert_supported_signals[i] == signal) {
@@ -162,7 +162,7 @@ void* dessert_signal_thread(void* param) {
     sigset_t signal_mask_catch;
     sigemptyset(&signal_mask_catch);
 
-    size_t i;
+    uint32_t i;
 
     for(i = 0; i < sizeof(dessert_supported_signals) / sizeof(int); i++) {
         sigaddset(&signal_mask_catch, dessert_supported_signals[i]);

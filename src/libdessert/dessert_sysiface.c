@@ -41,7 +41,7 @@ int _dessert_sysrxcblistver = 0;
 
 /* internal functions forward declarations*/
 static void* _dessert_sysif_init_thread(void* arg);
-static dessert_cb_result _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
+static dessert_cb_result _dessert_sysif_init_getmachack(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
 
 /******************************************************************************
  *
@@ -303,13 +303,13 @@ int dessert_syssend_msg(dessert_msg_t* msg) {
  * @return DESSERT_OK   on success
  * @return -EIO         if message failed to be sent
  **/
-int dessert_syssend(const void* pkt, size_t len) {
+int dessert_syssend(const void* pkt, uint32_t len) {
 
     if(_dessert_sysif == NULL) {
         return (-EIO);
     }
 
-    size_t res = write(_dessert_sysif->fd, (const void*) pkt, len);
+    uint32_t res = write(_dessert_sysif->fd, (const void*) pkt, len);
 
     if(res == len) {
         pthread_mutex_lock(&(_dessert_sysif->cnt_mutex));
@@ -360,7 +360,7 @@ int _dessert_getHWAddr(char* device, char* hwaddr) {
  ******************************************************************************/
 
 /** internal callback which gets registered if we can't find out mac address of tap interface */
-static dessert_cb_result _dessert_sysif_init_getmachack(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
+static dessert_cb_result _dessert_sysif_init_getmachack(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
     struct ether_header* eth;
     dessert_msg_ethdecap(msg, &eth);
 
@@ -579,7 +579,7 @@ int dessert_cli_cmd_addsysif_tun(struct cli_def* cli, char* command, char* argv[
  * @retval DESSERT_MSG_DROP if the message contains an IPv6 datagram
  * @retval DESSERT_MSG_KEEP if message contains an IPv4 datagram
  */
-dessert_cb_result dessert_sys_drop_ipv6(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
+dessert_cb_result dessert_sys_drop_ipv6(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id) {
     void* payload;
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 

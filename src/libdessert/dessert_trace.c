@@ -148,7 +148,7 @@ int dessert_cli_cmd_traceroute(struct cli_def* cli, char* command, char* argv[],
  * @retval DESSERT_MSG_DROP if this host is the destination of the trace request
  * @retval DESSERT_MSG_KEEP if this host is not the destination of the trace request
  */
-dessert_cb_result dessert_mesh_trace(dessert_msg_t* msg, size_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result dessert_mesh_trace(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
 
     struct ether_header* l25h = dessert_msg_getl25ether(msg);
 

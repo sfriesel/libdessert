@@ -177,7 +177,7 @@ static char* _dessert_policy2str[] = {
 };
 
 dessert_result _dessert_meshif_gethwaddr(dessert_meshif_t* meshif);
-int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, size_t len, dessert_msg_proc_t* proc_in, dessert_meshif_t* meshif, dessert_frameid_t id);
+int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, uint32_t len, dessert_msg_proc_t* proc_in, dessert_meshif_t* meshif, dessert_frameid_t id);
 dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface);
 dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval);
 
