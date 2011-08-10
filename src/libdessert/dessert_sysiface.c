@@ -524,7 +524,7 @@ int dessert_cli_cmd_addsysif(struct cli_def* cli, char* command, char* argv[], i
     i = system(buf);
 
     if(i != 0) {
-        dessert_crit("running ifconfig on sys interface %s returned %i", argv[0], i);
+        dessert_crit("running ifconfig on sys interface %s returned %d", argv[0], i);
         return CLI_ERROR;
     }
 
@@ -558,7 +558,7 @@ int dessert_cli_cmd_addsysif_tun(struct cli_def* cli, char* command, char* argv[
     dessert_sysif_init(argv[0], DESSERT_TUN | DESSERT_MAKE_DEFSRC);
     sprintf(buf, "ifconfig %s %s netmask %s mtu %d up", argv[0], argv[1], argv[2], DESSERT_DEFAULT_MTU);
     i = system(buf);
-    dessert_info("ifconfig on sys interface returned %i", i);
+    dessert_info("ifconfig on sys interface returned %d", i);
     return (i == 0 ? CLI_OK : CLI_ERROR);
 }
 

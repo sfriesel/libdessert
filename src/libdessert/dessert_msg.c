@@ -773,7 +773,7 @@ dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, uint32_t len, dessert
         memcpy((ext->data) + ETHER_ADDR_LEN * 2, msg->l2h.ether_shost, ETHER_ADDR_LEN);
     }
     else {
-        dessert_warn("got packet with %d bytes trace extension - ignoring");
+        dessert_warn("got packet with trace extension - ignoring");
     }
 
     return DESSERT_MSG_KEEP;

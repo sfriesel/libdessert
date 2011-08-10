@@ -944,7 +944,7 @@ static inline int _dessert_meshsend_if2(dessert_msg_t* msg, dessert_meshif_t* if
     _dessert_lock_bucket(iface); //// [LOCK]
     if(iface->token_bucket.periodic != NULL) {
         if(iface->token_bucket.tokens >= (uint64_t) msglen) {
-            dessert_debug("consuming %ld bytes for %s",  msglen, iface->if_name);
+            dessert_debug("consuming %d bytes for %s",  msglen, iface->if_name);
             iface->token_bucket.tokens -= msglen;
         }
         else {
@@ -1403,9 +1403,9 @@ int _dessert_cli_cmd_tokenbucket_max(struct cli_def* cli, char* command, char* a
 
     _dessert_lock_bucket(meshif); //// [LOCK]
     meshif->token_bucket.max_queue_len = max_len;
-    cli_print(cli, "INFO: set maximum queue length: %d", max_len);
+    cli_print(cli, "INFO: set maximum queue length: %" PRIu32 "", max_len);
     if(max_len < meshif->token_bucket.queue_len) {
-        cli_print(cli, "WARNING: there are currently more packets in the queue: %d", meshif->token_bucket.queue_len);
+        cli_print(cli, "WARNING: there are currently more packets in the queue: %" PRIu32 "", meshif->token_bucket.queue_len);
     }
     _dessert_unlock_bucket(meshif); //// [UNLOCK]
     return CLI_OK;
@@ -1456,11 +1456,11 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
 
     /* enforce minimum rate of 1kByte/s */
     if(size < 1000) {
-        cli_print(cli, "ERROR: size smaller than 1000: %ld", size);
+        cli_print(cli, "ERROR: size smaller than 1000: %" PRIu64 "", size);
         goto fail;
     }
     if(rate < 1000) {
-        cli_print(cli, "ERROR: rate smaller than 1000: %ld", size);
+        cli_print(cli, "ERROR: rate smaller than 1000: %" PRIu64 "", size);
         goto fail;
     }
 
@@ -1469,7 +1469,7 @@ int _dessert_cli_cmd_tokenbucket(struct cli_def* cli, char* command, char* argv[
     meshif->token_bucket.tokens_per_msec = min(rate/1000, size);
     if(rate != meshif->token_bucket.tokens_per_msec*1000) {
         meshif->token_bucket.tokens = min(meshif->token_bucket.max_tokens, meshif->token_bucket.tokens);
-        cli_print(cli, "WARNING: rate rounded to: %ld", meshif->token_bucket.tokens_per_msec);
+        cli_print(cli, "WARNING: rate rounded to: %" PRIu64 "", meshif->token_bucket.tokens_per_msec);
     }
 
     /* activate token bucket */
@@ -1527,7 +1527,7 @@ int dessert_cli_cmd_addmeshif(struct cli_def* cli, char* command, char* argv[], 
     i = system(buf);
 
     if(i != 0) {
-        dessert_crit("running ifconfig on mesh interface %s returned %i", argv[0], i);
+        dessert_crit("running ifconfig on mesh interface %s returned %d", argv[0], i);
         return CLI_ERROR;
     }
 
