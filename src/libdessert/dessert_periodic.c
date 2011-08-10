@@ -271,7 +271,7 @@ void dessert_register_ptr_name(void* ptr, const char* name) {
         dessert_crit("could not alloc memory");
         return;
     }
-    char* s = malloc(strlen(name));
+    char* s = malloc(strlen(name)+1);
     if(s == NULL) {
         free(f);
         dessert_crit("could not alloc memory");
