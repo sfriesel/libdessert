@@ -1,14 +1,24 @@
+20110720 - 1.06
+    - Fixed heap corruption bug
+    - Replaced size_t type by uint32_t
+    - Replaced some left u_int* by uint*_t
+    - Replaced uint8_t by bool where semantically appropriate
+    - Fixed several issues in log message prints
+    - Fixed display of scheduled time for tasks with unknown function name
+    - Fixed two compiler warnings due to missing function declarations in header
+    - libtool version = 1.12.1
+
 20110720 - 1.05
     - Fixed bugs in packet filter
     - Removed legacy defines that are replaced by enums
     - Replaced int return values by enum types
     - Added enum for periodics return codes
-    - The filter is now called always before the mesh callbacks are invoked
+    - The filter function is now called always before the mesh callbacks are invoked
     - Added min, max macros (if they are not already defined)
     - Added token bucket implementation with 3 policies
     - Token bucket support unlimited or tail drop queueing of packets
     - "show tasks" CLI command to show the currently registered (periodic) tasks
-    - pointer to name hash map to print function names of registered tasks
+    - Implemented data structure and functions to map function pointer to names
     - libtool version = 1.11.1
 
 
