@@ -1231,6 +1231,11 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
         }                                      \
     } while(0)
 
+inline void dessert_timevaladd(struct timeval* tv, uint32_t sec, uint32_t usec);
+inline uint32_t dessert_timeval2ms(struct timeval* time);
+inline void dessert_ms2timeval(uint32_t ms, struct timeval* time);
+inline void dessert_timevaladd2(struct timeval* result, struct timeval* tva, struct timeval* tvb);
+
 /** Branch prediction optimization macros
  *
  * You can give the compiler a hint if it is likely

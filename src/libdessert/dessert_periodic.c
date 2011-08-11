@@ -402,3 +402,40 @@ static void* _dessert_periodic_thread(void* arg) {
     _dessert_periodic_worker_running = 0;
     return (NULL);
 }
+
+void dessert_timevaladd(struct timeval* tv, uint32_t sec, uint32_t usec) {
+    tv->tv_sec  += sec;
+    tv->tv_usec += usec;
+    while(tv->tv_usec >= 1000000) {
+        tv->tv_sec++;
+        tv->tv_usec -= 1000000;
+    }
+}
+
+void dessert_timevaladd2(struct timeval* result, struct timeval* tva, struct timeval* tvb) {
+    result->tv_sec  = tva->tv_sec + tva->tv_sec;
+    result->tv_usec = tva->tv_usec + tva->tv_usec;
+    while(result->tv_usec >= 1000000) {
+        result->tv_sec++;
+        result->tv_usec -= 1000000;
+    }
+}
+
+/** Return ms stored in a timeval struct
+ *
+ * @param time data structure to evaluate
+ * @return time in ms
+ */
+uint32_t dessert_timeval2ms(struct timeval* time) {
+    return time->tv_sec*1000 + time->tv_usec/1000;
+}
+
+/** Fill timeval struct with a given time in ms
+ *
+ * @param ms time in ms to write into timeval struct
+ * @param time timeval struct to fill
+ */
+void dessert_ms2timeval(uint32_t ms, struct timeval* time) {
+    time->tv_sec = ms/1000;
+    time->tv_usec = (ms%1000) * 1000;
+}

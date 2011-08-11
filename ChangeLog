@@ -1,3 +1,7 @@
+???????? - 1.07
+    - Added helper functions: dessert_timevaladd, dessert_timeval2ms, dessert_ms2timeval,
+      dessert_timevaladd2
+
 20110720 - 1.06
     - Fixed heap corruption bug
     - Replaced size_t type by uint32_t
