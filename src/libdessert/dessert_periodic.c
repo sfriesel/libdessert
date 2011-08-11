@@ -160,7 +160,10 @@ int dessert_periodic_del(dessert_periodic_t* p) {
     dessert_periodic_t* i;
     int x = -1;
 
-    assert(p != NULL);
+    if(p == NULL) {
+        dessert_warn("dessert_periodic_del was called with a NULL pointer....doing nothing!11!!");
+        return 0;
+    }
 
     pthread_mutex_lock(&_dessert_periodic_mutex);
 
