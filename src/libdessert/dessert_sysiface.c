@@ -51,6 +51,46 @@ static dessert_cb_result _dessert_sysif_init_getmachack(dessert_msg_t* msg, uint
  *
  ******************************************************************************/
 
+bool _dessert_check_dup_mac(char* mac) {
+    struct ifreq ifreqs[10];
+    struct ifconf ifconf;
+    memset(&ifconf, 0, sizeof(ifconf));
+    ifconf.ifc_buf = (char*) (ifreqs);
+    ifconf.ifc_len = sizeof(ifreqs);
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if(sock < 0) {
+        dessert_warn("could not create socket");
+        return false;
+    }
+
+    if(ioctl(sock, SIOCGIFCONF , &ifconf) < 0) {
+        dessert_warn("Could not read interfaces");
+        goto out;
+    }
+    close(sock);
+
+    uint16_t i;
+    for(i = 0; i < ifconf.ifc_len/sizeof(struct ifreq); i++) {
+        char* ifname = ifreqs[i].ifr_name;
+        char buf[ETHER_ADDR_LEN];
+        if(_dessert_getHWAddr(ifname, buf) == DESSERT_OK) {
+            if(memcmp(buf, mac, ETHER_ADDR_LEN) == 0) {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    return true;
+
+out:
+    close(sock);
+    return false;
+}
+
+
 /** Initializes the tun/tap Interface dev for des-sert.
  * @arg *device interface name
  * @arg flags  @see DESSERT_TUN @see DESSERT_TAP @see DESSERT_MAKE_DEFSRC
@@ -106,8 +146,11 @@ int dessert_sysif_init(char* device, uint8_t flags) {
         if(_dessert_getHWAddr("eth0", ifr.ifr_hwaddr.sa_data) == DESSERT_OK) {
             ifr.ifr_hwaddr.sa_data[0] = 0xFE;
 
-            if(ioctl(_dessert_sysif->fd, SIOCSIFHWADDR, &ifr) < 0) {
-                dessert_warn("ioctl(SIOCSIFHWADDR) failed: %s", strerror(errno));
+            // check if the address is already taken
+            if(_dessert_check_dup_mac(ifr.ifr_hwaddr.sa_data)) {
+                if(ioctl(_dessert_sysif->fd, SIOCSIFHWADDR, &ifr) < 0) {
+                    dessert_warn("ioctl(SIOCSIFHWADDR) failed: %s", strerror(errno));
+                }
             }
         }
     }

@@ -442,3 +442,13 @@ void dessert_ms2timeval(uint32_t ms, struct timeval* time) {
     time->tv_sec = ms/1000;
     time->tv_usec = (ms%1000) * 1000;
 }
+
+/** Current time as timestamp in ms
+ *
+ * @return current time in ms
+ */
+uint32_t dessert_cur_ms() {
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return dessert_timeval2ms(&t);
+}

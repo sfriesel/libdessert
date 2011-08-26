@@ -351,6 +351,14 @@ int _dessert_cli_init() {
         MODE_EXEC,
         "Show list of registered sys (TUN/TAP) interface.");
 
+    cli_register_command(dessert_cli,
+        dessert_cli_show,
+        "uptime",
+        _dessert_cli_cmd_showuptime,
+        PRIVILEGE_UNPRIVILEGED,
+        MODE_EXEC,
+        "Time since the daemon was started");
+
     /* initialize config mode commands */
 #ifndef ANDROID
     cli_register_command(dessert_cli,

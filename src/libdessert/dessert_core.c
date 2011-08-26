@@ -38,6 +38,7 @@ pthread_rwlock_t dessert_cfglock = PTHREAD_RWLOCK_INITIALIZER;
 
 /* global data storage // P R I V A T E */
 int _dessert_status = 0x0;
+struct timeval _dessert_started = { 0, 0};
 
 /* local data storage*/
 dessert_frameid_t _dessert_nextframeid = 0;
@@ -72,6 +73,7 @@ static void _dessert_register_ptr_names() {
  * @returns DESSERT_OK on success, DESSERT_ERR otherwise
  **/
 int dessert_init(const char* proto, int version, uint16_t opts) {
+    gettimeofday(&_dessert_started, NULL);
     pthread_rwlock_wrlock(&dessert_cfglock);
 
     /* save global config */
@@ -269,4 +271,19 @@ void _dessert_daemonize(void) {
 
     /* adopt logging */
     dessert_logcfg(0x0);
+}
+
+int _dessert_cli_cmd_showuptime(struct cli_def* cli, char* command, char* argv[], int argc) {
+    uint32_t cur_ms = dessert_cur_ms();
+    uint32_t started_ms = dessert_timeval2ms(&_dessert_started);
+    uint32_t diff_ms = cur_ms - started_ms;
+    uint32_t seconds = diff_ms / (1000);
+    uint32_t minutes = diff_ms / (1000*60);
+    uint32_t hours   = diff_ms / (1000*60*60);
+    uint32_t days    = diff_ms / (1000*60*60*24);
+    hours   -= days*24;
+    minutes -= hours*60;
+    seconds -= minutes*60;
+    cli_print(cli, "%2u days, %2u hours, %2u minutes, %2u seconds", days, hours, minutes, seconds);
+    return CLI_OK;
 }
