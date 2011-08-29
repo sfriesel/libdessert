@@ -282,8 +282,8 @@ int _dessert_cli_cmd_showuptime(struct cli_def* cli, char* command, char* argv[]
     uint32_t hours   = diff_ms / (1000*60*60);
     uint32_t days    = diff_ms / (1000*60*60*24);
     hours   -= days*24;
-    minutes -= hours*60;
-    seconds -= minutes*60;
+    minutes -= hours*60+days*24*60;
+    seconds -= minutes*60+hours*3600;
     cli_print(cli, "%2u days, %2u hours, %2u minutes, %2u seconds", days, hours, minutes, seconds);
     return CLI_OK;
 }
