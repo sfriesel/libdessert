@@ -4,6 +4,7 @@
     - The sysif MAC is only derived from the eth0 address, if this MAC addr is not yet
       used. This allows to run multiple daemons on the same node.
     - Added "show uptime" CLI command.
+    - Added dessert_get_uptime_ms function
 
 20110720 - 1.06
     - Fixed heap corruption bug

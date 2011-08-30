@@ -287,3 +287,15 @@ int _dessert_cli_cmd_showuptime(struct cli_def* cli, char* command, char* argv[]
     cli_print(cli, "%2u days, %2u hours, %2u minutes, %2u seconds", days, hours, minutes, seconds);
     return CLI_OK;
 }
+
+/** Uptime in ms
+ *
+ * Get the time since libdessert was initialized.
+ *
+ * @return uptime in ms
+ */
+uint32_t dessert_get_uptime_ms() {
+    uint32_t cur_ms = dessert_cur_ms();
+    uint32_t started_ms = dessert_timeval2ms(&_dessert_started);
+    return cur_ms - started_ms;
+}
