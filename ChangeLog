@@ -1,10 +1,11 @@
-???????? - 1.07
+20110908 - 1.07
     - Added helper functions: dessert_timevaladd, dessert_timeval2ms, dessert_ms2timeval,
       dessert_timevaladd2
     - The sysif MAC is only derived from the eth0 address, if this MAC addr is not yet
       used. This allows to run multiple daemons on the same node.
     - Added "show uptime" CLI command.
     - Added dessert_get_uptime_ms function
+    - libtool version = 1.13.1
 
 20110720 - 1.06
     - Fixed heap corruption bug
