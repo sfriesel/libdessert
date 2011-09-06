@@ -99,8 +99,10 @@
 #ifdef ANDROID
 #include <pthread.h>
 #include <pthreadex.h>
+#include <linux/if_ether.h>
 #include <net/if_ether.h>
 #include <netinet/in6.h>
+#include <inttypes.h>
 #else
 #include <net/ethernet.h>
 #endif
