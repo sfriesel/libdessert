@@ -70,9 +70,10 @@
  * - \ref Architecture "System Architecture and Concepts"
  * - \ref DaemonUsage "How to use DES-SERT based Daemons"
  * - \ref ExampleDaemon "A Simple Example Daemon"
- * - \ref FirstSteps "First Steps how to implement a Routing Daemon"
- * - \ref Android "How to build for Android"
+ * - \ref FirstSteps "First Steps on how to implement a Routing Daemon"
+ * - \ref Android "How to build DES-SERT based Daemons for Android"
  * - \ref AdvTopics "Advanced Topics"
+ * - \ref FAQ "FAQ - Frequently Asked Questions"
  *
  * @section feedback_sec Contact & Feedback
  *

@@ -8,6 +8,8 @@
  * - \ref sec_adv_tun
  * - \ref sec_adv_compat
  * - \ref sec_ifaces_rm
+ * - \ref sec_packetfilter
+ * - \ref sec_tokenbucket
  * - <a href="http://code.google.com/p/libcli/wiki/DevelopersReference">Using CLI passwords</a>
  * - \ref sec_didntlearn
  *
@@ -100,6 +102,14 @@
  *  int dessert_meshif_del(const char* dev);
  *  int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
  * @endcode
+ *
+ * @section sec_packetfilter Setting up a Packet Filter
+ *
+ * Packet filter can be set up.
+ *
+ * @section sec_tokenbucket Setting up a TokenBucket
+ *
+ * TokenBucket can be set up.
  *
  * @section sec_didntlearn What You Did Not Learn
  *

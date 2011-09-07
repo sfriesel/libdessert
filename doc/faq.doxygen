@@ -1,0 +1,11 @@
+/**
+ * \ingroup Manual
+ * \addtogroup FAQ
+ *
+ * This module provides answers to frequently asked questions:
+ *
+ * - \ref sec_FAQ_question01
+ *
+ * @section sec_FAQ_question01 Question 01
+ *
+ */
