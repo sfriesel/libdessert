@@ -12,8 +12,7 @@ ANDROID_PLATFORM=android-3
 
 # android-ndk
 NDK_LOCATION=http://dl.google.com/android/ndk
-NDK_FILE=android-ndk-r6-linux-x86.tar.bz2
-#NDK_FILE=android-ndk-r5b-linux-x86.tar.bz2
+NDK_FILE=android-ndk-r6b-linux-x86.tar.bz2
 
 # libpcap
 LIBPCAP_LOCATION=http://www.tcpdump.org/release/
