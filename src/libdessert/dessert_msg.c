@@ -561,21 +561,16 @@ int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, ui
         dessert_crit("tried to add extension to a sparse message - use dessert_msg_clone() first!");
         return -1;
     }
-
+    if(len > DESSERT_MAXEXTDATALEN) {
+        dessert_debug("extension too big! requested length was %u", len);
+        return -2; /* too big */
+    }
     /* add DESSERT_EXTLEN to len for convenience*/
     len += DESSERT_EXTLEN;
 
     /* check ext */
     if(len > dessert_maxlen - ntohs(msg->hlen) - ntohs(msg->plen)) {
-        dessert_crit("message would be too large after adding extension!");
-        return -2; /* too big */
-    }
-    else if(len < DESSERT_EXTLEN) {
-        dessert_crit("extension too small!");
-        return -3; /* too small */
-    }
-    else if(len > min(DESSERT_MAXEXTDATALEN + DESSERT_EXTLEN, 256)) { // min() for misconfiguration
-        dessert_crit("extension too big!");
+        dessert_debug("message would be too large after adding extension! requested length was %u", len);
         return -2; /* too big */
     }
 

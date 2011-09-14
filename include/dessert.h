@@ -128,7 +128,7 @@
 #define DESSERT_DEFAULT_MTU 1300
 
 /** maximum size of the data part in dessert_ext */
-#define DESSERT_MAXEXTDATALEN 254
+#define DESSERT_MAXEXTDATALEN 253
 
 /** length of protocol string used in dessert_msg */
 #define DESSERT_PROTO_STRLEN 4
@@ -265,6 +265,10 @@ typedef struct __attribute__((__packed__)) dessert_ext {
     /** pointer to the data - real length is len-2 bytes */
     uint8_t    data[DESSERT_MAXEXTDATALEN];
 } dessert_ext_t;
+
+#if sizeof(dessert_ext_t) > 255
+#error("dessert_ext_t is too large, check DESSERT_MAXEXTDATALEN")
+#endif
 
 extern struct msg_queue* queue;
 
@@ -1235,11 +1239,52 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
         }                                      \
     } while(0)
 
-inline void dessert_timevaladd(struct timeval* tv, uint32_t sec, uint32_t usec);
-inline uint32_t dessert_timeval2ms(struct timeval* time);
-inline void dessert_ms2timeval(uint32_t ms, struct timeval* time);
-inline uint32_t dessert_cur_ms();
-inline void dessert_timevaladd2(struct timeval* result, struct timeval* tva, struct timeval* tvb);
+static inline void dessert_timevaladd(struct timeval* tv, uint32_t sec, uint32_t usec) {
+    tv->tv_sec  += sec;
+    tv->tv_usec += usec;
+    while(tv->tv_usec >= 1000000) {
+        tv->tv_sec++;
+        tv->tv_usec -= 1000000;
+    }
+}
+
+static inline void dessert_timevaladd2(struct timeval* result, struct timeval* tva, struct timeval* tvb) {
+    result->tv_sec  = tva->tv_sec + tva->tv_sec;
+    result->tv_usec = tva->tv_usec + tva->tv_usec;
+    while(result->tv_usec >= 1000000) {
+        result->tv_sec++;
+        result->tv_usec -= 1000000;
+    }
+}
+
+/** Return ms stored in a timeval struct
+ *
+ * @param time data structure to evaluate
+ * @return time in ms
+ */
+static inline uint32_t dessert_timeval2ms(struct timeval* time) {
+    return time->tv_sec*1000 + time->tv_usec/1000;
+}
+
+/** Fill timeval struct with a given time in ms
+ *
+ * @param ms time in ms to write into timeval struct
+ * @param time timeval struct to fill
+ */
+static inline void dessert_ms2timeval(uint32_t ms, struct timeval* time) {
+    time->tv_sec = ms/1000;
+    time->tv_usec = (ms%1000) * 1000;
+}
+
+/** Current time as timestamp in ms
+ *
+ * @return current time in ms
+ */
+static inline uint32_t dessert_cur_ms() {
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return dessert_timeval2ms(&t);
+}
 
 /** Branch prediction optimization macros
  *
