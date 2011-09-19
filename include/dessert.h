@@ -266,10 +266,6 @@ typedef struct __attribute__((__packed__)) dessert_ext {
     uint8_t    data[DESSERT_MAXEXTDATALEN];
 } dessert_ext_t;
 
-#if sizeof(dessert_ext_t) > 255
-#error("dessert_ext_t is too large, check DESSERT_MAXEXTDATALEN")
-#endif
-
 extern struct msg_queue* queue;
 
 /** token bucket for traffic shaping of a meshif
