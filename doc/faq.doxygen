@@ -30,7 +30,7 @@
  * @section sec_FAQ_daemonsdonotseeeachother Why cant the started daemons communicate with each other?
  * - Have you really started the daemons everywhere?
  * - Did you check, that only one instance of your daemon is started on those nodes?
- * - Did you check your interfaces? Are the wlan (or eth1 in case of virtual machines) all up?
+ * - Did you check your interfaces? Are the wlan (or eth1 in case of virtual machines) interfaces all up?
  * - Are all the interfaces on the same channel and have the same cell id? Use iwconfig to determine.
  * - Use tcpdump on the tap interface of the sending mesh router. Are there any incoming packets?
  * - When using tcpdump, do you see ARP requests or ICMP packets? If ARP request, a ARP reply should follow by, elsewise no communication can be established.
