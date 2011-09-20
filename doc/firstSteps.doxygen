@@ -23,9 +23,6 @@
  * In link-state routing protocols only neighborhood information is flooded over the network.
  * So we can summarize the task of every router as "tell the world, who your neighbors are".
  * When the dissemination of the data succeeds, every router has a complete graph of the network.
- * The link-state routing protocol can be divided into three tasks:
- *
- * \image html lsr_steps.png "Link state routing - protocol task"
  *
  * @section sec_fs_rlogic_coldataneigh Neighbor discovery
  *
@@ -34,14 +31,11 @@
  * To discover neighbors, each router sends "hello" packets.
  * The packets will not be forwarded and are thus dropped when they have been received and evaluated.
  *
- * @section sec_fs_rlogic_floodnetw Dissemination of neighborhood information
+ * @section sec_fs_rlogic_floodnetw Dissemination of neighbohood information
  *
  * We assume that the neighbor discovery is running and neighbors have been found.
  * This information is important for all other routers in the network to create the graph of the network.
  * Therfore, we have to flood our neighborhood information over the whole network.
- * In the following image you can see how this works in detail.
- *
- * \image html lsr02.png "Link state routing - collecting and disseminating information"
  *
  * The green node symbolizes the current mesh router.
  * Orange nodes are 1-hop-neighbors, red nodes are 2-hop or n-hop-neighbors.
@@ -52,9 +46,6 @@
  * @section sec_fs_rlogic_fillrouting Create routing table based on the network topology
  *
  * When the first two task are successfully run, routing information has to be input into the routing table.
- * A simple routing table can contain the following columns:
- *
- * \image html lsr_rt.png "Link state routing - routing table columns"
  *
  * - mac address: hardware address of the destination node
  * - next hop: address of the router that is the next hop on the route to the destination

@@ -234,7 +234,7 @@
  * Now you need the libdessert library. It can be found <a href="http://www.des-testbed.net/DES-SERT/downloads" target="_blanks">on the DES-SERT homepage</a>. Download the libdessert library's source code, extract and compile it:
  *
  * @code
- * ./configure; make; sudo make install; ldconfig
+ * ./autogen.sh; ./configure; make; sudo make install; ldconfig
  * @endcode
  *
  * This will configure, build and install the library on your system. Please check the output for any errors. Most errors are probably due to missing dependencies.
