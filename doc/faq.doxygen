@@ -5,6 +5,7 @@
  * This module provides answers to frequently asked questions:
  *
  * - \ref sec_FAQ_daemondoesntstart
+ * - \ref sec_FAQ_daemonsdonotseeeachother
  * - \ref sec_FAQ_telnetcli
  *
  * @section sec_FAQ_daemondoesntstart Why doesnt my daemon start?
@@ -25,6 +26,18 @@
  * @code
  * sudo modprobe ipv6
  * @endcode
+ *
+ * @section sec_FAQ_daemonsdonotseeeachother Why cant the started daemons communicate with each other?
+ * - Have you really started the daemons everywhere?
+ * - Did you check, that only one instance of your daemon is started on those nodes?
+ * - Did you check your interfaces? Are the wlan (or eth1 in case of virtual machines) all up?
+ * - Are all the interfaces on the same channel and have the same cell id? Use iwconfig to determine.
+ * - Use tcpdump on the tap interface of the sending mesh router. Are there any incoming packets?
+ * - When using tcpdump, do you see ARP requests or ICMP packets? If ARP request, a ARP reply should follow by, elsewise no communication can be established.
+ * - Use tcpdump on the mesh interfaces of the sending node. Are there any outgoing packets?
+ * - Use tcpdump on the mesh interfaces of a mesh router in the neighborhood of the sending node. Can you see any packets sent by the sending node? To determine the neighborhood a broadcast ping should work.
+ * - Make previous steps for all nodes between source and destination, until no more packets go out or come in. Alternatively traceroute or mtr can be used.
+ * - If the route cannot be established at all, tcpdump should be used to determine, whether a Route Request reaches the destination.
  *
  * @section sec_FAQ_telnetcli Why doesnt telnet connect to the CLI of the daemon?
  * In some scenarios, telnet cannot connect to the configured TCP port of the CLI.
