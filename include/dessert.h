@@ -96,6 +96,7 @@
 #include <pcap.h>
 #include <libcli.h>
 #include <stdbool.h>
+#include <string.h>
 
 #ifdef ANDROID
 #include <pthread.h>
@@ -172,6 +173,10 @@ typedef uint64_t dessert_frameid_t;
 
 /** ethernet address */
 typedef uint8_t mac_addr[ETHER_ADDR_LEN];
+
+static inline bool mac_equal(mac_addr left, mac_addr right) {
+	return memcmp(left, right, ETH_ALEN) == 0;
+}
 
 /** callbacks type to call in a periodic task
  *
