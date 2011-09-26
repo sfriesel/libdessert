@@ -94,8 +94,6 @@ dessert_periodic_t* dessert_periodic_add(dessert_periodiccallback_t* c, void* da
         scheduled = &now;
     }
 
-    assert(scheduled != NULL);
-
     /* sanity checks */
     if(c == NULL) {
         return (NULL);
