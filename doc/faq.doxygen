@@ -5,6 +5,7 @@
  * This module provides answers to frequently asked questions:
  *
  * - \ref sec_FAQ_daemondoesntstart
+ * - \ref sec_FAQ_nointerfaces
  * - \ref sec_FAQ_daemonsdonotseeeachother
  * - \ref sec_FAQ_telnetcli
  *
@@ -27,8 +28,28 @@
  * sudo modprobe ipv6
  * @endcode
  *
+ * If your building your daemon on a 64-bit system, you should use the following make instruction to build the daemon for the use in the mesh network:
+ *
+ * @code
+ * make CC="cc" CFLAGS="-Os -W -Wall -Wextra -march=geode"
+ * @endcode
+ *
+ * @section sec_FAQ_nointerfaces My daemon starts, but the WLAN interfaces are not existent. What should I do?
+ * Restarting the dameon should work sometimes.
+ * Better is to use the following instructions instead:
+ *
+ * @code
+ * sudo mount-modulesdir
+ * sudo modprobe ath5k
+ * sudo modprobe rt73usb
+ * sudo ifup wlan0
+ * sudo ifup wlan1
+ * @endcode
+ *
+ * Thereafter, start your dameon again.
+ *
  * @section sec_FAQ_daemonsdonotseeeachother Why cant the started daemons communicate with each other?
- * - Have you really started the daemons everywhere?
+ * - Have you really started the daemons on all needed routers?
  * - Did you check, that only one instance of your daemon is started on those nodes?
  * - Did you check your interfaces? Are the wlan (or eth1 in case of virtual machines) interfaces all up?
  * - Are all the interfaces on the same channel and have the same cell id? Use iwconfig to determine.
@@ -41,8 +62,8 @@
  *
  * @section sec_FAQ_telnetcli Why doesnt telnet connect to the CLI of the daemon?
  * In some scenarios, telnet cannot connect to the configured TCP port of the CLI.
- * @code
  *
+ * @code
  * user@host:~$ telnet localhost 4519                                           
  * Trying 127.0.0.1...                                                                                                                   
  * telnet: Unable to connect to remote host: Connection refused
@@ -61,4 +82,34 @@
  *
  * The sysctl setting is automatically set at boot time when configured in /etc/sysctl.conf.
  *
+ * @section sec_FAQ_manylogs I use to much space for my daemon logs. What should I do?
+ * Compress your logs right at the creation.
+ * You can save your logs with the ending .gz.
+ * By doing this the log files automatically are compressed.
+ *
+ * If you later on want to parse them, there are a lot of variants for many tools: zless, zcat or zgrep.
+ * Compressed log files also can easily be parsed when using Python or other programming languages.
+ * In case of Python see <a href="https://svn.mi.fu-berlin.de/des-testbed/Software/DES-SERT/des-gossip-adv-tools/parse-smp.py">DES-SERT/des-gossip-adv-tools/parse-smp.py</a>.
+ *
+ * @section sec_FAQ_telnetcli Why doesnt telnet connect to the CLI of the daemon?
+ * In some scenarios, telnet cannot connect to the configured TCP port of the CLI.
+ *
+ * @code
+ * user@host:~$ telnet localhost 4519                                           
+ * Trying 127.0.0.1...                                                                                                                   
+ * telnet: Unable to connect to remote host: Connection refused
+ * @endcode
+ *
+ * Have a look at the log file and check if the daemon is running.
+ * If everything seems to be right, the problem might be due to some misconfiguration.
+ *
+ * In newer Linux kernel versions the bind syscall of the daemon with the parameters AF_INET6 and SOCK_STREAM will result in binding only to an IPv6 socket.
+ * You can either replace "localhost" by "::1" for the address parameter of telnet or change the kernel setting with sysctl.
+ *
+ * @code
+ * user@host:~$ telnet ::1 4519
+ * user@host:~$ sysctl -w net.ipv6.bindv6only=0
+ * @endcode
+ *
+ * The sysctl setting is automatically set at boot time when configured in /etc/sysctl.conf.
  */
