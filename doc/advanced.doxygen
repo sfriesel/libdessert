@@ -105,11 +105,16 @@
  *
  * @section sec_packetfilter Setting up a Packet Filter
  *
- * Packet filter can be set up.
+ * A packet filter inspects the incoming packets. According to the rules of the packet filter, an incoming packet may be dropped or accepted.
+ * The stateless filter only is packet based and pays no attention to whether a packet is part of an existing stream of traffic.
  *
  * @section sec_tokenbucket Setting up a TokenBucket
  *
- * TokenBucket can be set up.
+ * Based on the presence of tokens in the bucket, the token bucket dictates, when a certain traffic can be transmitted.
+ * Therefore the bucket contains token units and each of them represent a unit of bytes.
+ * Those tokens are removed when sending a packet according to the size of the packet.
+ * If there are not tokens in the bucket anymore, no packets can be transmitted anymore until the token bucket gets enough tokens again.
+ * Tokens are added into the bucket every xxx ms.
  *
  * @section sec_didntlearn What You Did Not Learn
  *
