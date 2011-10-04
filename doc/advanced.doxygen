@@ -104,19 +104,19 @@
  * @endcode
  *
  * @section sec_packetfilter Setting up a Packet Filter
- *
+ * 
  * A packet filter inspects the incoming packets.
  * According to the rules of the packet filter, an incoming packet may be dropped or accepted.
  * The stateless filter only is packet based and pays no attention to whether a packet is part of an existing stream of traffic.
  * 
  * To show all active paket filter rules type in the following command in the CLI of the daemon:
- *
+ * 
  * @code
  * show rules
  * @endcode
- *
+ * 
  * The following output is an example:
- *
+ * 
  * @code
  * # show rules
  * [accept]
@@ -128,23 +128,23 @@
  * 
  * [default]: accept
  * @endcode
- *
+ * 
  * To create new rules, the following command should be used:
- *
+ * 
  * @code
  * # rule add
  * usage: rule add [accept|drop] [MAC] [MESHIF] [PROBABILITY]
  * @endcode
- *
+ * 
  * This will add an accept or drop rule of incoming packets received from the given MAC address at the interface MESHIF with a given PROBABILITY.
  * 
  * Dually, a rule can be removed by typing in the following command:
- *
+ * 
  * @code
  * # rule rm
  * usage: rule rm [accept|drop] [MAC] [MESHIF]
  * @endcode
- *
+ * 
  * Rules for an incoming frame are checked in the following order:
  * 
  * - 1) whitelist (accept)
@@ -153,20 +153,60 @@
  * 
  * When both accept and dropping rules do not match the incoming frame, the default rule is used.
  * The default rule only specifies, whether such packet is accepted or dropped.
- *
+ * 
  * @code
  * # rule default
  * usage: rule default [accept|drop]
  * @endcode
- *
+ * 
  * @section sec_tokenbucket Setting up a TokenBucket
- *
+ * 
  * Based on the presence of tokens in the bucket, the token bucket dictates, when a certain traffic can be transmitted.
  * Therefore the bucket contains token units and each of them represent a unit of bytes.
  * Those tokens are removed when sending a packet according to the size of the packet.
  * If there are not tokens in the bucket anymore, no packets can be transmitted anymore until the token bucket gets enough tokens again.
  * Tokens are added into the bucket every xxx ms.
+ * 
+ * The current token bucket configuration of a daemon can be viewed by typing in the following commando to the CLI:
+ * 
+ * @code
+ * # show tb
+ * #       meshif                  size [B]              rate [B/s]              policy         queue length        state
+ * 0         eth1      18446744073709551615                       0                drop             0/0          disabled
+ * @endcode
+ * 
+ * This shows, that a token bucket is registered for a specific interface and has a given bucket size.
+ * The rate indicates, with how much bytes per time unit the bucket is filled.
+ * The bucket policy is used, when the size of the tokens is smaller then the next queued packet.
+ * If the policy is set to drop, the next queued packet will be dropped.
+ * Or the policy is set to queue_ordered, which means, that the next packet will not be dropped, but unfortunately cannot be send out.
+ * If the policy is set to queue_unordered, the queue is searched for packets, that could fit the size of given tokens.
+ * A token bucket also has a maximum queue length (packets), where 0 stands for unlimited.
+ * To activate, deactivate or modify the token bucket, the following instruction can be used:
+ * 
+ * @code
+ * # set tb
+ * USAGE: set tb [MESHIF] [BUCKETSIZE (bytes)] [RATE (bytes/s)]
+ * @endcode
+ * 
+ * To do so a token bucket has to be activated on a given mesh interface with a given bucket size and the bucket rate.
+ * 
+ * The policy of the token bucket can be changed by typing in the following:
+ * 
+ * @code
+ * # set tb policy 
+ * USAGE: set tb policy [MESHIF] [drop, queue_ordered, queue_unordered]
+ * @endcode
+ * 
+ * This will modify the token bucket on a given mesh interface so that the policy becomes drop, queue_ordered or queue_unordered.
  *
+ * The length of the queue can be changed with the following command:
+ *
+ * @code
+ * # set tb queue_max 
+ * USAGE: set tb queue_max [MESHIF] [MAX_LEN]
+ * @endcode
+ * 
  * @section sec_didntlearn What You Did Not Learn
  *
  * - Advanced Usage of the Processsing Buffer
