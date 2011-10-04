@@ -20,8 +20,8 @@
  * First of all, we create a "set" CLI anchor. This means all commands that are registered with this anchor have to be prefixed by the word "set" when entered in the CLI. As setting options is a critical task, it should only be allowed in the privileged mode.
  *
  * @code
- *  struct cli_command *cli_cfg_set;
- *  cli_cfg_set = cli_register_command(dessert_cli, NULL, "set", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set variable");
+ * struct cli_command *cli_cfg_set;
+ * cli_cfg_set = cli_register_command(dessert_cli, NULL, "set", NULL, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "set variable");
  * @endcode
  *
  * The following function can be used to parse the value specified in the CLI and set the threshold if it is valid. Our "set threshold option" in the cli gets only a parameter, which is a floating number between 0 and 1.
@@ -29,27 +29,27 @@
  * As you can see we simply check, whether the given input is correct. In other words: whether we only have one parameter and whether it is a number between 0 and 1. Then we put the value of the threshold in our daemon to the new one.
  *
  * @code
- *  double threshold = 0;
+ * double threshold = 0;
  *
- *  int set_threshold(struct cli_def *cli, char *command, char *argv[], int argc) {
- *      double d;
+ * int set_threshold(struct cli_def *cli, char *command, char *argv[], int argc) {
+ *     double d;
  *
- *      if (argc != 1) {
- *          cli_print(cli, "usage %s [float]\n", command);
- *          return CLI_ERROR;
- *      }
+ *     if (argc != 1) {
+ *         cli_print(cli, "usage %s [float]\n", command);
+ *         return CLI_ERROR;
+ *     }
  *
- *      d = strtod(argv[0], NULL);
+ *     d = strtod(argv[0], NULL);
  *
- *      if (d <= 0 || d >= 1) {
- *          cli_print(cli, "threshold must be in [0,1]\n");
- *          return CLI_ERROR;
- *      }
+ *     if (d <= 0 || d >= 1) {
+ *         cli_print(cli, "threshold must be in [0,1]\n");
+ *         return CLI_ERROR;
+ *     }
  *
- *      threshold = d;
- *      dessert_info("setting threshold to %f", threshold);
- *      return CLI_OK;
- *  }
+ *     threshold = d;
+ *     dessert_info("setting threshold to %f", threshold);
+ *     return CLI_OK;
+ * }
  * @endcode
  *
  * If you want to implement a flexible code, you should use many cli commands. It gives your the oppertunity to change your daemon without stopping and recompiling it. Think of a function which prints the current routing table. You could see in the runtime of your daemon to which other nodes a route is selected. There are a few operations for that cli commands should be implemented:
@@ -76,8 +76,8 @@
  * You can replace the TAP interface used in the \ref ExampleDaemon "example" of this manual by a TUN interface. Remember: Packets received or sent via a TUN interface are IPv4/IPv6 datagrams. You have to register the dessert_cli_cmd_addsysif_tun() instead of dessert_cli_cmd_addsysif() for the CLI to register a TUN interface. Here you can see how this would look like:
  *
  * @code
- *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys", dessert_cli_cmd_addsysif_tun, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys interface");
- *    cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh", dessert_cli_cmd_addmeshif_tun, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize mesh interface");
+ * cli_register_command(dessert_cli, dessert_cli_cfg_iface, "sys", dessert_cli_cmd_addsysif_tun, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize sys interface");
+ * cli_register_command(dessert_cli, dessert_cli_cfg_iface, "mesh", dessert_cli_cmd_addmeshif_tun, PRIVILEGE_PRIVILEGED, MODE_CONFIG, "initialize mesh interface");
  * @endcode
  *
  * Your code should not contain any ethernet specific parts as raw IP datagrams are received over TUN interfaces.
@@ -87,7 +87,7 @@
  * To achieve compatibility between the two different sys interface types, it is best to use dessert_syssend_msg() instead of dessert_syssend() as this function will determine what packet was encapsulated.
  *
  * @code
- *  dessert_syssend_msg(msg);
+ * dessert_syssend_msg(msg);
  * @endcode
  *
  * As you can see the dessert_syssend_msg() funciton only gets one argument. Now you dont use the ethernet packet as a parameter, but the DES-SERT messsage. If there is an DES-SERT ethernet extension, the frame will be reconstructed and if the extension is missing, it only handles the IP datagram. In both cases the packet is send to the kernel.
@@ -99,14 +99,29 @@
  * You can remove interfaces registered as mesh or sys interface with the following functions.
  *
  * @code
- *  int dessert_meshif_del(const char* dev);
- *  int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
+ * int dessert_meshif_del(const char* dev);
+ * int dessert_sysrxcb_del(dessert_sysrxcb_t* c);
  * @endcode
  *
  * @section sec_packetfilter Setting up a Packet Filter
  *
- * A packet filter inspects the incoming packets. According to the rules of the packet filter, an incoming packet may be dropped or accepted.
+ * A packet filter inspects the incoming packets.
+ * According to the rules of the packet filter, an incoming packet may be dropped or accepted.
  * The stateless filter only is packet based and pays no attention to whether a packet is part of an existing stream of traffic.
+ * 
+ * To show all active paket filter rules type in the following command in the CLI of the daemon:
+ *
+ * @code
+ * show rules
+ * @endcode
+ *
+ * To create new rules, the following command should be used:
+ *
+ * @code
+ * rule add
+ * usage: rule add [accept|drop] [MAC] [MESHIF] [PROBABILITY]
+ * @endcode
+ *
  *
  * @section sec_tokenbucket Setting up a TokenBucket
  *

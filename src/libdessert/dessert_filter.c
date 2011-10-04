@@ -230,7 +230,7 @@ fail:
  */
 int _dessert_cli_cmd_rule_add(struct cli_def* cli, char* command, char* argv[], int argc) {
     if(argc != PARAM_NUM) {
-        cli_print(cli, "usage: rule add accept|drop] [MAC] [MESHIF] [PROBABILITY]");
+        cli_print(cli, "usage: rule add [accept|drop] [MAC] [MESHIF] [PROBABILITY]");
         goto fail;
     }
 
