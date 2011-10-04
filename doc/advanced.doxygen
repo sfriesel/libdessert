@@ -115,13 +115,49 @@
  * show rules
  * @endcode
  *
+ * The following output is an example:
+ *
+ * @code
+ * # show rules
+ * [accept]
+ * #                  MAC           meshif          p
+ * 0    fe:fe:fe:fe:fe:fe             eth1      0.300
+ * 
+ * [drop]
+ * #                  MAC           meshif          p
+ * 
+ * [default]: accept
+ * @endcode
+ *
  * To create new rules, the following command should be used:
  *
  * @code
- * rule add
+ * # rule add
  * usage: rule add [accept|drop] [MAC] [MESHIF] [PROBABILITY]
  * @endcode
  *
+ * This will add an accept or drop rule of incoming packets received from the given MAC address at the interface MESHIF with a given PROBABILITY.
+ * 
+ * Dually, a rule can be removed by typing in the following command:
+ *
+ * @code
+ * # rule rm
+ * usage: rule rm [accept|drop] [MAC] [MESHIF]
+ * @endcode
+ *
+ * Rules for an incoming frame are checked in the following order:
+ * 
+ * - 1) whitelist (accept)
+ * - 2) blacklist (drop)
+ * - 3) default rule
+ * 
+ * When both accept and dropping rules do not match the incoming frame, the default rule is used.
+ * The default rule only specifies, whether such packet is accepted or dropped.
+ *
+ * @code
+ * # rule default
+ * usage: rule default [accept|drop]
+ * @endcode
  *
  * @section sec_tokenbucket Setting up a TokenBucket
  *
