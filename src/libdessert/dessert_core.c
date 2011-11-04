@@ -51,7 +51,6 @@ char* dessert_pidfile_name = NULL;
 /* internal functions forward declarations*/
 static void _dessert_cleanup(void);
 static void _dessert_daemonize(void);
-static int _dessert_pid(char* pidfile);
 
 /******************************************************************************
  *

@@ -488,7 +488,7 @@ void dessert_msg_proc_destroy(dessert_msg_proc_t* proc) {
  * @arg len the length of the payload
  * @return DESSERT_OK on success, DESSERT_ERR otherwise
  **/
-dessert_result dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len) {
+dessert_result_t dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len) {
     /* check payload */
     if((unsigned int) len > dessert_maxlen - ntohs(msg->hlen)) {
         return DESSERT_ERR; /* too big */
@@ -512,7 +512,7 @@ dessert_result dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int le
  * @param min_size minimum size
  * @return DESSERT_ERR on error, else DESSERT_OK
  */
-dessert_result dessert_msg_dummy_payload(dessert_msg_t* msg, uint32_t min_size) {
+dessert_result_t dessert_msg_dummy_payload(dessert_msg_t* msg, uint32_t min_size) {
     void* payload;
     uint32_t msglen = ntohs(msg->hlen) + ntohs(msg->plen);
     uint32_t size = max(min_size - msglen, 0);
@@ -597,7 +597,7 @@ int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, ui
  * @arg *ext (out) the extension pointer to the extension to be removed
  * @return DESSERT_OK on success, else DESSERT_ERR
  **/
-dessert_result dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext) {
+dessert_result_t dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext) {
     /* check ext */
     if((((uint8_t*) ext) < ((uint8_t*) msg))
        || (((uint8_t*) ext) > (((uint8_t*) msg) + ntohs(msg->hlen)))) {
@@ -707,7 +707,7 @@ int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type) {
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP if message is valid, DESSERT_MSG_DROP otherwise
  **/
-dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result_t dessert_msg_check_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     if(dessert_msg_check(msg, len)) {
         dessert_debug("invalid package - discarding");
         return DESSERT_MSG_DROP;
@@ -722,7 +722,7 @@ dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, uint32_t len, dessert
  * @arg *iface interface received packet on
  * @return DESSERT_MSG_KEEP always
  **/
-dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result_t dessert_msg_dump_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     char buf[1024];
 
     dessert_msg_proc_dump(msg, len, proc, buf, 1024);
@@ -738,7 +738,7 @@ dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, uint32_t len, dessert_
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP always
  **/
-dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
+dessert_cb_result_t dessert_msg_trace_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) {
     dessert_ext_t* ext;
 
     /* abort if message has no trace extension */
@@ -780,7 +780,7 @@ dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, uint32_t len, dessert
  * @arg *iface interface received packet on
  * ®return DESSERT_MSG_KEEP or DESSERT_MSG_NEEDMSGPROC
  **/
-dessert_cb_result dessert_msg_ifaceflags_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* riface, dessert_frameid_t id) {
+dessert_cb_result_t dessert_msg_ifaceflags_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* riface, dessert_frameid_t id) {
     dessert_meshif_t* iface;
     struct ether_header* l25h;
 

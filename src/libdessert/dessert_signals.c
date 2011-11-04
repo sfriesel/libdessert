@@ -226,7 +226,7 @@ void* dessert_signal_thread(void* param) {
     return NULL;
 }
 
-dessert_result _dessert_signals_init() {
+dessert_result_t _dessert_signals_init() {
     sigset_t signal_mask_block;
     sigemptyset(&signal_mask_block);
     sigaddset(&signal_mask_block, SIGTERM);

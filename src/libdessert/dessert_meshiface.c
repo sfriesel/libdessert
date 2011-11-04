@@ -44,6 +44,12 @@ dessert_meshif_t** *_dessert_meshiflist_perms = NULL;
 dessert_meshrxcbe_t* _dessert_meshrxcblist;
 int _dessert_meshrxcblistver = 0;
 
+static char* _dessert_policy2str[] = {
+    "drop",
+    "queue_ordered",
+    "queue_unordered"
+};
+
 /* internal functions forward declarations*/
 static void _dessert_packet_process(uint8_t* args, const struct pcap_pkthdr* header, const uint8_t* packet);
 static void* _dessert_meshif_add_thread(void* arg);
@@ -790,7 +796,7 @@ dessert_meshif_add_err:
  * %DESCRIPTION:
  *
  */
-dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, uint32_t len, dessert_msg_proc_t* proc_in, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result_t _dessert_meshrxcb_runall(dessert_msg_t* msg_in, uint32_t len, dessert_msg_proc_t* proc_in, dessert_meshif_t* meshif, dessert_frameid_t id) {
     dessert_msg_t* msg = msg_in;
     dessert_msg_proc_t* proc = proc_in;
     dessert_meshrxcbe_t* cb;
@@ -878,7 +884,7 @@ dessert_cb_result _dessert_meshrxcb_runall(dessert_msg_t* msg_in, uint32_t len, 
  * %DESCRIPTION:
  *
  **/
-dessert_result _dessert_meshif_gethwaddr(dessert_meshif_t* meshif) {
+dessert_result_t _dessert_meshif_gethwaddr(dessert_meshif_t* meshif) {
     /* we need some socket to do that */
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -1253,7 +1259,7 @@ static void _dessert_send_queued_msgs(dessert_meshif_t* meshif) {
     _dessert_unlock_bucket(meshif); //// [UNLOCK]
     LL_FOREACH_SAFE(scheduled, elt, tmp) {
         LL_DELETE(scheduled, elt); // always first delete entries!!!
-        dessert_cb_result r = _dessert_meshsend_if2(elt->msg, meshif, elt);
+        dessert_cb_result_t r = _dessert_meshsend_if2(elt->msg, meshif, elt);
         if(r == DESSERT_OK) {
             dessert_msg_destroy(elt->msg);
             free(elt);
@@ -1553,7 +1559,7 @@ int dessert_cli_cmd_addmeshif(struct cli_def* cli, char* command, char* argv[], 
  * @retval DESSERT_MSG_DROP if Ethernet extension is available
  * @retval DESSERT_MSG_KEEP if Ethernet extension is missing
  */
-dessert_cb_result dessert_mesh_drop_ethernet(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result_t dessert_mesh_drop_ethernet(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 
     if(eth != NULL) {  // has Ethernet extension
@@ -1577,7 +1583,7 @@ dessert_cb_result dessert_mesh_drop_ethernet(dessert_msg_t* msg, uint32_t len, d
  * @retval DESSERT_MSG_KEEP if Ethernet extension is available
  * @retval DESSERT_MSG_DROP if Ethernet extension is missing
  */
-dessert_cb_result dessert_mesh_drop_ip(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result_t dessert_mesh_drop_ip(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 
     if(eth == NULL) {  // has no Ethernet extension
@@ -1605,7 +1611,7 @@ dessert_cb_result dessert_mesh_drop_ip(dessert_msg_t* msg, uint32_t len, dessert
  * @retval DESSERT_MSG_KEEP if TTL or Hop Limit > 1
  * @retval DESSERT_MSG_DROP if TTL or Hop Limit <= 1
  */
-dessert_cb_result dessert_mesh_ipttl(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
+dessert_cb_result_t dessert_mesh_ipttl(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* meshif, dessert_frameid_t id) {
     void* payload;
     struct ether_header* eth = dessert_msg_getl25ether(msg);
 

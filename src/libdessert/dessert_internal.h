@@ -111,7 +111,7 @@ int _dessert_cli_init(void);
  *
  ******************************************************************************/
 
-dessert_result _dessert_signals_init(void);
+dessert_result_t _dessert_signals_init(void);
 
 /******************************************************************************
  *
@@ -171,15 +171,9 @@ typedef struct msg_queue {
     struct msg_queue* next;
 } dessert_msg_queue_t;
 
-static char* _dessert_policy2str[] = {
-    "drop",
-    "queue_ordered",
-    "queue_unordered"
-};
-
-dessert_result _dessert_meshif_gethwaddr(dessert_meshif_t* meshif);
+dessert_result_t _dessert_meshif_gethwaddr(dessert_meshif_t* meshif);
 int _dessert_meshrxcb_runall(dessert_msg_t* msg_in, uint32_t len, dessert_msg_proc_t* proc_in, dessert_meshif_t* meshif, dessert_frameid_t id);
-dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface);
+dessert_cb_result_t dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface);
 dessert_per_result_t _dessert_token_dispenser(void* data, struct timeval* scheduled, struct timeval* interval);
 
 /******************************************************************************

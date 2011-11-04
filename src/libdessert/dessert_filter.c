@@ -43,7 +43,7 @@ static mac_entry_t* _dessert_whitelist = NULL;
 static mac_entry_t* _dessert_blacklist = NULL;
 static const char* _whitelist_str = "accept";
 static const char* _blacklist_str = "drop";
-static dessert_cb_result _default_rule = DESSERT_MSG_KEEP;
+static dessert_cb_result_t _default_rule = DESSERT_MSG_KEEP;
 
 static mac_entry_t* find_in_list(char* mac, dessert_meshif_t* iface, mac_entry_t* list) {
     mac_entry_t* elt = NULL;
@@ -377,7 +377,7 @@ fail:
  * Please note that the filter is fairly simple and that the first matching rule is used.
  * Therefore a less specific rule can overwrite a more specific one.
  */
-dessert_cb_result dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface) {
+dessert_cb_result_t dessert_mesh_filter(dessert_msg_t* msg, dessert_meshif_t* iface) {
     char* mac = (char *) msg->l2h.ether_shost;
 
     pthread_rwlock_rdlock(&dessert_filterlock);

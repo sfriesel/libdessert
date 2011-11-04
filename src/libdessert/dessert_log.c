@@ -79,7 +79,7 @@ static pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to
  *
  * %DESCRIPTION:
  **/
-dessert_result dessert_logcfg(uint16_t opts) {
+dessert_result_t dessert_logcfg(uint16_t opts) {
     char dessert_logprefix[32];
     snprintf(dessert_logprefix, sizeof(dessert_logprefix), "dessert/%s", dessert_proto);
 

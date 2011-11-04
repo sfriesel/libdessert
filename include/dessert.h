@@ -141,19 +141,23 @@
  * typedefs
  ******************************************************************************/
 
-typedef enum _dessert_results {
+typedef enum _dessert_result {
     DESSERT_OK = 0,
     DESSERT_ERR = 1
-} dessert_result;
+} dessert_result_t;
 
-typedef enum _dessert_cb_results {
+typedef dessert_result_t  dessert_result __attribute__((__deprecated__));
+
+typedef enum _dessert_cb_result {
     DESSERT_MSG_DROP            = -1, ///< stop handling the packet and drop it
     DESSERT_MSG_KEEP            =  0, ///< continue to handle the packet in the following callback
     DESSERT_MSG_NEEDNOSPARSE    =  1, ///< forces to copy the message and call again
     DESSERT_MSG_NEEDMSGPROC     =  2, ///< forces to generate processing info and call again
-} dessert_cb_result;
+} dessert_cb_result_t;
 
-typedef enum _dessert_periodic_results {
+typedef dessert_cb_result_t  dessert_cb_result __attribute__((__deprecated__));
+
+typedef enum _dessert_periodic_result {
     DESSERT_PER_KEEP = 0,
     DESSERT_PER_UNREGISTER = 1
 } dessert_per_result_t;
@@ -407,7 +411,7 @@ typedef struct dessert_sysif {
  * providing the requested resource.
  *
  */
-typedef dessert_cb_result dessert_meshrxcb_t(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+typedef dessert_cb_result_t dessert_meshrxcb_t(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
 /** Callback type to call if a packed should be injected into dessert via a tun/tap interface.
  *
@@ -425,10 +429,10 @@ typedef dessert_cb_result dessert_meshrxcb_t(dessert_msg_t* msg, uint32_t len, d
  * \warning YOU MUST also make sure not to do anything blocking in a callback!
  *
 */
-typedef dessert_cb_result dessert_sysrxcb_t(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
+typedef dessert_cb_result_t dessert_sysrxcb_t(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
 
 /** callback function type to handle signals **/
-typedef dessert_result dessert_signalcb_t(int signal);
+typedef dessert_result_t dessert_signalcb_t(int signal);
 
 /***************************************************************************//**
  * @}
@@ -572,7 +576,7 @@ enum dessert_logcfg_flags {
  ******************************************************************************/
 #define LOG_TRACE (LOG_DEBUG+1)
 
-dessert_result dessert_logcfg(uint16_t opts);
+dessert_result_t dessert_logcfg(uint16_t opts);
 void _dessert_log(int level, const char* func, const char* file, int line, const char* fmt, ...);
 /** log at TRACE level */
 #define dessert_trace(...) _dessert_log(LOG_TRACE, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
@@ -718,9 +722,9 @@ int dessert_meshif_del(const char* dev);
 int dessert_cli_cmd_addmeshif(struct cli_def* cli, char* command, char* argv[], int argc);
 
 /* mesh callbacks */
-dessert_cb_result dessert_mesh_drop_ethernet(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-dessert_cb_result dessert_mesh_drop_ip(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-dessert_cb_result dessert_mesh_ipttl(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result_t dessert_mesh_drop_ethernet(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result_t dessert_mesh_drop_ip(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result_t dessert_mesh_ipttl(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
 /* helper functions */
 dessert_meshif_t* dessert_meshif_get_name(const char* dev);
@@ -771,7 +775,7 @@ int dessert_cli_cmd_addsysif(struct cli_def* cli, char* command, char* argv[], i
 int dessert_cli_cmd_addsysif_tun(struct cli_def* cli, char* command, char* argv[], int argc);
 
 /* sys callbacks */
-dessert_cb_result dessert_sys_drop_ipv6(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
+dessert_cb_result_t dessert_sys_drop_ipv6(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_sysif_t* sysif, dessert_frameid_t id);
 
 /* send functions */
 int dessert_syssend_msg(dessert_msg_t* msg);
@@ -856,20 +860,20 @@ int dessert_msg_proc_clone(dessert_msg_proc_t** procnew, const dessert_msg_proc_
 void dessert_msg_proc_dump(const dessert_msg_t* msg, uint32_t len, const dessert_msg_proc_t* proc, char* buf, uint32_t blen);
 void dessert_msg_proc_destroy(dessert_msg_proc_t* proc);
 
-dessert_result dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len);
-dessert_result dessert_msg_dummy_payload(dessert_msg_t* msg, uint32_t min_size);
+dessert_result_t dessert_msg_addpayload(dessert_msg_t* msg, void** payload, int len);
+dessert_result_t dessert_msg_dummy_payload(dessert_msg_t* msg, uint32_t min_size);
 int dessert_msg_getpayload(dessert_msg_t* msg, void** payload);
 int dessert_msg_addext(dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, uint32_t len);
-dessert_result dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext);
+dessert_result_t dessert_msg_delext(dessert_msg_t* msg, dessert_ext_t* ext);
 int dessert_msg_resizeext(dessert_msg_t* msg, dessert_ext_t* ext, uint32_t new_len);
 int dessert_msg_getext(const dessert_msg_t* msg, dessert_ext_t** ext, uint8_t type, int index);
 int dessert_msg_get_ext_count(const dessert_msg_t* msg, uint8_t type);
 
 /* mesh callbacks */
-dessert_cb_result dessert_msg_dump_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-dessert_cb_result dessert_msg_check_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-dessert_cb_result dessert_msg_trace_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-dessert_cb_result dessert_msg_ifaceflags_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result_t dessert_msg_dump_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result_t dessert_msg_check_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result_t dessert_msg_trace_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
+dessert_cb_result_t dessert_msg_ifaceflags_cb(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
 
 int dessert_msg_trace_dump(const dessert_msg_t* msg, uint8_t type, char* buf, int blen);
 
@@ -1372,12 +1376,12 @@ bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_fil
  * @{
  ******************************************************************************/
 
-int dessert_cli_cmd_ping(struct cli_def* cli, char* command, char* argv[], int argc);
-int dessert_cli_cmd_traceroute(struct cli_def* cli, char* command, char* argv[], int argc);
-dessert_cb_result dessert_mesh_ping(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-dessert_cb_result dessert_mesh_pong(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-dessert_cb_result dessert_mesh_trace(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id);
-int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode);
+int dessert_cli_cmd_ping(struct cli_def* cli, char* command, char* argv[], int argc) __attribute__((__deprecated__));
+int dessert_cli_cmd_traceroute(struct cli_def* cli, char* command, char* argv[], int argc) __attribute__((__deprecated__));
+dessert_cb_result_t dessert_mesh_ping(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) __attribute__((__deprecated__));
+dessert_cb_result_t dessert_mesh_pong(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) __attribute__((__deprecated__));
+dessert_cb_result_t dessert_mesh_trace(dessert_msg_t* msg, uint32_t len, dessert_msg_proc_t* proc, dessert_meshif_t* iface, dessert_frameid_t id) __attribute__((__deprecated__));
+int dessert_msg_trace_initiate(dessert_msg_t* msg, uint8_t type, int mode) __attribute__((__deprecated__));
 
 /** @} */
 #endif /* DESSERT_H*/
