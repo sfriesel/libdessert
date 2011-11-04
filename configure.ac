@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([libdessert], [1.07], [des-sert@spline.inf.fu-berlin.de])
-AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
+AC_INIT([libdessert],[1.07],[des-sert@spline.inf.fu-berlin.de])
+AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2 subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR([src/libdessert/dessert_core.c])
@@ -17,29 +17,43 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
+AM_PROG_CC_C_O
+
 # Checks for libtool
 
 LT_INIT
 
 # Checks for net-snmp-config
-AS_IF([test "x$with_net_snmp" != xno],
-    [AC_CHECK_NET_SNMP
-     AC_SUBST([SNMP_LIBS])
-     AC_SUBST([SNMP_CFLAGS])
-     AC_DEFINE([WITH_NET_SNMP], [1], [Enable or disable net-snmp support (default=yes)])],
-)
-AS_IF([test "x$with_net_snmp" != xno],
-      [AC_CHECK_HEADERS([net-snmp/net-snmp-config.h],,
-                        [AC_MSG_ERROR([net-snmp-config.h not found, please install libsnmp development package])])],
+AS_IF([test x$with_net_snmp == xyes],
+      [
+          #AC_MSG_CHECKING([Searching for net-snmp lib])
+          AC_CHECK_PROG([NET_SNMP_CONFIG], [net-snmp-config], [yes], [no])
+          
+          AS_IF([test x${NET_SNMP_CONFIG} = xno],
+                [AC_MSG_ERROR([net-snmp-config not found, please install the development package of net-snmp])]
+          )
+          AC_SUBST([SNMP_LIBS], [`net-snmp-config --agent-libs`])
+          AC_SUBST([SNMP_CFLAGS], [`net-snmp-config --cflags`])
+          
+          AC_DEFINE([WITH_NET_SNMP], [1], [Enable or disable net-snmp support (default=no)])
+          AC_CHECK_HEADERS([net-snmp/net-snmp-config.h],
+                           [],
+                           [AC_MSG_ERROR([net-snmp-config.h not found, please install libsnmp development package])])
+      ],
 )
 
 # Checks for zlib support
 CHECK_ZLIB
 
 # Checks for pcap-config
-AC_CHECK_PCAP
-AC_SUBST([PCAP_LIBS])
-AC_SUBST([PCAP_CFLAGS])
+AC_CHECK_PROG([PCAP_CONFIG],[pcap-config],[yes],[no])
+AS_IF([test x${PCAP_CONFIG} = xno],
+      [AC_MSG_ERROR([pcap-config not found, please install or upgrade the development package of libpcap])]
+)
+AC_SUBST([PCAP_LIBS], [`pcap-config --libs`])
+AC_SUBST([PCAP_CFLAGS], [`pcap-config --cflags`])
+
+AC_CHECK_HEADER([pcap.h],[],[AC_MSG_ERROR([pcap headers not found])])
 
 # Checks for libcli
 AC_CHECK_HEADERS([libcli.h])
@@ -54,13 +68,6 @@ AC_SUBST([CLI_LIBS])
 AC_CHECK_HEADERS([uthash.h utlist.h],,[AC_MSG_ERROR([Please install uthash from http://uthash.sourceforge.net/])])
 
 AC_CHECK_HEADERS([iwlib.h],,[AC_MSG_ERROR([iwlib could not be found, please install development package of iwlib])])
-#AC_SEARCH_LIBS([iw_get_ext],
-#               [iw],
-#               [AC_DEFINE([IW_LIBS],[-liw],[defines linkoption for libiw])],
-#               [AC_MSG_ERROR([libiw not be found])]
-#)
-#AC_SUBST([IW_LIBS])
-
 
 # Checks for libraries.
 
@@ -71,20 +78,8 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netinet/in.h stdint.h stdlib.h string.h sy
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
-AC_C_INLINE
-AC_TYPE_INT32_T
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_FUNC_FORK
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS([gethostname gettimeofday localtime_r memmove memset socket strdup strerror strtol])
 
@@ -101,17 +96,13 @@ DX_PS_FEATURE([OFF])
 DX_INIT_DOXYGEN([${PACKAGE_NAME}], [doc/libdessert.doxyfile], [doxygen])
 
 AC_CONFIG_FILES([Makefile
-                src/Makefile
-                src/snmp/Makefile
-                src/libdessert/Makefile
-                include/Makefile
                 libdessert.pc
                 ])
 
 AC_ARG_WITH(net-snmp,
-        [AS_HELP_STRING([--without-net-snmp], [Disable net-snmp support])],
+        [AS_HELP_STRING([--with-net-snmp], [enable net-snmp support @<:@default=no@:>@])],
         [],
-        [with_net_snmp=yes])
+        [with_net_snmp=no])
 AC_SUBST(with_net_snmp)
 AM_CONDITIONAL([WITH_NET_SNMP], [test "x$with_net_snmp" != xno])
 
@@ -119,34 +110,9 @@ AC_ARG_ENABLE(dissectors, [  --enable-dissectors     install Wireshark dissector
 AC_SUBST(install_dissectors)
 
 AC_ARG_WITH(dissectorsdir,
-        [  --with-dissectorsdir=DIR    Directory to install Wireshark dissectors. @<:@DATAROOTDIR/wireshark/@:>@],
-        [ AC_SUBST(with_dissectorsdir) ])
-
-AS_IF([test $install_dissectors -eq 1],
-    [AS_IF([test -z "$with_dissectorsdir"],
-        [with_dissectorsdir="$datarootdir/wireshark"; echo "Using default dissector dir: $with_dissectorsdir"],
-        [echo "Dissectors dir: $with_dissectorsdir"])
-    ]
-)
-
-AC_ARG_ENABLE(mibs, [  --enable-mibs           install MIBs @<:@Default=no@:>@], [install_mibs=1], [install_mibs=0])
-AS_IF([test $install_mibs -eq 1],
-    [AS_IF([test "x$with_net_snmp" = xno],
-        [install_mibs=0; echo "Ignoring --enable-mibs because net-snmp support is disabled"])
-    ]
-)
-AC_SUBST(install_mibs)
-
-AC_ARG_WITH(mibsdir,
-        [  --with-mibsdir=DIR      Directory to MIBs. @<:@DATAROOTDIR/mibs@:>@],
-        [ AC_SUBST(with_mibsdir) ])
-
-AS_IF([test $install_mibs -eq 1],
-    [AS_IF([test -z "$with_mibsdir"],
-        [with_mibsdir="$datarootdir/mibs"; echo "Using default MIBs dir: $with_mibsdir"],
-        [echo "MIBs dir: $with_mibsdir"])
-    ]
-)
+        [  --with-dissectorsdir=DIR    Directory to install Wireshark dissectors. @<:@DATAROOTDIR/wireshark/plugins/@:>@],
+        [ AC_SUBST(with_dissectorsdir) ],
+        [ AC_SUBST(with_dissectorsdir, "$datarootdir/wireshark/plugins")])
 
 AC_ARG_ENABLE(android-build,
     AS_HELP_STRING([--enable-android-build], [enables build to be compiled for android @<:@Default=no@:>@]),
@@ -162,7 +128,7 @@ AS_IF([test $do_android_build -eq 1],
     AC_SEARCH_LIBS([pthread_rwlock_unlock],
         [pthreadex],
         [],
-        [AC_MSG_ERROR([pthreadex could not found, you need to manually build this special library])])
+        [AC_MSG_ERROR([pthreadex could not be found, you need to manually build this special library])])
    ]
 )
 
