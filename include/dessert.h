@@ -184,7 +184,7 @@ static inline bool mac_equal(mac_addr left, mac_addr right) {
 
 /** callbacks type to call in a periodic task
  *
- * The callbacks are invoked with no locks hold by the thread,
+ * The callbacks are invoked with no locks held by the thread,
  * YOU MUST make sure the thread holds no locks after the callback exits.
  * YOU MUST also make sure not to do anything blocking in a callback!
  *
@@ -280,7 +280,7 @@ extern struct msg_queue* queue;
 /** token bucket for traffic shaping of a meshif
  *
  * When no tokens are available, the policy determines how to handle the packets.
- * The can either be dropped or queued. The queue can be unlimited or limited to
+ * They can either be dropped or queued. The queue can be unlimited or limited to
  * a specific size. In the latter case, packets will be dropped when the queue is
  * full: tail drop queue.
  */
@@ -424,7 +424,7 @@ typedef dessert_cb_result_t dessert_meshrxcb_t(dessert_msg_t* msg, uint32_t len,
  * @retval DESSERT_MSG_KEEP to continue processing the packet
  * @retval DESSERT_MSG_DROP to drop it
  *
- * \warning The callbacks are invoked with no locks hold by the thread,
+ * \warning The callbacks are invoked with no locks held by the thread,
  * \warning YOU MUST make sure the thread holds no locks after the callback exits.
  * \warning YOU MUST also make sure not to do anything blocking in a callback!
  *
@@ -1371,7 +1371,7 @@ bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_fil
  * @ingroup legacy
  * @defgroup legacy Legacy Functions
  *
- * @brief The functions in this group will be removed in the future releases.
+ * @brief The functions in this group will be removed in future releases.
  *
  * @{
  ******************************************************************************/
