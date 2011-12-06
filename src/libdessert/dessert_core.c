@@ -31,14 +31,14 @@
 char dessert_proto[DESSERT_PROTO_STRLEN + 1];
 uint32_t dessert_maxlen = ETH_FRAME_LEN;
 uint8_t dessert_ver;
-uint8_t dessert_l25_defsrc[ETHER_ADDR_LEN];
-u_char ether_broadcast[ETHER_ADDR_LEN];
-u_char ether_null[ETHER_ADDR_LEN];
+mac_addr dessert_l25_defsrc;
+const mac_addr ether_broadcast = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+const mac_addr ether_null = {0, 0, 0, 0, 0, 0};
 pthread_rwlock_t dessert_cfglock = PTHREAD_RWLOCK_INITIALIZER;
 
 /* global data storage // P R I V A T E */
 int _dessert_status = 0x0;
-struct timeval _dessert_started = { 0, 0};
+struct timeval _dessert_started = { 0, 0 };
 
 /* local data storage*/
 dessert_frameid_t _dessert_nextframeid = 0;
