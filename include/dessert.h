@@ -176,10 +176,14 @@ typedef enum _dessert_tb_policy {
 typedef uint64_t dessert_frameid_t;
 
 /** ethernet address */
-typedef uint8_t mac_addr[ETHER_ADDR_LEN];
+typedef uint8_t mac_addr[ETH_ALEN];
 
-static inline bool mac_equal(mac_addr left, mac_addr right) {
-	return memcmp(left, right, ETH_ALEN) == 0;
+static inline bool mac_equal(const mac_addr left, const mac_addr right) {
+    return memcmp(left, right, ETH_ALEN) == 0;
+}
+
+static inline void mac_copy(mac_addr target, mac_addr src) {
+    memcpy(target, src, ETH_ALEN);
 }
 
 /** callbacks type to call in a periodic task
@@ -449,7 +453,7 @@ typedef dessert_result_t dessert_signalcb_t(int signal);
  ******************************************************************************/
 
 /** type for local unique packet identification */
-#define DESSERT_FRAMEID_MAX ((uint64_t)-1)
+#define DESSERT_FRAMEID_MAX UINT64_MAX
 
 enum dessert_init_flags {
     DESSERT_OPT_DAEMONIZE   = 0x0100, ///< daemonize when calling disables logging to STDERR
@@ -481,13 +485,13 @@ extern uint32_t dessert_maxlen;
 extern uint8_t    dessert_ver;
 
 /** default src address used for local generated dessert_msg frames */
-extern uint8_t    dessert_l25_defsrc[ETHER_ADDR_LEN];
+extern mac_addr    dessert_l25_defsrc;
 
 /** constant holding ethernet broadcast address after dessert_init */
-extern u_char      ether_broadcast[ETHER_ADDR_LEN];
+extern const mac_addr      ether_broadcast;
 
 /** constant holding ethernet null address after dessert_init */
-extern u_char      ether_null[ETHER_ADDR_LEN];
+extern const mac_addr      ether_null;
 
 /** the config funnel */
 extern pthread_rwlock_t dessert_cfglock;
