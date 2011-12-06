@@ -1303,14 +1303,6 @@ static inline uint32_t dessert_cur_ms() {
  * can be optimized.
  */
 #define likely(x)       (__builtin_expect((x),1))
-
-/** Branch prediction optimization macros
- *
- * You can give the compiler a hint if it is likely
- * or unlikely that a particular condition will
- * apply. In this way the branch prediction
- * can be optimized.
- */
 #define unlikely(x)     (__builtin_expect((x),0))
 
 #define __dessert_assert(func, file, line, e) \
