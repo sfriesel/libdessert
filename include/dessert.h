@@ -1258,11 +1258,25 @@ static inline void dessert_timevaladd(struct timeval* tv, uint32_t sec, uint32_t
 }
 
 static inline void dessert_timevaladd2(struct timeval* result, struct timeval* tva, struct timeval* tvb) {
-    result->tv_sec  = tva->tv_sec + tva->tv_sec;
-    result->tv_usec = tva->tv_usec + tva->tv_usec;
+    result->tv_sec  = tva->tv_sec + tvb->tv_sec;
+    result->tv_usec = tva->tv_usec + tvb->tv_usec;
     while(result->tv_usec >= 1000000) {
         result->tv_sec++;
         result->tv_usec -= 1000000;
+    }
+}
+
+static inline int dessert_timevalcmp(const struct timeval* t1, const struct timeval* t2) {
+    if(t1->tv_sec < t2->tv_sec) {
+        return -1;
+    } else if(t1->tv_sec  > t2->tv_sec) {
+        return  1;
+    } else if(t1->tv_usec < t2->tv_usec) {
+        return -1;
+    } else if(t1->tv_usec > t2->tv_usec) {
+        return  1;
+    } else {
+        return  0;
     }
 }
 
@@ -1271,7 +1285,7 @@ static inline void dessert_timevaladd2(struct timeval* result, struct timeval* t
  * @param time data structure to evaluate
  * @return time in ms
  */
-static inline uint32_t dessert_timeval2ms(struct timeval* time) {
+static inline uint64_t dessert_timeval2ms(struct timeval* time) {
     return time->tv_sec*1000 + time->tv_usec/1000;
 }
 
@@ -1280,7 +1294,7 @@ static inline uint32_t dessert_timeval2ms(struct timeval* time) {
  * @param ms time in ms to write into timeval struct
  * @param time timeval struct to fill
  */
-static inline void dessert_ms2timeval(uint32_t ms, struct timeval* time) {
+static inline void dessert_ms2timeval(uint64_t ms, struct timeval* time) {
     time->tv_sec = ms/1000;
     time->tv_usec = (ms%1000) * 1000;
 }
@@ -1289,7 +1303,7 @@ static inline void dessert_ms2timeval(uint32_t ms, struct timeval* time) {
  *
  * @return current time in ms
  */
-static inline uint32_t dessert_cur_ms() {
+static inline uint64_t dessert_cur_ms() {
     struct timeval t;
     gettimeofday(&t, NULL);
     return dessert_timeval2ms(&t);
