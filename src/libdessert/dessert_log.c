@@ -52,6 +52,7 @@ static gzFile* _dessert_logfdgz = NULL;
 static int _dessert_logflags = _DESSERT_LOGFLAG_STDERR;
 static int _dessert_loglevel = LOG_INFO;
 static dessert_periodic_t* _dessert_log_flush_periodic = NULL;
+static char dessert_logprefix[32];
 
 /* the logging ringbuffer */
 static char* _dessert_logrbuf = NULL; /* pointer to begin */
@@ -80,8 +81,7 @@ static pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to
  * %DESCRIPTION:
  **/
 dessert_result_t dessert_logcfg(uint16_t opts) {
-    char dessert_logprefix[32];
-    snprintf(dessert_logprefix, sizeof(dessert_logprefix), "dessert/%s", dessert_proto);
+    snprintf(dessert_logprefix, sizeof(dessert_logprefix), "dessert-%s", dessert_proto);
 
     pthread_rwlock_wrlock(&dessert_cfglock);
 
