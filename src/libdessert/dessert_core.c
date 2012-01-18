@@ -33,7 +33,7 @@ uint32_t dessert_maxlen = ETH_FRAME_LEN;
 uint8_t dessert_ver;
 mac_addr dessert_l25_defsrc;
 const mac_addr ether_broadcast = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-const mac_addr ether_null = {0, 0, 0, 0, 0, 0};
+const mac_addr ether_null = { 0, 0, 0, 0, 0, 0 };
 pthread_rwlock_t dessert_cfglock = PTHREAD_RWLOCK_INITIALIZER;
 
 /* global data storage // P R I V A T E */
@@ -79,10 +79,6 @@ int dessert_init(const char* proto, int version, uint16_t opts) {
     memset(dessert_proto, 0x0, DESSERT_PROTO_STRLEN + 1);
     strncpy(dessert_proto, proto, DESSERT_PROTO_STRLEN);
     dessert_ver = version;
-
-    /* initialize pseudo constants */
-    memset(ether_broadcast, 255, ETHER_ADDR_LEN);
-    memset(ether_null, 0, ETHER_ADDR_LEN);
 
     pthread_rwlock_unlock(&dessert_cfglock);
 
