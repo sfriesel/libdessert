@@ -1224,30 +1224,6 @@ DL_FOREACH(dessert_meshiflist_get(), __interface) {
  */
 #define MESHIFLIST_ITERATOR_STOP } pthread_rwlock_unlock(&dessert_cfglock)
 
-/** A convenience macro to safely add @a __sec seconds and @a __usec microseconds
- *  to the @c struct @c timeval @a __tv in an <em>invariant respecting</em> manner.
- *
- * @param __tv   the @c struct @c timeval to add to
- * @param __sec  the number of seconds to add up to @a __tv->tv_sec
- * @param __usec the number of microseconds to add up to @a __tv.->tv_usec
- *
- * %DESCRIPTION: \n
- * The <a href="http://www.gnu.org/s/libc/manual/html_node/Elapsed-Time.html#Elapsed-Time">GNU C Library Documentation</a>
- * states about the @c tv_usec member of the @c struct @c timeval: <em>This is the
- * rest of the elapsed time (a fraction of a second), represented as the number
- * of microseconds. It is always less than one @a million.</em>
- *
- */
-#define TIMEVAL_ADD(__tv, __sec, __usec)       \
-    do {                                       \
-        (__tv)->tv_sec  += __sec;              \
-        (__tv)->tv_usec += __usec;             \
-        if((__tv)->tv_usec >= 1000000) {       \
-            ++(__tv)->tv_sec;                  \
-            (__tv)->tv_usec -= 1000000;        \
-        }                                      \
-    } while(0)
-
 static inline void dessert_timevaladd(struct timeval* tv, uint32_t sec, uint32_t usec) {
     tv->tv_sec  += sec;
     tv->tv_usec += usec;
@@ -1385,6 +1361,9 @@ bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_fil
  *
  * @{
  ******************************************************************************/
+
+//use timeval_add instead
+static void (*TIMEVAL_ADD)(struct timeval*, uint32_t, uint32_t) __attribute__ ((deprecated)) = dessert_timevaladd;
 
 int dessert_cli_cmd_ping(struct cli_def* cli, char* command, char* argv[], int argc) __attribute__((__deprecated__));
 int dessert_cli_cmd_traceroute(struct cli_def* cli, char* command, char* argv[], int argc) __attribute__((__deprecated__));
