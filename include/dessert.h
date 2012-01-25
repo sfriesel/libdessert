@@ -155,7 +155,7 @@ typedef enum _dessert_cb_result {
     DESSERT_MSG_NEEDMSGPROC     =  2, ///< forces to generate processing info and call again
 } dessert_cb_result_t;
 
-typedef dessert_cb_result_t  dessert_cb_result __attribute__((__deprecated__));
+typedef dessert_cb_result_t  dessert_cb_result;
 
 typedef enum _dessert_periodic_result {
     DESSERT_PER_KEEP = 0,
