@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([libdessert],[1.07],[des-sert@spline.inf.fu-berlin.de])
-AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2 subdir-objects])
+AM_INIT_AUTOMAKE([-Wall gnu dist-bzip2])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR([src/libdessert/dessert_core.c])
