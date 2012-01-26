@@ -52,7 +52,7 @@ static int _dessert_cli_sock;
 /// \todo _dessert_cli_addr* is not used anywhere but in a single function; global vars should be removed
 static struct sockaddr_in6 _dessert_cli_addr6;
 static struct sockaddr_in _dessert_cli_addr4;
-static char _dessert_cli_hostname[HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1];
+static char _dessert_cli_hostname[HOST_NAME_MAX + 1 + DESSERT_PROTO_STRLEN + 1];
 static pthread_t _dessert_cli_worker;
 static int _dessert_cli_running = 0;
 static uint16_t _cli_port = 4519; // should be default port number
@@ -262,10 +262,10 @@ int _dessert_cli_init() {
     dessert_cli = cli_init();
 
     /* set host name */
-    memset(_dessert_cli_hostname, 0x0, HOST_NAME_MAX + DESSERT_PROTO_STRLEN + 1);
+    memset(_dessert_cli_hostname, 0, sizeof(_dessert_cli_hostname));
     gethostname(_dessert_cli_hostname, HOST_NAME_MAX);
-    strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), ":", 1);
-    strncpy(_dessert_cli_hostname + strlen(_dessert_cli_hostname), dessert_proto, DESSERT_PROTO_STRLEN);
+    strncat(_dessert_cli_hostname, ":", 1);
+    strncat(_dessert_cli_hostname, dessert_proto, DESSERT_PROTO_STRLEN);
     cli_set_hostname(dessert_cli, _dessert_cli_hostname);
 
     _dessert_cli_init_anchors();
