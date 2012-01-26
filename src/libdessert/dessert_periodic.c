@@ -148,45 +148,38 @@ dessert_periodic_t* dessert_periodic_add_delayed(dessert_periodiccallback_t* c, 
 /** Removes a periodic task from the task list.
  *
  * @param[in] p pointer to task description
- * @param[in] data data pointer given to dessert_periodic_add*
  *
- * @return -1 on failure, 0 if the task was removed
+ * @return DESSERT_OK if p was successfully removed, DESSERT_ERR otherwise
  *
  * %DESCRIPTION: \n
  */
 int dessert_periodic_del(dessert_periodic_t* p) {
-    dessert_periodic_t* i;
-    int x = -1;
-
     if(p == NULL) {
-        dessert_warn("dessert_periodic_del was called with a NULL pointer....doing nothing!11!!");
-        return 0;
+        dessert_warn("ignoring call with NULL pointer argument");
+        return DESSERT_ERR;
     }
 
     pthread_mutex_lock(&_dessert_periodic_mutex);
 
     if(p == _tasklist) {
-        _tasklist = _tasklist->next;
-        x++;
+        _tasklist = p->next;
     }
+    else {
+        dessert_periodic_t* i = _tasklist;
 
-    i = _tasklist;
-
-    while(i != NULL) {
-        if(i->next == p) {
-            i->next = p->next;
-            x++;
+        while(i->next != p) {
+            if(i->next == NULL) {
+                return DESSERT_ERR;
+            }
+            i = i->next;
         }
-
-        i = i->next;
+        i->next = p->next;
     }
 
     pthread_mutex_unlock(&_dessert_periodic_mutex);
 
-    assert(x < 2);
-
     free(p);
-    return x;
+    return DESSERT_OK;
 }
 
 /******************************************************************************
@@ -216,49 +209,23 @@ void _dessert_periodic_init() {
 
 /* internal task list modifier - only call while holding _dessert_periodic_mutex */
 static int _dessert_periodic_add_periodic_t(dessert_periodic_t* task) {
+    if(!_tasklist || timercmp(&task->scheduled, &_tasklist->scheduled, <)) {
+        LL_PREPEND(_tasklist, task);
+        pthread_cond_broadcast(&_dessert_periodic_changed);
+        return DESSERT_OK;
+    }
     dessert_periodic_t* i;
-
-    /* first task? */
-    if(_tasklist == task) {
-        dessert_err("infinite loop in periodic tasklist requested - aborting!");
-        return (-1);
-    }
-    else if(_tasklist == NULL) {
-        _tasklist = task;
-        pthread_cond_broadcast(&_dessert_periodic_changed);
-    }
-    /* is next task.... */
-    else if(task->scheduled.tv_sec < _tasklist->scheduled.tv_sec
-            || (task->scheduled.tv_sec == _tasklist->scheduled.tv_sec
-                && task->scheduled.tv_usec < _tasklist->scheduled.tv_usec)) {
-        task->next = _tasklist;
-        _tasklist = task;
-        pthread_cond_broadcast(&_dessert_periodic_changed);
-    }
-    /* search right place */
-    else {
-        i = _tasklist;
-
-        while(i->next != NULL && (i->next->scheduled.tv_sec
-                                  < task->scheduled.tv_sec || (i->next->scheduled.tv_sec
-                                          == task->scheduled.tv_sec && i->next->scheduled.tv_usec
-                                          <= task->scheduled.tv_usec))) {
-            i = i->next;
-
-            if(i->next == task) {
-                dessert_err("infinite loop in periodic tasklist requested - aborting!");
-                return (-1);
-            }
+    for(i = _tasklist; i->next; i = i->next) {
+        if(!timercmp(&task->scheduled, &i->next->scheduled, >)) {
+            break;
         }
-
-        /* last or right place */
-        task->next = i->next;
-        i->next = task;
-        /* no need to tell periodic thread to check
-        again - next task has not changed */
     }
-
-    return 0;
+    if(i == task) {
+        dessert_warn("Tried to add periodic %p twice", task->c);
+        return DESSERT_ERR;
+    }
+    LL_PREPEND(i->next, task);
+    return DESSERT_OK;
 }
 
 /** Inserts a name in the function2name hash map
