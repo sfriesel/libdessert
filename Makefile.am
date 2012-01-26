@@ -6,7 +6,7 @@ pkgconfig_DATA = libdessert.pc
 include doc/doxygen-include.am
 
 AM_CPPFLAGS = -Iinclude \
-              -Isrc/dessert \
+              -I. \
               @PCAP_CFLAGS@ \
               @PTHREAD_CFLAGS@
 
