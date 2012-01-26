@@ -145,7 +145,7 @@ static struct radiotap_header_opt_fields parse(const uint8_t* packet) {
         switch(i) {
 #define PARSE_FIELD_NOBREAK(field) \
             offset = ALIGN(offset, sizeof(out.field)); \
-            out.field = * (typeof(out.field) *) (radiotap_data + offset); \
+            memcpy(&out.field, (radiotap_data + offset), sizeof(out.field)); \
             offset += sizeof(out.field);
 #define PARSE_FIELD(field) PARSE_FIELD_NOBREAK(field); break
             case  0:
