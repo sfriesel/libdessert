@@ -588,7 +588,6 @@ int _dessert_cli_no_logging_ringbuffer(struct cli_def* cli, char* command, char*
     }
 }
 
-/** just a helper function */
 static int _dessert_loglevel_to_string(uint8_t level, char* buffer, uint32_t len) {
     switch(level) {
         case LOG_TRACE:
@@ -653,14 +652,12 @@ int _dessert_cli_cmd_set_loglevel(struct cli_def* cli, char* command, char* argv
         _dessert_loglevel = LOG_EMERG;
     }
     else {
-        cli_print(cli, "invalid loglevel specified: %s", argv[0]);
-        dessert_warn("invalid loglevel specified: %s", argv[0]);
+        print_log(LOG_WARNING, cli, "invalid loglevel specified: %s", argv[0]);
     }
 
     char buf[128];
     _dessert_loglevel_to_string(_dessert_loglevel, buf, sizeof(buf));
-    cli_print(cli, "loglevel is set to \"%s\"", buf);
-    dessert_notice("loglevel is set to \"%s\"", buf);
+    print_log(LOG_NOTICE, cli, "loglevel is set to \"%s\"", buf);
 
     return CLI_OK;
 }
