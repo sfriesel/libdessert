@@ -63,7 +63,22 @@ static pthread_rwlock_t _dessert_logrbuf_len_lock = PTHREAD_RWLOCK_INITIALIZER; 
 static pthread_mutex_t _dessert_logrbuf_mutex = PTHREAD_MUTEX_INITIALIZER; /* for moving _dessert_logrbuf_cur */
 static pthread_mutex_t _dessert_logfile_mutex = PTHREAD_MUTEX_INITIALIZER; /* to prevent simultaneous accesses from threads */
 
-/* internal functions forward declarations \todo cleanup */
+/* log message filtering: contains the function name prefix to match and the corresponding log_level */
+typedef struct dessert_log_filter {
+    const char *prefix;
+    int level;
+} dessert_log_filter_t;
+
+/** the array of message filters */
+static dessert_log_filter_t *filters = NULL;
+static int filters_len = 0;
+static int filters_used = 0;
+
+static char* filter_spec = NULL;
+
+/* internal functions forward declarations */
+static int dessert_log_string_to_loglevel(const char* str);
+static dessert_result_t dessert_log_init_filters(void);
 
 /******************************************************************************
  *
@@ -148,6 +163,8 @@ dessert_result_t dessert_logcfg(uint16_t opts) {
         _dessert_logflags &= ~_DESSERT_LOGFLAG_RBUF;
     }
 
+    dessert_log_init_filters();
+
     pthread_rwlock_unlock(&dessert_cfglock);
 
     return DESSERT_OK;
@@ -183,6 +200,103 @@ static char* _dessert_log_rbuf_nextline(void) {
     return (r);
 }
 
+/** @return the translation of str into a log level or -1 on error. */
+static int dessert_log_string_to_loglevel(const char* str) {
+    if(strcmp(str, "trace") == 0) {
+        return LOG_TRACE;
+    }
+    else if(strcmp(str, "debug") == 0) {
+        return LOG_DEBUG;
+    }
+    else if(strcmp(str, "info") == 0) {
+        return LOG_INFO;
+    }
+    else if(strcmp(str, "notice") == 0) {
+        return LOG_NOTICE;
+    }
+    else if(strcmp(str, "warning") == 0 || strcmp(str, "warn") == 0) {
+        return LOG_WARNING;
+    }
+    else if(strcmp(str, "error") == 0 || strcmp(str, "err") == 0) {
+        return LOG_ERR;
+    }
+    else if(strcmp(str, "critical") == 0) {
+        return LOG_CRIT;
+    }
+    else if(strcmp(str, "alert") == 0) {
+        return LOG_ALERT;
+    }
+    else if(strcmp(str, "emergency") == 0) {
+        return LOG_EMERG;
+    }
+    else {
+        return -1;
+    }
+}
+
+static dessert_result_t dessert_log_init_filters(void) {
+    if(filters) {
+        return DESSERT_OK;
+    }
+    const char *tmp = getenv("DESSERT_LOG");
+    if(!tmp) {
+        return DESSERT_OK;
+    }
+
+    //copy to writeable buffer
+    filter_spec = malloc(strlen(tmp) + 1);
+    strcpy(filter_spec, tmp);
+
+    //iterate over all rules in spec (delimited by ';' and internally by ':')
+    char *prefix;
+    for(prefix = strtok(filter_spec, ":"); prefix; prefix = strtok(NULL, ":")) {
+        if(!filters) {
+            filters_len = 4;
+            filters = malloc(sizeof(dessert_log_filter_t) * filters_len);
+        }
+        if(filters_len == filters_used) {
+            filters_len *= 2;
+            filters = realloc(filters, sizeof(dessert_log_filter_t) * filters_len);
+        }
+        dessert_log_filter_t new_filter;
+        new_filter.prefix = prefix;
+        char *level_string = strtok(NULL, "; ");
+        if(!level_string) {
+            dessert_err("no priority specified for prefix \"%s\". Format: <prefix>:<level>;<prefix>:level...", prefix);
+            return DESSERT_ERR;
+        }
+        int level = dessert_log_string_to_loglevel(level_string);
+        if(level < 0) {
+            dessert_err("unknown priority \"%s\" specified. Valid values: trace, debug, info, notice, warning, err, critical, alert, emergency", level_string);
+            return DESSERT_ERR;
+        }
+        new_filter.level = level;
+        filters[filters_used++] = new_filter;
+    }
+    return DESSERT_OK;
+}
+
+/** @param[in] name the function name to match against the filters
+ *  @return    the log level to use for this function name according to the first matching filter or
+ *             (default-) log_level if no match was found */
+static int level_for_name(const char *name) {
+    int remaining;
+    dessert_log_filter_t *filter;
+    for(filter = filters, remaining = filters_used; remaining; ++filter, --remaining) {
+        //match the filter's prefix against the beginning of name
+        const char *prefix = filter->prefix;
+        while(*prefix && *prefix == *name) {
+            ++prefix;
+            ++name;
+        }
+        if(!*prefix) { //prefix matched completely
+            return filter->level;
+        }
+    }
+    //no match found, return default loglevel
+    return _dessert_loglevel;
+}
+
 /** internal log function
  *
  * @internal
@@ -195,7 +309,8 @@ static char* _dessert_log_rbuf_nextline(void) {
  * @param[in] ... (var-arg) printf like variables
  **/
 void _dessert_log(int level, const char* func, const char* file, int line, const char* fmt, ...) {
-    if(_dessert_logflags == 0 || _dessert_loglevel < level) {
+    int threshold_level = filters_used ? level_for_name(func) : _dessert_loglevel;
+    if(_dessert_logflags == 0 || (threshold_level < level)) {
         return;
     }
 
@@ -627,29 +742,9 @@ int _dessert_cli_cmd_set_loglevel(struct cli_def* cli, char* command, char* argv
         return CLI_ERROR;
     }
 
-    if(strcmp(argv[0], "trace") == 0) {
-        _dessert_loglevel = LOG_TRACE;
-    }
-    else if(strcmp(argv[0], "debug") == 0) {
-        _dessert_loglevel = LOG_DEBUG;
-    }
-    else if(strcmp(argv[0], "info") == 0) {
-        _dessert_loglevel = LOG_INFO;
-    }
-    else if(strcmp(argv[0], "notice") == 0) {
-        _dessert_loglevel = LOG_NOTICE;
-    }
-    else if(strcmp(argv[0], "warning") == 0) {
-        _dessert_loglevel = LOG_WARNING;
-    }
-    else if(strcmp(argv[0], "error") == 0) {
-        _dessert_loglevel = LOG_ERR;
-    }
-    else if(strcmp(argv[0], "critical") == 0) {
-        _dessert_loglevel = LOG_CRIT;
-    }
-    else if(strcmp(argv[0], "emergency") == 0) {
-        _dessert_loglevel = LOG_EMERG;
+    int level = dessert_log_string_to_loglevel(argv[0]);
+    if(level >= 0) {
+        _dessert_loglevel = level;
     }
     else {
         print_log(LOG_WARNING, cli, "invalid loglevel specified: %s", argv[0]);
