@@ -97,9 +97,9 @@
 #include <libcli.h>
 #include <stdbool.h>
 #include <string.h>
+#include <pthread.h>
 
 #ifdef ANDROID
-#include <pthread.h>
 #include <pthreadex.h>
 #include <linux/if_ether.h>
 #include <net/if_ether.h>
