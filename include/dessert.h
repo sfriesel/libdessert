@@ -182,7 +182,7 @@ static inline bool mac_equal(const mac_addr left, const mac_addr right) {
     return memcmp(left, right, ETH_ALEN) == 0;
 }
 
-static inline void mac_copy(mac_addr target, mac_addr src) {
+static inline void mac_copy(mac_addr target, const mac_addr src) {
     memcpy(target, src, ETH_ALEN);
 }
 
@@ -1363,7 +1363,7 @@ bool dessert_filter_rule_rm(char* mac, dessert_meshif_t* iface, enum dessert_fil
  ******************************************************************************/
 
 //use timeval_add instead
-static void (*TIMEVAL_ADD)(struct timeval*, uint32_t, uint32_t) __attribute__ ((deprecated)) = dessert_timevaladd;
+static void (*TIMEVAL_ADD)(struct timeval*, uint32_t, uint32_t) __attribute__ ((deprecated, unused)) = dessert_timevaladd;
 
 int dessert_cli_cmd_ping(struct cli_def* cli, char* command, char* argv[], int argc) __attribute__((__deprecated__));
 int dessert_cli_cmd_traceroute(struct cli_def* cli, char* command, char* argv[], int argc) __attribute__((__deprecated__));
