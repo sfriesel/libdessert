@@ -280,17 +280,20 @@ static dessert_result_t dessert_log_init_filters(void) {
  *  @return    the log level to use for this function name according to the first matching filter or
  *             (default-) log_level if no match was found */
 static int level_for_name(const char *name) {
-    int remaining;
-    dessert_log_filter_t *filter;
-    for(filter = filters, remaining = filters_used; remaining; ++filter, --remaining) {
+    int i;
+    for(i = 0; i < filters_used; ++i) {
         //match the filter's prefix against the beginning of name
-        const char *prefix = filter->prefix;
-        while(*prefix && *prefix == *name) {
-            ++prefix;
-            ++name;
+        const char *prefix = filters[i]->prefix;
+        int pos;
+        bool match = true;
+        for(pos = 0; prefix[pos] != '\0'; ++pos) {
+            if(prefix[pos] != name[pos]) {
+                match = false;
+                break;
+            }
         }
-        if(!*prefix) { //prefix matched completely
-            return filter->level;
+        if(match) {
+            return filters[i]->level;
         }
     }
     //no match found, return default loglevel
