@@ -271,6 +271,7 @@ static dessert_result_t dessert_log_init_filters(void) {
             return DESSERT_ERR;
         }
         new_filter.level = level;
+        dessert_info("using filter: %s: %d (%s)", new_filter.prefix, new_filter.level, level_string);
         filters[filters_used++] = new_filter;
     }
     return DESSERT_OK;
