@@ -284,7 +284,7 @@ static int level_for_name(const char *name) {
     int i;
     for(i = 0; i < filters_used; ++i) {
         //match the filter's prefix against the beginning of name
-        const char *prefix = filters[i]->prefix;
+        const char *prefix = filters[i].prefix;
         int pos;
         bool match = true;
         for(pos = 0; prefix[pos] != '\0'; ++pos) {
@@ -294,7 +294,7 @@ static int level_for_name(const char *name) {
             }
         }
         if(match) {
-            return filters[i]->level;
+            return filters[i].level;
         }
     }
     //no match found, return default loglevel
